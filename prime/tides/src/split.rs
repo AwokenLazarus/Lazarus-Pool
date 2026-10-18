@@ -34,6 +34,11 @@
 //! is `grace_work`: it is charged `grace_fee_bps` in place of the stratum fee, and
 //! `grace_rebate_bps` of its value is rebated to DATUM work in the same way. It is still
 //! stratum work: it earns no DATUM rebate itself.
+//!
+//! **Offender fee.** DATUM work from a gateway that is mining coinbases without the split
+//! (pool-only or partial) is `offender_work`: it is charged `offender_fee_bps` in place of the
+//! DATUM fee, and the fee goes to the pool output like any other. It is still DATUM work for
+//! the rebate.
 
 use serde::Serialize;
 
@@ -54,6 +59,9 @@ pub struct SplitParams {
     /// Share of the grace fee (basis points of grace work's value) redistributed to DATUM
     /// work. Clamped to the grace fee.
     pub grace_rebate_bps: u32,
+    /// Fee on DATUM work from a gateway mining pool-only or partial coinbases, basis points.
+    /// 0: such work pays the DATUM fee like any other.
+    pub offender_fee_bps: u32,
     /// Smallest output the split will emit, in sats.
     pub min_payout: u64,
     /// Cap on the number of outputs (the protocol allows 512).
@@ -96,6 +104,7 @@ impl Default for SplitParams {
             datum_rebate_bps: 0,
             grace_fee_bps: 0,
             grace_rebate_bps: 0,
+            offender_fee_bps: 0,
             min_payout: 546,
             max_outputs: 512,
             output_budget_bytes: 14_000,
@@ -281,11 +290,14 @@ fn stratum_rebate(value: u64, total_work: u64, total_sw: u64, rebate_bps: u32) -
 }
 
 /// A miner's window work by fee class: house stratum at the full stratum fee, house stratum
-/// inside its grace, and DATUM (or untagged). The three sum to `work`.
-fn classes(m: &MinerStat) -> (u64, u64, u64) {
+/// inside its grace, DATUM (or untagged), and DATUM from an offending gateway. The four sum
+/// to `work`.
+fn classes(m: &MinerStat) -> (u64, u64, u64, u64) {
     let stratum = m.stratum_work.min(m.work);
     let gw = m.grace_work.min(stratum);
-    (stratum - gw, gw, m.work - stratum)
+    let datum = m.work - stratum;
+    let ow = m.offender_work.min(datum);
+    (stratum - gw, gw, datum - ow, ow)
 }
 
 pub fn compute(
@@ -301,13 +313,15 @@ pub fn compute(
     let rebate_bps = p.datum_rebate_bps.min(stratum_bps);
     let grace_bps = p.grace_fee_bps.min(10_000);
     let grace_rebate_bps = p.grace_rebate_bps.min(grace_bps);
+    // never below the DATUM fee: an offender pays at least what everyone else does
+    let offender_bps = p.offender_fee_bps.clamp(p.fee_bps.min(10_000), 10_000);
 
     // `total_sw` is the stratum work charged the full stratum fee; `total_gw` the grace work.
     let mut total_sw = 0u64;
     let mut total_gw = 0u64;
     let mut scripts: Vec<Option<Vec<u8>>> = Vec::with_capacity(miners.len());
     for m in &miners {
-        let (sw, gw, _) = classes(m);
+        let (sw, gw, _, _) = classes(m);
         total_sw = total_sw.saturating_add(sw);
         total_gw = total_gw.saturating_add(gw);
         scripts.push(if m.work > 0 || m.carry > 0 { script_for(&m.identity) } else { None });
@@ -347,15 +361,17 @@ pub fn compute(
     let mut shares: Vec<u64> = Vec::with_capacity(miners.len());
     for (m, script) in miners.iter().zip(&scripts) {
         let (earned, fee) = if total_work > 0 && m.work > 0 {
-            let (sw, gw, dw) = classes(m);
+            let (sw, gw, dw, ow) = classes(m);
             let keep = u128::from(sw) * u128::from(10_000 - stratum_bps)
                 + u128::from(gw) * u128::from(10_000 - grace_bps)
-                + u128::from(dw) * u128::from(10_000 - p.fee_bps);
+                + u128::from(dw) * u128::from(10_000 - p.fee_bps)
+                + u128::from(ow) * u128::from(10_000 - offender_bps);
             let earned = (u128::from(value) * keep / u128::from(total_work) / 10_000) as u64;
             let fee = (u128::from(value)
                 * (u128::from(sw) * u128::from(stratum_bps)
                     + u128::from(gw) * u128::from(grace_bps)
-                    + u128::from(dw) * u128::from(p.fee_bps))
+                    + u128::from(dw) * u128::from(p.fee_bps)
+                    + u128::from(ow) * u128::from(offender_bps))
                 / u128::from(total_work)
                 / 10_000) as u64;
             (earned, fee)
@@ -474,15 +490,42 @@ mod tests {
     use super::*;
 
     fn miner(id: &str, work: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: 0, grace_work: 0, credits: 1, last_ts: 0, carry: 0 }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: 0,
+            grace_work: 0,
+            offender_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry: 0,
+        }
     }
 
     fn miner_stratum(id: &str, work: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: work, grace_work: 0, credits: 1, last_ts: 0, carry: 0 }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: work,
+            grace_work: 0,
+            offender_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry: 0,
+        }
     }
 
     fn miner_carry(id: &str, work: u64, carry: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: 0, grace_work: 0, credits: 1, last_ts: 0, carry }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: 0,
+            grace_work: 0,
+            offender_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry,
+        }
     }
 
     fn script(id: &str) -> Option<Vec<u8>> {
@@ -894,6 +937,7 @@ mod tests {
                     work,
                     stratum_work: sw,
                     grace_work: 0,
+                    offender_work: 0,
                     credits: 1,
                     last_ts: 0,
                     carry: rnd(50_000),
@@ -981,7 +1025,16 @@ mod tests {
     }
 
     fn gone(id: &str, carry: u64, last_ts: u32) -> MinerStat {
-        MinerStat { identity: id.into(), work: 0, stratum_work: 0, grace_work: 0, credits: 0, last_ts, carry }
+        MinerStat {
+            identity: id.into(),
+            work: 0,
+            stratum_work: 0,
+            grace_work: 0,
+            offender_work: 0,
+            credits: 0,
+            last_ts,
+            carry,
+        }
     }
 
     /// A miner who left with less than the floor is paid once it has been gone long enough.
@@ -1024,6 +1077,7 @@ mod tests {
                 work: 1,
                 stratum_work: 0,
                 grace_work: 0,
+                offender_work: 0,
                 credits: 1,
                 last_ts: old,
                 carry: 20_000,
@@ -1083,6 +1137,7 @@ mod tests {
             work,
             stratum_work: stratum,
             grace_work: grace,
+            offender_work: 0,
             credits: 1,
             last_ts: 0,
             carry: 0,
@@ -1118,6 +1173,64 @@ mod tests {
         // 50 points of the donor's 200k and 12.5 points of the failover's, all to DATUM work
         assert_eq!(s.rebate_credits, vec![("datum".to_string(), 125_000)]);
         assert_eq!((s.rebate_sats, s.rebate_deferred), (125_000, 0));
+    }
+
+    fn miner_offender(id: &str, work: u64, offender: u64) -> MinerStat {
+        MinerStat { offender_work: offender, ..miner(id, work) }
+    }
+
+    /// The offender fee: DATUM work from a gateway mining pool-only or partial coinbases pays
+    /// 10% to the pool; the same miner's other DATUM work and everyone else's pay the DATUM fee.
+    #[test]
+    fn offender_work_is_charged_the_offender_fee() {
+        let p = SplitParams {
+            fee_bps: 0,
+            stratum_fee_bps: 10_000,
+            datum_rebate_bps: 5_000,
+            offender_fee_bps: 1_000,
+            min_payout: 1,
+            ..SplitParams::default()
+        };
+        let miners = vec![
+            miner_offender("clean", 500, 0),
+            miner_offender("rogue", 300, 300),
+            miner_offender("switched", 200, 100),
+        ];
+        let s = compute(miners.clone(), 1_000, 1_000_000, &p, 0, 0, script);
+        let paid = |s: &Split, id: &str| s.payees.iter().find(|x| x.identity == id).map(|x| x.sats);
+        assert_eq!(paid(&s, "clean"), Some(500_000));
+        assert_eq!(paid(&s, "rogue"), Some(270_000), "300k of work value less 10%");
+        assert_eq!(paid(&s, "switched"), Some(190_000), "only the 100 done while offending");
+        assert_eq!(s.fee_sats, 40_000);
+        assert_eq!(s.pool_sats, 40_000, "the fee is the pool output");
+        assert!(s.rebate_credits.is_empty(), "no stratum work, no rebate");
+
+        // off: offender work is DATUM work like any other
+        let off = SplitParams { offender_fee_bps: 0, ..p.clone() };
+        let plain = compute(miners.clone(), 1_000, 1_000_000, &off, 0, 0, script);
+        assert_eq!((paid(&plain, "rogue"), plain.pool_sats), (Some(300_000), 0));
+
+        // never below the DATUM fee
+        let low = SplitParams { fee_bps: 500, offender_fee_bps: 100, ..p };
+        let s = compute(miners, 1_000, 1_000_000, &low, 0, 0, script);
+        assert_eq!(paid(&s, "rogue"), Some(285_000));
+    }
+
+    /// Offender work is still DATUM work: it takes its slice of the stratum rebate.
+    #[test]
+    fn offender_work_still_earns_the_datum_rebate() {
+        let p = SplitParams {
+            fee_bps: 0,
+            stratum_fee_bps: 10_000,
+            datum_rebate_bps: 5_000,
+            offender_fee_bps: 1_000,
+            min_payout: 1,
+            ..SplitParams::default()
+        };
+        let miners = vec![miner_offender("rogue", 400, 400), miner("clean", 400), miner_stratum("donor", 200)];
+        let s = compute(miners, 1_000, 1_000_000, &p, 0, 0, script);
+        assert_eq!(s.rebate_credits, vec![("rogue".to_string(), 50_000), ("clean".to_string(), 50_000)]);
+        assert_eq!(s.fee_sats, 200_000 + 40_000);
     }
 
     /// A miner part-way through: some of its stratum work was done in grace, some after.
@@ -1237,7 +1350,7 @@ mod tests {
             assert!(s.rebate_sats <= s.fee_sats + n as u64, "the rebate comes out of the fee: {dbg}\n{s:?}");
             for m in &miners {
                 let paid = s.payees.iter().find(|x| x.identity == m.identity).map_or(0, |x| x.sats);
-                let (sw, gw, dw) = classes(m);
+                let (sw, gw, dw, _) = classes(m);
                 assert_eq!(sw + gw + dw, m.work);
                 let most = u128::from(value)
                     * (u128::from(sw) * u128::from(10_000 - stratum)

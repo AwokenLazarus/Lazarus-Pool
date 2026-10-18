@@ -367,6 +367,14 @@ const STOCK_COINBASER_DEADLINE: Duration = Duration::from_secs(5);
 const COINBASER_SLOW: Duration = Duration::from_secs(1);
 /// How often one session may repeat the "mining work without the split" warning.
 const POOL_ONLY_WARN_EVERY: Duration = Duration::from_secs(300);
+/// The offender test (`Session::is_offender`), the same rule as the fee wallet's and the admin
+/// dashboard's: pool-only full jobs on at least 1 in 200 accepted shares once there are 50, or
+/// a last block here in 30 days that was pool-only or partial.
+const OFFENDER_MIN_ACCEPTED: u64 = 50;
+const OFFENDER_RATE_DIVISOR: u64 = 200;
+const OFFENDER_BLOCK_WINDOW_S: u64 = 30 * 86_400;
+/// How long a session trusts its last look at the block log for the offender test.
+const OFFENDER_RECHECK: Duration = Duration::from_secs(60);
 /// A session with this many rejects (or malformed messages) inside `REJECT_WINDOW` is
 /// doing nothing useful and costing verification CPU: drop it. The live house gateway
 /// runs at 13 rejects per 50 000 shares; a broken farm behind one gateway might manage
@@ -708,6 +716,10 @@ struct Session {
     /// subsidy-only job and should not be happening.
     pool_only_full_jobs: u64,
     pool_only_warned: Option<Instant>,
+    /// Accepted shares from this session, for the offender rate.
+    accepted_shares: u64,
+    /// When this session last read the block log for the offender test, and what it found.
+    offender_block: Option<(Instant, bool)>,
     /// When this session last said its shares are credited by hash alone.
     uncommitted_warned: Option<Instant>,
     /// When the house gateway's session last said it is over the reject-flood limit.
@@ -956,6 +968,8 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         pool_only_shares: 0,
         pool_only_full_jobs: 0,
         pool_only_warned: None,
+        accepted_shares: 0,
+        offender_block: None,
         uncommitted_warned: None,
         flood_warned: None,
         candidate_at: None,
@@ -1014,6 +1028,27 @@ impl Session {
 
     fn is_stratum_front(&self) -> bool {
         stratum_front(&self.shared.cfg, self.remote, &self.gateway_key_hex())
+    }
+
+    /// Whether this gateway's DATUM work pays the offender fee: it is mining coinbases without
+    /// the split, by its pool-only full jobs this session or by its last block here.
+    fn is_offender(&mut self) -> bool {
+        if self.shared.cfg.offender_fee_bps == 0 || self.is_house_stratum() || self.is_stratum_front() {
+            return false;
+        }
+        if self.accepted_shares >= OFFENDER_MIN_ACCEPTED
+            && self.pool_only_full_jobs.saturating_mul(OFFENDER_RATE_DIVISOR) >= self.accepted_shares
+        {
+            return true;
+        }
+        match self.offender_block {
+            Some((at, bad)) if at.elapsed() < OFFENDER_RECHECK => bad,
+            _ => {
+                let bad = self.shared.last_block_unsplit(&self.gateway_hex, now(), OFFENDER_BLOCK_WINDOW_S);
+                self.offender_block = Some((Instant::now(), bad));
+                bad
+            }
+        }
     }
 
     async fn serve(&mut self) -> Result<(), SessionError> {
@@ -1924,6 +1959,8 @@ impl Session {
         }
         let ts = now();
         let solo = matches!(v.coinbase_kind, CoinbaseKind::EmptySolo | CoinbaseKind::GatewaySolo);
+        // decided before the ledger lock: it may read the block log
+        let offender = (!solo && v.work > 0).then(|| self.is_offender());
         let credited = if solo {
             true
         } else {
@@ -1949,6 +1986,11 @@ impl Session {
                         tides::SOURCE_STRATUM
                     } else {
                         ledger.source_for(&identity, ts as u32, self.is_house_stratum(), &self.shared.cfg.grace())
+                    };
+                    let source = if source == tides::SOURCE_DATUM && offender == Some(true) {
+                        tides::SOURCE_DATUM_OFFENDER
+                    } else {
+                        source
                     };
                     if let Err(e) = ledger.credit(&identity, v.work, v.height, ts as u32, source) {
                         log::error!("ledger write failed: {e}");
@@ -1994,8 +2036,12 @@ impl Session {
                 }
             }
         }
+        self.accepted_shares += 1;
         self.shared.client_update(self.id, |c| {
             c.accepted += 1;
+            if let Some(o) = offender {
+                c.offender = o;
+            }
             if !solo {
                 c.work += v.work;
                 // Display only: which machine a share named. Nothing reads it but the stats.
@@ -2540,6 +2586,8 @@ impl Session {
             carry_reserved_sats: carry_reserved,
         };
         self.shared.record_block(record);
+        // this block may make the gateway an offender, or stop it being one
+        self.offender_block = None;
 
         // ask for the transactions so we can submit the block ourselves as a backup
         let job = s.job_id;
@@ -3373,6 +3421,7 @@ mod tests {
             datum_rebate_bps: 0,
             grace_fee_bps: 0,
             grace_rebate_bps: 0,
+            offender_fee_bps: 0,
             min_payout: 546,
             max_outputs: 511,
             output_budget_bytes: 14_000 - 9 - 64,
@@ -3395,6 +3444,7 @@ mod tests {
                 work: 10_000 - u64::from(i) * 100,
                 stratum_work: 0,
                 grace_work: 0,
+                offender_work: 0,
                 credits: 1,
                 last_ts: 0,
                 carry,

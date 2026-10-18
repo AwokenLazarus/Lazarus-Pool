@@ -243,6 +243,12 @@ fn run(cfg: Config) -> i32 {
         ledger.window.lifetime_shares
     );
     warn_if_window_cliff(&cfg.data_dir, &ledger);
+    if cfg.offender_fee_bps > 0 {
+        log::info!(
+            "offender fee: {} bps on DATUM work from gateways mining pool-only or partial coinbases",
+            cfg.offender_fee_bps
+        );
+    }
     let grace = cfg.grace();
     if grace.enabled() {
         log::info!(
@@ -300,6 +306,7 @@ fn run(cfg: Config) -> i32 {
             // plain stratum work again; they are never work that pays no fee.
             grace_fee_bps: cfg.stratum_grace_fee_bps.unwrap_or(cfg.stratum_fee_bps),
             grace_rebate_bps: if cfg.grace().enabled() { cfg.stratum_grace_rebate_bps } else { cfg.datum_rebate_bps },
+            offender_fee_bps: cfg.offender_fee_bps,
             min_payout: cfg.min_payout,
             // The gateway accepts at most 512 coinbaser entries; one is the pool's own
             // output appended after the payees. The byte budget leaves room for it too.

@@ -42,6 +42,10 @@ pub const SOURCE_DATUM: u8 = 2;
 /// Public house stratum inside the address's grace (see [`grace`]): charged the grace fee.
 /// A build from before the tag reads such a row as untagged, that is as DATUM work.
 pub const SOURCE_STRATUM_GRACE: u8 = 3;
+/// External gateway that is mining coinbases without the split (pool-only or partial): DATUM
+/// work charged the offender fee instead of the DATUM fee. A build from before the tag reads
+/// such a row as DATUM work.
+pub const SOURCE_DATUM_OFFENDER: u8 = 4;
 
 /// One accepted unit of work, possibly several coalesced shares.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -91,6 +95,9 @@ pub struct MinerStat {
     /// The part of `stratum_work` tagged `SOURCE_STRATUM_GRACE`: charged the grace fee.
     #[serde(default)]
     pub grace_work: u64,
+    /// DATUM work tagged `SOURCE_DATUM_OFFENDER`: charged the offender fee.
+    #[serde(default)]
+    pub offender_work: u64,
     pub credits: u64,
     pub last_ts: u32,
     /// Sats earned in earlier blocks that no coinbase has placed yet (under the payout
@@ -412,7 +419,11 @@ impl Window {
     /// window are included (work 0) so their carry can still be paid.
     pub fn miners(&self) -> Vec<MinerStat> {
         let mut stratum: HashMap<u32, (u64, u64)> = HashMap::new();
+        let mut offender: HashMap<u32, u64> = HashMap::new();
         for c in &self.credits {
+            if c.source == SOURCE_DATUM_OFFENDER {
+                *offender.entry(c.ident).or_insert(0) += c.work;
+            }
             if c.source == SOURCE_STRATUM || c.source == SOURCE_STRATUM_GRACE {
                 let s = stratum.entry(c.ident).or_insert((0, 0));
                 s.0 += c.work;
@@ -429,6 +440,7 @@ impl Window {
                 work,
                 stratum_work: stratum.get(&i).map_or(0, |s| s.0).min(work),
                 grace_work: stratum.get(&i).map_or(0, |s| s.1).min(work),
+                offender_work: offender.get(&i).copied().unwrap_or(0).min(work),
                 credits,
                 last_ts,
                 carry: self.carry.get(&i).copied().unwrap_or(0),
@@ -441,6 +453,7 @@ impl Window {
                     work: 0,
                     stratum_work: 0,
                     grace_work: 0,
+                    offender_work: 0,
                     credits: 0,
                     last_ts: self.last_seen.get(&i).copied().unwrap_or(0),
                     carry,
@@ -1040,7 +1053,7 @@ impl Ledger {
             let class = match c.source {
                 SOURCE_STRATUM => grace::Seen::Stratum,
                 SOURCE_STRATUM_GRACE => grace::Seen::StratumGrace,
-                SOURCE_DATUM => grace::Seen::Datum,
+                SOURCE_DATUM | SOURCE_DATUM_OFFENDER => grace::Seen::Datum,
                 _ => grace::Seen::Other,
             };
             (c.ts, w.idents[c.ident as usize].as_str(), class)

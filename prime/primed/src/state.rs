@@ -178,6 +178,9 @@ pub struct ClientInfo {
     /// Of those, the ones on a job that carried transactions. Stock DATUM's per-height
     /// subsidy-only job is expected and unavoidable; this is the count that should be zero.
     pub pool_only_full_jobs: u64,
+    /// Its DATUM work is charged the offender fee (`offender-fee-bps`): as of its last
+    /// credited share, it is mining coinbases without the split.
+    pub offender: bool,
     /// Accepted shares on an empty-solo job (gateway-paid, 0-tx). Not in the window.
     pub solo_empty_shares: u64,
     pub solo_empty_work: u64,
@@ -767,6 +770,19 @@ impl Shared {
         t.max(self.cfg.window_min_work)
     }
 
+    /// Whether `gateway`'s last block here within `window_s` seconds of `now` (orphans aside)
+    /// was pool-only or partial.
+    pub fn last_block_unsplit(&self, gateway: &str, now: u64, window_s: u64) -> bool {
+        if gateway.is_empty() {
+            return false;
+        }
+        let b = self.blocks.lock().unwrap();
+        b.iter()
+            .rev()
+            .find(|r| r.gateway == gateway && !r.kind.starts_with("orphan"))
+            .is_some_and(|r| now.saturating_sub(r.ts) <= window_s && (r.kind == "partial" || r.kind == "pool-only"))
+    }
+
     pub fn record_block(&self, r: BlockRecord) {
         if let Err(e) = self.block_log.append(&r) {
             log::error!("block log append failed: {e}");
@@ -824,6 +840,7 @@ mod tests {
                 datum_rebate_bps: 0,
                 grace_fee_bps: 0,
                 grace_rebate_bps: 0,
+                offender_fee_bps: 0,
                 min_payout: 546,
                 max_outputs: 511,
                 output_budget_bytes: 13_927,
@@ -868,6 +885,36 @@ mod tests {
     /// Every gateway asks for a coinbaser as the tip moves, which is the second a found block is
     /// booked. A snapshot from before the block's debits would offer the carry it just paid a
     /// second time, out of the pool's remainder.
+    /// The offender test reads a gateway's last block in the window, orphans aside.
+    #[test]
+    fn last_block_unsplit_is_the_gateways_latest_counted_block() {
+        let (shared, dir) = test_shared("unsplit");
+        let block = |n: u64, gw: &str, kind: &str| {
+            let r: tides::BlockRecord = serde_json::from_value(serde_json::json!({
+                "ts": n, "height": n, "hash": format!("{n:064x}"), "finder": null, "coinbase_value": 0,
+                "kind": kind, "owed_sats": 0, "split": [], "pool_sats": 0, "settled": true, "gateway": gw,
+            }))
+            .unwrap();
+            shared.record_block(r);
+        };
+        let day = 86_400;
+        let unsplit = |gw: &str, now: u64| shared.last_block_unsplit(gw, now, 30 * day);
+        block(1_000, "bad", "partial");
+        block(2_000, "good", "split");
+        block(3_000, "mended", "pool-only");
+        block(4_000, "mended", "split");
+        block(5_000, "orph", "partial");
+        block(6_000, "orph", "orphan-split");
+        assert!(unsplit("bad", 10_000));
+        assert!(!unsplit("good", 10_000));
+        assert!(!unsplit("mended", 10_000), "its latest block paid the split");
+        assert!(unsplit("orph", 10_000), "an orphan does not clear it");
+        assert!(!unsplit("bad", 1_000 + 31 * day), "a month on, the old block no longer counts");
+        assert!(!unsplit("", 10_000));
+        assert!(!unsplit("never", 10_000));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn carry_a_block_paid_is_not_offered_again_by_the_coinbaser_snapshot() {
         let (shared, dir) = test_shared("carry");

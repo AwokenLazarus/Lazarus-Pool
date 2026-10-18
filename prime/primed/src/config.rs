@@ -63,6 +63,12 @@ pub struct Config {
     /// still classify as EmptySolo at 0% via the script-flip path.
     #[serde(default = "d_empty_solo_fee")]
     pub empty_solo_fee_bps: u32,
+    /// Fee on DATUM work from a gateway that is mining coinbases without the split: one whose
+    /// last block here in 30 days was pool-only or partial, or that sends pool-only full jobs on
+    /// at least 0.5% of 50 or more accepted shares this session. Basis points; never below
+    /// `fee-bps`. 0 (default): no such fee.
+    #[serde(default)]
+    pub offender_fee_bps: u32,
     /// How a stock gateway's *full* pool-only job is treated after Prime has seen one.
     /// `owe` (default): configure(pool) with each coinbaser so they pool-mine the split
     /// until the next tip. `gateway-solo`: leave them on their own script so those jobs
@@ -460,6 +466,9 @@ impl Config {
         }
         if c.empty_solo_fee_bps > 10_000 {
             return Err("empty-solo-fee-bps cannot exceed 10000".into());
+        }
+        if c.offender_fee_bps > 10_000 {
+            return Err("offender-fee-bps cannot exceed 10000".into());
         }
         match c.stock_full_pool_only.as_str() {
             "owe" | "gateway-solo" => {}
