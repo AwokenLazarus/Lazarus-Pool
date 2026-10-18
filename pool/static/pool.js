@@ -61,14 +61,10 @@
     });
   });
   if (tabs.length) selectTab(tabs[0].id);
-  // The fee cards are the "why"; clicking one opens the matching "how" tab. Any link with
-  // data-tab (the DATUM calls to action) does the same, so it lands on the setup it promises.
+  // Any link with data-tab (the DATUM calls to action, the hero rate cards) opens that tab, so it
+  // lands on the setup it promises.
   document.querySelectorAll("[data-tab]").forEach((el) => {
-    el.addEventListener("click", () => {
-      const id = el.getAttribute("data-tab");
-      selectTab(id);
-      if (el.classList.contains("fee-card")) $(id)?.focus({ preventScroll: true });
-    });
+    el.addEventListener("click", () => selectTab(el.getAttribute("data-tab")));
   });
 
   const PROMO_DISMISS_KEY = "lz.promo.datum";
@@ -310,9 +306,6 @@
     const upliftPhrase = fees.uplift > 0
       ? t("connect.upliftPhrase", { uplift: upliftTxt })
       : "";
-    const upliftBecause = fees.uplift > 0
-      ? t("connect.upliftBecause", { datumPct: pctSmart(fees.datumWorkPct), stratumPct: pctSmart(fees.stratumWorkPct) })
-      : "";
 
     show("datum-promo", on && !promoDismissed());
     show("promo-live", on && !!upliftTxt);
@@ -347,10 +340,6 @@
       pillar.hidden = !on;
     }
 
-    show("fee-datum-bonus", on && !!upliftTxt);
-    setText("fee-datum-bonus", upliftTxt ? t("connect.bonusSmall", { uplift: upliftTxt }) : "");
-    setText("fee-datum-copy", on ? t("connect.datumCopyOn", { fee: feePct(fees.stratum) }) : "");
-    setText("fee-stratum-copy", on ? t("connect.stratumCopyOn", { pts: pts(fees.rebate) }) : "");
     show("tab-bonus-datum", on && !!upliftTxt);
     setText("tab-bonus-datum", upliftTxt || "");
 
@@ -367,7 +356,7 @@
       explain.innerHTML = t("connect.bonusExplain", {
         fee: feePct(fees.stratum),
         Pts: Pts(fees.rebate),
-        uplift: upliftPhrase ? upliftPhrase + upliftBecause : "",
+        uplift: "",
       });
     }
     show("datum-bonus-dt", on && !!upliftTxt);
@@ -622,8 +611,8 @@
       custodyNotice(p.fees.custody);
     }
     const setText = (id, text) => { const e = $(id); if (e) e.textContent = text; };
-    for (const id of ["fee-datum", "tab-fee-datum", "datum-fee-line", "top-fee-datum"]) setText(id, feePct(fees.datum));
-    for (const id of ["fee-stratum", "tab-fee-stratum", "stratum-fee-line", "pillar-stratum-fee", "top-fee-stratum"]) setText(id, feePct(fees.stratum));
+    for (const id of ["tab-fee-datum", "datum-fee-line", "top-fee-datum"]) setText(id, feePct(fees.datum));
+    for (const id of ["tab-fee-stratum", "stratum-fee-line", "top-fee-stratum"]) setText(id, feePct(fees.stratum));
     rebateCopy(p);
     if (fees.datum === 0 && fees.stratum > 0) {
       setText("fee-ratio", t("connect.noCut"));
@@ -666,7 +655,6 @@
     const gws = Number(pr.gateways_online) || 0;
     const remote = Number(pr.gateways_remote) || 0;
     const thsDatum = thsDay(p, fees.datum);
-    const thsStratum = thsDay(p, fees.stratum);
     // Headline yield is the DATUM one including the bonus: it is the number we want a miner
     // comparing pools to see, and it is what they actually get through a gateway.
     const thsBonus = fees.rebate > 0 ? thsDay(p, fees.datum, "datum_bonus") : thsDatum;
@@ -685,8 +673,7 @@
         : t("status.sharesVerified", { rej: rejPct });
     const cells = [
       [t("status.thsEst", { label: t("hero.ths") }), thsBonus != null ? t("status.perDay", { amt: amt(thsBonus) + money(thsBonus) }) : "\u2014",
-        (fees.rebate > 0 ? t("status.thsSubOn") : t("status.thsSubOff"))
-        + " · " + (thsStratum != null ? t("status.perDay", { amt: amt(thsStratum) + money(thsStratum) }) : "\u2014") + " · " + feePct(fees.stratum)],
+        fees.rebate > 0 ? t("status.thsSubOn") : t("status.thsSubOff")],
       [t("status.hashrate"), fmtHr(p.pool_hr_ghs), hrSub],
       [t("status.miners"), String(inWindow || p.miners_online || 0), inWindow ? t("status.minersSub", { seen: p.miners_seen ?? "\u2014" }) : t("status.minersEver", { seen: p.miners_seen ?? "\u2014" })],
       [t("status.shares"), num(sharesMain), sharesSub],
@@ -1155,13 +1142,12 @@
 
   function solo(s) {
     const on = !!(s && s.enabled);
-    for (const id of ["solo", "nav-solo", "fee-card-solo", "tab-solo"]) {
+    for (const id of ["solo", "nav-solo", "tab-solo"]) {
       const el = $(id);
       if (el) el.hidden = !on;
     }
     if (!on) return;
     const fee = s.fee_percent;
-    setText("fee-solo", pctFee(fee));
     setText("tab-fee-solo", pctFee(fee));
     setText("solo-fee-line", pctFee(fee));
 
