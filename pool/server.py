@@ -6994,27 +6994,27 @@ _ORG_ID = "https://lazarus-xbt.xyz/#org"
 # a page's modified date only when its words change, never per deploy. /blocks and /calculator are
 # live data and a tool, so they stay plain WebPages.
 _SEO_ARTICLE = {
-    "/hardware": ("Article", "2026-09-13", "2026-10-13"),
-    "/rentals": ("Article", "2026-10-08", "2026-10-13"),
-    "/pools": ("Article", "2026-09-13", "2026-10-13"),
-    "/self-cap": ("Article", "2026-09-13", "2026-10-13"),
-    "/non-custodial": ("Article", "2026-09-13", "2026-10-13"),
-    "/bip110": ("Article", "2026-09-13", "2026-10-13"),
-    "/how": ("Article", "2026-09-13", "2026-10-13"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-10-13"),
-    "/ratum": ("TechArticle", "2026-09-28", "2026-10-13"),
-    "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-13"),
-    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-13"),
-    "/api": ("TechArticle", "2026-09-13", "2026-10-17"),
+    "/hardware": ("Article", "2026-09-13", "2026-10-18"),
+    "/rentals": ("Article", "2026-10-08", "2026-10-18"),
+    "/pools": ("Article", "2026-09-13", "2026-10-18"),
+    "/self-cap": ("Article", "2026-09-13", "2026-10-18"),
+    "/non-custodial": ("Article", "2026-09-13", "2026-10-18"),
+    "/bip110": ("Article", "2026-09-13", "2026-10-18"),
+    "/how": ("Article", "2026-09-13", "2026-10-18"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-10-18"),
+    "/ratum": ("TechArticle", "2026-09-28", "2026-10-18"),
+    "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-18"),
+    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-18"),
+    "/api": ("TechArticle", "2026-09-13", "2026-10-18"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
 # rule as _SEO_ARTICLE: bump a date in the commit that changes that page's words, never per deploy.
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-10-13",
-    "/calculator": "2026-10-13",
-    "/blocks": "2026-10-13",
+    "/": "2026-10-18",
+    "/calculator": "2026-10-18",
+    "/blocks": "2026-10-18",
 }
 _OG_IMAGE = "https://pool.lazarus-xbt.xyz/static/og-pool.png"
 
@@ -7106,8 +7106,8 @@ def _inject_intro(raw, meta):
         return raw
     title, paras = entry
     # A block already written as markup (a table, a list) is emitted as it stands; anything else is
-    # prose and gets wrapped in a paragraph.
-    body = "\n".join(f"      {t}" if t.startswith("<") else f"      <p>{t}</p>" for t in paras)
+    # prose and gets wrapped in a paragraph, including prose that opens with inline markup (a row of links).
+    body = "\n".join(f"      {t}" if t.startswith("<") and not t.startswith(("<a ", "<b>", "<code>", "<i>", "<em>", "<strong>")) else f"      <p>{t}</p>" for t in paras)
     block = (
         '\n  <section class="seo-intro" aria-labelledby="seo-intro-title">\n'
         '    <div class="wrap">\n'

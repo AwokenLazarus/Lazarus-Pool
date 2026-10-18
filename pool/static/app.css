@@ -325,6 +325,8 @@ html.app { scroll-padding-top: calc(var(--mast-full, 7.5rem) + 14px); }
   .app .promo-row { gap: 0.5rem 0.7rem; padding-block: 0.55rem; }
   .app .promo-copy { font-size: 0.84rem; line-height: 1.35; }
   .app .promo-tag { display: none; }
+  .app .promo-live { display: none; }
+  .app .promo-copy { flex-basis: 12rem; }
 }
 
 /* ------------------------------------------------------------------ bars that scroll sideways */
@@ -427,28 +429,25 @@ html.app { scroll-padding-top: calc(var(--mast-full, 7.5rem) + 14px); }
 /* Sits in the hero, so the homepage (EN and ZH) carries it; keyword pages drop the hero. */
 .ask-ai {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-top: 1.5rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid var(--line);
-  max-width: 36rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin-top: 0.4rem;
 }
-.ask-ai-copy { min-width: 0; }
 .ask-ai-title {
-  font: 500 1.05rem / 1.25 var(--serif);
-  letter-spacing: -0.005em;
-  color: var(--ink);
+  font: 500 0.7rem / 1 var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
-.ask-ai-lede { margin-top: 0.25rem; font-size: 0.86rem; line-height: 1.5; color: var(--muted); }
 .ask-ai-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .ask-ai-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  height: 2.6rem;
-  padding: 0 1.1rem 0 0.9rem;
+  height: 2.2rem;
+  padding: 0 0.95rem 0 0.75rem;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--bg-raised);
