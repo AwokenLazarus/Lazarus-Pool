@@ -53,7 +53,12 @@ for url in urls:
     count += 1
 assert count == 30, count  # 15 documents in two languages
 assert not (out/'static/index.html').exists(), 'raw template is publicly exported'
-assert 'Disallow: /\n' not in (out/'robots.txt').read_text()
+robots = (out/'robots.txt').read_text()
+assert 'Disallow: /\n' not in robots
+# The pages render from these; Google does not run a fetch to a blocked URL.
+disallowed = [l.split(':', 1)[1].strip() for l in robots.splitlines() if l.startswith('Disallow:')]
+for api in ['/api/pool', '/api/coinbaser', '/api/price', '/api/solo', '/api/miners', '/api/hardware', '/api/rentals', '/api/blocks', '/api/payouts', '/api/history']:
+    assert not any(api.startswith(d) for d in disallowed), (api, disallowed)
 for route in ['/static/', '/static/index.html', '/static/index']:
     assert f'{route} / 301' in (out/'_redirects').read_text()
 assert (out/'404.html').exists(), 'Pages would enable SPA fallback without 404.html'
