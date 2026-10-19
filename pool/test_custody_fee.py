@@ -202,9 +202,12 @@ def client(ident, gw, accepted=0, pof=0, offline=False):
 class OutdatedGateways(unittest.TestCase):
     def test_pool_only_work_rate(self):
         Book(self).write()
-        clients = [client(A, "g1", 1000, 5), client(B, "g2", 1000, 4), client(L, "g3", 49, 49), client(S, "g4", 1000, 900, offline=True)]
+        # A: pays only the pool. B: a current build's odd pool-only share (1.1%). L: too few shares.
+        # S: offline. "blip": one pool-only share right after a reconnect (Knotzi, 2026-10-19).
+        clients = [client(A, "g1", 1000, 999), client(B, "g2", 1000, 11), client(L, "g3", 199, 199), client(S, "g4", 1000, 900, offline=True),
+                   client("blip", "g5", 60, 1), client("edge", "g6", 200, 20)]
         bad = server.gateway_offenders(clients, now=NOW)
-        self.assertEqual(set(bad), {A}, "0.5% of 50+ accepted, connected only")
+        self.assertEqual(set(bad), {A, "edge"}, "10% of 200+ accepted, connected only")
         self.assertIn("pool-only work", bad[A])
 
     def test_latest_block_in_30_days(self):
@@ -223,7 +226,7 @@ class OutdatedGateways(unittest.TestCase):
 
     def test_miner_flags(self):
         Book(self).write()
-        clients = [client(A, "g1", 1000, 50)]
+        clients = [client(A, "g1", 1000, 500)]
         self.assertEqual(server.gateway_outdated_for(A, [], clients, now=NOW)[:2], (True, server.gateway_offenders(clients, NOW)[A]))
         self.assertEqual(server.gateway_outdated_for(B, [], clients, now=NOW), (False, "", False))
         charged = [{"custody_fee_sats": 10, "ts": NOW - 6 * DAY}]

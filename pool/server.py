@@ -3386,11 +3386,14 @@ def gateway_names_by_address():
 # whole reward to the pool (pool-only); the newest builds in gateways.json split correctly. Who
 # counts as mining through one is the fee wallet's rule (fee_wallet.py `offenders_from`, the same
 # as the admin dashboard's offender list): the payout identity of a connected gateway session
-# that sends pool-only full jobs on at least 0.5% of 50 or more accepted, or whose gateway's
+# that sends pool-only full jobs on at least 10% of 200 or more accepted, or whose gateway's
 # latest block in the last 30 days (orphans aside) was pool-only or partial. Those identities are
 # the payees the wallet charges the custody fee, so the miner page warns exactly them.
-OFFENDER_MIN_ACCEPTED = 50
-OFFENDER_POOL_ONLY_RATE = 0.005
+# Every build, v0.5.0beta included, mines the odd pool-only share after a reconnect or a new height
+# (on 2026-10-19 all live sessions but two were at 1.1% or less; the two paying only the pool were
+# at 99.98%), so 0.5% of 50 warned a current gateway for one share (Mike, 2026-10-19).
+OFFENDER_MIN_ACCEPTED = 200
+OFFENDER_POOL_ONLY_RATE = 0.10
 OFFENDER_BLOCK_WINDOW_S = 30 * 86400
 _offender_blocks_cache = {"key": None, "latest": {}}
 
@@ -5942,7 +5945,7 @@ API_CATALOG = (
             ApiField("makegood_custody_fee_sats", "integer", "sats", "Custody fee kept from this address's pending and paid make-goods.", "从该地址待付与已付补付中保留的托管费。"),
             ApiField("custody_fee_percent", "number", "percent", "The custody fee on make-goods for pool-only and partial coinbases. 0 when there is none.", "仅矿池与部分分账 coinbase 补付的托管费率。没有时为 0。"),
             ApiField("custody_from_height", "integer", "blocks", "First block whose make-goods carry the custody fee. 0 when there is none.", "其补付开始收取托管费的第一个区块。没有时为 0。"),
-            ApiField("gateway_outdated", "boolean", "", "True while this address is the payout identity of a connected DATUM gateway on an out-of-date build: its latest block in the last 30 days was pool-only or partial, or it sends pool-only work (at least 0.5% of 50 or more accepted jobs). The same rule decides who pays the custody fee.", "该地址是一个在线、版本过时的 DATUM 网关的收款身份时为 true：该网关最近 30 天内的最新区块是仅矿池或部分分账，或它发送仅矿池工作（在 50 个及以上已接受任务中至少占 0.5%）。托管费由谁承担也按同一规则判定。"),
+            ApiField("gateway_outdated", "boolean", "", "True while this address is the payout identity of a connected DATUM gateway on an out-of-date build: its latest block in the last 30 days was pool-only or partial, or it sends pool-only work (at least 10% of 200 or more accepted jobs). The same rule decides who pays the custody fee.", "该地址是一个在线、版本过时的 DATUM 网关的收款身份时为 true：该网关最近 30 天内的最新区块是仅矿池或部分分账，或它发送仅矿池工作（在 200 个及以上已接受任务中至少占 10%）。托管费由谁承担也按同一规则判定。"),
             ApiField("gateway_outdated_reason", "string", "", "Why, in a few words. Also set when gateway_outdated is false but a make-good in the last 7 days carried a custody fee; empty otherwise.", "简短的原因。gateway_outdated 为 false、但最近 7 天内有补付被收取托管费时也会填写；否则为空。"),
         ),
     ),
@@ -7005,7 +7008,7 @@ _SEO_ARTICLE = {
     "/ratum": ("TechArticle", "2026-09-28", "2026-10-18"),
     "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-18"),
     "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-18"),
-    "/api": ("TechArticle", "2026-09-13", "2026-10-18"),
+    "/api": ("TechArticle", "2026-09-13", "2026-10-19"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
 # rule as _SEO_ARTICLE: bump a date in the commit that changes that page's words, never per deploy.

@@ -161,8 +161,10 @@ export const TOOLS = [
         if (!g.offline && Number(g.last_share_s) > 600) flags.push("connected but no share for over 10 minutes: are miners pointed at the gateway?");
         if (acc + rej > 100 && rej / (acc + rej) > 0.02) flags.push("over 2% of shares rejected: see last_reject");
         const v = verdicts[i];
-        if (v && v.outdated) flags.push(`producing improperly split coinbases (${v.reason || "pool-only or partial"}): the miners it leaves out wait for a make-good${v.fee_percent ? `, and make-goods to this gateway's own address pay ${v.fee_percent}% less (the custody fee)` : ""}; update to ${firstBuild(builds)} now`);
-        if (/^v0\.4\.1-beta\//.test(g.user_agent || "") || g.generation === "ocean") flags.push(`out-of-date build (v0.4.1-beta): some of these builds mine coinbases that pay only the pool or only part of the window; update to ${firstBuild(builds)} (ranked list: connection_info gateway_builds)`);
+        const old = /^v0\.4\.1-beta\//.test(g.user_agent || "") || g.generation === "ocean";
+        if (v && v.outdated) flags.push(`producing improperly split coinbases (${v.reason || "pool-only or partial"}): the miners it leaves out wait for a make-good${v.fee_percent ? `, and make-goods to this gateway's own address pay ${v.fee_percent}% less (the custody fee) while this flag stands` : ""}; ` +
+          (old ? `update to ${firstBuild(builds)}` : "it clears once its next block splits correctly; if it keeps happening, ask in the pool's Discord with this gateway id"));
+        if (old) flags.push(`out-of-date build (v0.4.1-beta): update to ${firstBuild(builds)}, the current release. Its blocks come out partial less often; no build is at zero yet (ranked list: connection_info gateway_builds)`);
         const sw = gatewaySoftware(g.user_agent);
         return { name: label(g.name || g.secondary_tag), gateway_id: g.gateway, payout_identity: g.identity, pays_fee_as: g.fee_path === "datum" ? "own DATUM gateway (0% + bonus)" : "public stratum", connected: !g.offline,
           connected_for_minutes: Math.round((Number(g.connected_s) || 0) / 60), seconds_since_last_share: g.last_share_s, accepted_shares: acc, rejected_shares: rej, last_reject_reason: label(g.last_reject), accepted_work: g.work,
