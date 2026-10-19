@@ -58,7 +58,6 @@ Disallow: /tx/
 Disallow: /api/
 Disallow: /*/address/
 Disallow: /*/tx/
-Allow: /
 
 Sitemap: https://mempool.lazarus-xbt.xyz/sitemap.xml
 `;
