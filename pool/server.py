@@ -7216,24 +7216,23 @@ def _lastmod(freq, path=None):
 
 
 def sitemap_xml():
-    """Every crawlable page in both languages, each declaring the other as its alternate."""
+    """Every crawlable page in both languages, in the same plain shape as the hub's sitemap.
+
+    The en/zh-CN alternates live in each page's <head> (tests/indexing.py checks them), so they are
+    not repeated here: xhtml:link elements make browsers render the file as a page of run-together
+    text instead of showing the XML.
+    """
     urls = []
     for p, freq, prio in _SITEMAP_ORDER:
-        en, zh = _seo_url(p, "en"), _seo_url(p, "zh")
-        alts = (
-            f'<xhtml:link rel="alternate" hreflang="en" href="{_xml_attr(en)}"/>'
-            f'<xhtml:link rel="alternate" hreflang="zh-CN" href="{_xml_attr(zh)}"/>'
-            f'<xhtml:link rel="alternate" hreflang="x-default" href="{_xml_attr(en)}"/>'
-        )
-        for loc in (en, zh):
+        for loc in (_seo_url(p, "en"), _seo_url(p, "zh")):
             urls.append(
                 f"  <url><loc>{_xml_attr(loc)}</loc><lastmod>{_lastmod(freq, p)}</lastmod>"
-                f"{alts}<changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
+                f"<priority>{prio}</priority></url>"
             )
     # The protocol reference is linked from every page's footer; it is a text file, not a page.
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "\n".join(urls)
         + "\n</urlset>\n"
     )
