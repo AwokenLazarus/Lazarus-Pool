@@ -53,6 +53,7 @@ const API_TTL = [
 // until a crawler rereads that, its address lookups are turned away here.
 const CRAWLER_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|embedly|headless/i;
 const ROBOTS = `User-agent: *
+Allow: /
 Disallow: /address/
 Disallow: /tx/
 Disallow: /api/
