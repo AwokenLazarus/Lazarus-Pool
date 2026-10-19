@@ -16,11 +16,16 @@
   Cache-Control: public, max-age=300
 /sitemap.xml
   Cache-Control: public, max-age=0, s-maxage=3600
-# The licence files have no extension, so Pages would not call them text.
+# The licence files have no extension, so Pages would not call them text. They are files the
+# footer links to, not pages, so they stay out of search results (INDEXING.md).
 /lazarus/NOTICE
   Content-Type: text/plain; charset=utf-8
+  X-Robots-Tag: noindex
 /lazarus/LICENSE
   Content-Type: text/plain; charset=utf-8
+  X-Robots-Tag: noindex
+/lazarus/COPYING.md
+  X-Robots-Tag: noindex
 /resources/mining-pools/lazarus.svg
   ! Cache-Control
   Cache-Control: public, max-age=300

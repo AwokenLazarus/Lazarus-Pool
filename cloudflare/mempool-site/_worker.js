@@ -63,6 +63,32 @@ Allow: /
 Sitemap: https://mempool.lazarus-xbt.xyz/sitemap.xml
 `;
 
+// The pages search engines may index. This is the one list: sitemap.py builds sitemap.xml from it
+// (so it stays valid JSON: double quotes, no trailing comma), and every other page the app serves
+// answers with X-Robots-Tag: noindex. INDEXING.md says what is left out and why.
+const INDEXABLE = [
+  "/",
+  "/mining",
+  "/graphs/mempool",
+  "/about",
+  "/mempool-block/0",
+  "/rbf",
+  "/mining/pool/lazarus",
+  "/blocks/1",
+  "/docs/api/rest",
+  "/docs/faq",
+  "/clock/mempool/0",
+  "/clock/mined/0",
+  "/tools/calculator",
+  "/terms-of-service",
+  "/privacy-policy",
+  "/trademark-policy"
+];
+
+function noindexUnlisted(headers, path) {
+  if (!INDEXABLE.includes(path)) headers.set("X-Robots-Tag", "noindex");
+}
+
 // No Content-Security-Policy on purpose: the Angular app uses inline styles and scripts, the
 // theme loads Google Fonts and calls the pool API cross-origin, and a policy tight enough to be
 // worth having would break all three. HSTS carries no includeSubDomains and no preload.
@@ -102,6 +128,7 @@ async function shell(env, request, lang, status = 200) {
   const out = new Response(request.method === "HEAD" ? null : res.body, { status: res.status === 200 ? status : res.status, headers: res.headers });
   out.headers.set("Cache-Control", LOCALE_CACHE);
   out.headers.set("Vary", "Accept-Encoding, Accept-Language, Cookie");
+  noindexUnlisted(out.headers, new URL(request.url).pathname);
   secure(out.headers);
   return out;
 }
@@ -241,6 +268,9 @@ export default {
           const out = new Response(hit.body, hit);
           out.headers.set("Cache-Control", HASHED_RE.test(path) ? HASHED_CACHE : LOCALE_CACHE);
           out.headers.set("Vary", "Accept-Encoding, Accept-Language, Cookie");
+          // Text documents (3rdpartylicenses.txt) are files, not pages; scripts and styles are left
+          // alone so nothing a renderer needs carries a robots header.
+          if (/\.(txt|md)$/.test(path)) out.headers.set("X-Robots-Tag", "noindex");
           secure(out.headers);
           return out;
         }

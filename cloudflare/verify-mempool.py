@@ -97,15 +97,22 @@ try:
     locs = [e.text for e in ET.fromstring(body).iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
 except ET.ParseError:
     locs = None
-if not (st == 200 and "xml" in (hh.get("Content-Type") or "") and locs == [postprocess.SITE + p for p, _ in sitemap.PAGES]):
+if not (st == 200 and "xml" in (hh.get("Content-Type") or "") and locs == [postprocess.SITE + p for p in sitemap.indexable()]):
     bad += 1
     print(f"DIFF /sitemap.xml: {st} {hh.get('Content-Type')}, {'unparseable' if locs is None else f'{len(locs)} URLs'}")
-for p, _ in sitemap.PAGES:
-    st = get(cand, p)[0]
+# Sitemap pages are indexable; everything else answers noindex (INDEXING.md).
+for p in sitemap.indexable():
+    st, _, hh = get(cand, p)
     n += 1
-    if st != 200:
+    if st != 200 or hh.get("X-Robots-Tag"):
         bad += 1
-        print(f"DIFF {p}: in the sitemap, candidate answers {st}")
+        print(f"DIFF {p}: in the sitemap, candidate answers {st} X-Robots-Tag {hh.get('X-Robots-Tag')}")
+for p in ("/graphs", "/graphs/mining/pools", "/de/mining", "/lazarus/NOTICE", "/lazarus/LICENSE", "/3rdpartylicenses.txt"):
+    st, _, hh = get(cand, p)
+    n += 1
+    if st != 200 or "noindex" not in (hh.get("X-Robots-Tag") or ""):
+        bad += 1
+        print(f"DIFF {p}: not in the sitemap, should be noindex, got {st} X-Robots-Tag {hh.get('X-Robots-Tag')}")
 # The pie's gateway bands read pool-tags.json, which the worker fetches live from the node
 # (pools-sync rewrites it every 3 min). A build-time copy would freeze the bands at deploy.
 import json, time
