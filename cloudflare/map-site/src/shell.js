@@ -38,6 +38,7 @@ export const HEAD = (title, description, canonical, current = "", css = "") => `
 <link rel="stylesheet" href="/assets/hub.css?v=7">
 ${css ? `<link rel="stylesheet" href="${esc(css)}">` : ""}
 <script src="/assets/js.js"></script>
+<script src="/assets/analytics.js?v=1" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

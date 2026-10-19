@@ -254,7 +254,7 @@ async function naughtyAddress(env, address) {
   };
 }
 
-const PAGE_CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+const PAGE_CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://*.googletagmanager.com https://*.posthog.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.posthog.com; worker-src 'self' blob: data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 
 /** The naughty list as HTML, held at the edge for a minute per URL. */
 async function naughtyPage(request, env, ctx, url) {
