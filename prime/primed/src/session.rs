@@ -368,10 +368,12 @@ const COINBASER_SLOW: Duration = Duration::from_secs(1);
 /// How often one session may repeat the "mining work without the split" warning.
 const POOL_ONLY_WARN_EVERY: Duration = Duration::from_secs(300);
 /// The offender test (`Session::is_offender`), the same rule as the fee wallet's and the admin
-/// dashboard's: pool-only full jobs on at least 1 in 200 accepted shares once there are 50, or
-/// a last block here in 30 days that was pool-only or partial.
-const OFFENDER_MIN_ACCEPTED: u64 = 50;
-const OFFENDER_RATE_DIVISOR: u64 = 200;
+/// dashboard's: pool-only full jobs on at least 1 in 10 accepted shares once there are 200, or
+/// a last block here in 30 days that was pool-only or partial. Every build mines the odd
+/// pool-only share after a reconnect or a new height (all live sessions but two at 1.1% or less
+/// on 2026-10-19, the two paying only the pool at 99.98%), so 1 in 200 of 50 caught current ones.
+const OFFENDER_MIN_ACCEPTED: u64 = 200;
+const OFFENDER_RATE_DIVISOR: u64 = 10;
 const OFFENDER_BLOCK_WINDOW_S: u64 = 30 * 86_400;
 /// How long a session trusts its last look at the block log for the offender test.
 const OFFENDER_RECHECK: Duration = Duration::from_secs(60);

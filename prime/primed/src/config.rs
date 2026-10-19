@@ -65,7 +65,7 @@ pub struct Config {
     pub empty_solo_fee_bps: u32,
     /// Fee on DATUM work from a gateway that is mining coinbases without the split: one whose
     /// last block here in 30 days was pool-only or partial, or that sends pool-only full jobs on
-    /// at least 0.5% of 50 or more accepted shares this session. Basis points; never below
+    /// at least 10% of 200 or more accepted shares this session. Basis points; never below
     /// `fee-bps`. 0 (default): no such fee.
     #[serde(default)]
     pub offender_fee_bps: u32,
