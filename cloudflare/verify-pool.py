@@ -21,7 +21,7 @@ def get(base, path, method="GET"):
 
 pages, verify, indexnow, stratum_doc = server_constants()
 exact = [p for p in pages] + ["/zh/" if p == "/" else "/zh" + p for p in pages]
-exact += ["/robots.txt", "/llms.txt", "/.well-known/llms.txt", f"/{indexnow}.txt", stratum_doc, "/sitemap.xml", "/bingsiteauth.xml"] + verify
+exact += ["/robots.txt", "/llms.txt", "/.well-known/llms.txt", f"/{indexnow}.txt", stratum_doc, "/sitemap.xml", "/sitemap-en.xml", "/sitemap-zh.xml", "/bingsiteauth.xml"] + verify
 exact += ["/miner", "/miner/bc1qexampleexampleexampleexampleexample00", "/zh/miner/bc1qexampleexampleexampleexampleexample00"]
 st, body, _ = get(origin, "/")
 exact += sorted(set(re.findall(r'(?:src|href)="(/static/[^"?]+)', body.decode())))

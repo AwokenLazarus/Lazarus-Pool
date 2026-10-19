@@ -7215,26 +7215,47 @@ def _lastmod(freq, path=None):
     return time.strftime("%Y-%m-%d", time.gmtime(newest))
 
 
-def sitemap_xml():
-    """Every crawlable page in both languages, in the same plain shape as the hub's sitemap.
+# /sitemap.xml is an index of one sitemap per language, so Search Console reports the English and
+# Chinese pages separately.
+_SITEMAP_CHILDREN = {"/sitemap-en.xml": "en", "/sitemap-zh.xml": "zh"}
+
+
+def _sitemap_urls(lang):
+    return [(_seo_url(p, lang), _lastmod(freq, p), prio) for p, freq, prio in _SITEMAP_ORDER]
+
+
+def sitemap_xml(lang):
+    """One language's crawlable pages, in the same plain shape as the hub's sitemap.
 
     The en/zh-CN alternates live in each page's <head> (tests/indexing.py checks them), so they are
     not repeated here: xhtml:link elements make browsers render the file as a page of run-together
     text instead of showing the XML.
     """
-    urls = []
-    for p, freq, prio in _SITEMAP_ORDER:
-        for loc in (_seo_url(p, "en"), _seo_url(p, "zh")):
-            urls.append(
-                f"  <url><loc>{_xml_attr(loc)}</loc><lastmod>{_lastmod(freq, p)}</lastmod>"
-                f"<priority>{prio}</priority></url>"
-            )
+    urls = [
+        f"  <url><loc>{_xml_attr(loc)}</loc><lastmod>{mod}</lastmod><priority>{prio}</priority></url>"
+        for loc, mod, prio in _sitemap_urls(lang)
+    ]
     # The protocol reference is linked from every page's footer; it is a text file, not a page.
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "\n".join(urls)
         + "\n</urlset>\n"
+    )
+
+
+def sitemap_index_xml():
+    """/sitemap.xml: the per-language sitemaps, each dated by its most recently changed page."""
+    entries = [
+        f"  <sitemap><loc>{_xml_attr(_PUBLIC_SITE + path)}</loc>"
+        f"<lastmod>{max(mod for _, mod, _ in _sitemap_urls(lang))}</lastmod></sitemap>"
+        for path, lang in _SITEMAP_CHILDREN.items()
+    ]
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(entries)
+        + "\n</sitemapindex>\n"
     )
 
 
@@ -7331,6 +7352,7 @@ _CHEAP_PATHS = frozenset(
         "/api/openapi.json",
         "/robots.txt",
         "/sitemap.xml",
+        *_SITEMAP_CHILDREN,
         "/llms.txt",
         "/.well-known/llms.txt",
         _STRATUM_DOC_PATH,
@@ -7593,7 +7615,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_text(robots_txt(), "text/plain; charset=utf-8", cache_s=3600)
             return
         if path == "/sitemap.xml":
-            self.send_text(sitemap_xml(), "application/xml; charset=utf-8", cache_s=3600)
+            self.send_text(sitemap_index_xml(), "application/xml; charset=utf-8", cache_s=3600)
+            return
+        if path in _SITEMAP_CHILDREN:
+            self.send_text(sitemap_xml(_SITEMAP_CHILDREN[path]), "application/xml; charset=utf-8", cache_s=3600)
             return
         if path in _SITE_VERIFY:
             proof, ctype = _SITE_VERIFY[path]
