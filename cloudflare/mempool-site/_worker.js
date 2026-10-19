@@ -60,29 +60,19 @@ Disallow: /api/
 Disallow: /*/address/
 Disallow: /*/tx/
 
-Sitemap: https://mempool.lazarus-xbt.xyz/sitemap.xml
+Sitemap: https://mempool.lazarus-xbt.xyz/sitemap-en.xml
 `;
 
-// The pages search engines may index. This is the one list: sitemap.py builds sitemap.xml from it
-// (so it stays valid JSON: double quotes, no trailing comma), and every other page the app serves
-// answers with X-Robots-Tag: noindex. INDEXING.md says what is left out and why.
+// The pages search engines may index: the ones about this chain and this pool, not the stock
+// mempool.space pages or the live widgets. This is the one list: sitemap.py builds sitemap-en.xml
+// from it (so it stays valid JSON: double quotes, no trailing comma), and every other page the app
+// serves answers with X-Robots-Tag: noindex. INDEXING.md says what is left out and why.
 const INDEXABLE = [
   "/",
   "/mining",
-  "/graphs/mempool",
-  "/about",
-  "/mempool-block/0",
-  "/rbf",
   "/mining/pool/lazarus",
   "/blocks/1",
-  "/docs/api/rest",
-  "/docs/faq",
-  "/clock/mempool/0",
-  "/clock/mined/0",
-  "/tools/calculator",
-  "/terms-of-service",
-  "/privacy-policy",
-  "/trademark-policy"
+  "/graphs/mempool"
 ];
 
 function noindexUnlisted(headers, path) {

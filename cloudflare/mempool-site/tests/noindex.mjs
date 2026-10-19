@@ -36,7 +36,7 @@ const expect = (path, want, got) => {
   }
 };
 for (const p of indexable) expect(p, null, await robots(p));
-for (const p of ["/graphs", "/docs", "/blocks", "/graphs/mining/pools", "/mining/pool/convoy", "/de/mining", "/zh/", "/block/abc", "/address/bc1qtest", "/tx/abc", "/api", "/3rdpartylicenses.txt"]) {
+for (const p of ["/graphs", "/docs", "/blocks", "/about", "/docs/faq", "/terms-of-service", "/tools/calculator", "/clock/mempool/0", "/rbf", "/graphs/mining/pools", "/mining/pool/convoy", "/de/mining", "/zh/", "/block/abc", "/address/bc1qtest", "/tx/abc", "/api", "/3rdpartylicenses.txt"]) {
   expect(p, "noindex", await robots(p));
 }
 expect("/main.0123456789abcdef.js", null, await robots("/main.0123456789abcdef.js"));
