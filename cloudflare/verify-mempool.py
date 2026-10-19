@@ -62,7 +62,7 @@ for label, hdr in (("en", {"Accept-Language": "en-US,en;q=0.9"}), ("zh", {"Accep
     same("/145.402fa264d97bba59.js", hdr, label)
 for p in ("/de/", "/de/mining", "/zh/block/abc", "/pt-BR/", "/resources/config.js", "/resources/customize.js", "/resources/mining-pools/lazarus.svg",
           "/resources/mining-pools/default.svg", "/resources/favicons/favicon.ico", "/lazarus/chi-rho.svg",
-          "/resources/pools-v2.json", "/robots.txt", "/resources/nope.png", "/resources/favicons/site.webmanifest"):
+          "/resources/pools-v2.json", "/resources/nope.png", "/resources/favicons/site.webmanifest"):
     same(p)
 # The footer links to the licence files (mempool is AGPL-3.0). The build ships them whether or
 # not the node's nginx serves them, so they are checked on the candidate alone.
@@ -82,6 +82,30 @@ for p in ("/lazarus/NOTICE", "/lazarus/LICENSE"):
     if not (st == 200 and body.strip() and "text/plain" in (hh.get("Content-Type") or "")):
         bad += 1
         print(f"DIFF {p}: {st}/{len(body)} {hh.get('Content-Type')}")
+# The worker answers robots.txt and the build writes sitemap.xml; the node's nginx serves neither,
+# so both are checked on the candidate alone, along with every page the sitemap lists.
+import sitemap
+from xml.etree import ElementTree as ET
+st, body, hh = get(cand, "/robots.txt")
+n += 1
+if not (st == 200 and f"Sitemap: {postprocess.SITE}/sitemap.xml" in body.decode().splitlines()):
+    bad += 1
+    print(f"DIFF /robots.txt: {st}, does not name the sitemap")
+st, body, hh = get(cand, "/sitemap.xml")
+n += 1
+try:
+    locs = [e.text for e in ET.fromstring(body).iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
+except ET.ParseError:
+    locs = None
+if not (st == 200 and "xml" in (hh.get("Content-Type") or "") and locs == [postprocess.SITE + p for p, _ in sitemap.PAGES]):
+    bad += 1
+    print(f"DIFF /sitemap.xml: {st} {hh.get('Content-Type')}, {'unparseable' if locs is None else f'{len(locs)} URLs'}")
+for p, _ in sitemap.PAGES:
+    st = get(cand, p)[0]
+    n += 1
+    if st != 200:
+        bad += 1
+        print(f"DIFF {p}: in the sitemap, candidate answers {st}")
 # The pie's gateway bands read pool-tags.json, which the worker fetches live from the node
 # (pools-sync rewrites it every 3 min). A build-time copy would freeze the bands at deploy.
 import json, time

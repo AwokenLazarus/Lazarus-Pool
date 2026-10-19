@@ -59,6 +59,8 @@ Disallow: /api/
 Disallow: /*/address/
 Disallow: /*/tx/
 Allow: /
+
+Sitemap: https://mempool.lazarus-xbt.xyz/sitemap.xml
 `;
 
 // No Content-Security-Policy on purpose: the Angular app uses inline styles and scripts, the

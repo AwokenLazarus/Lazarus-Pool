@@ -14,6 +14,8 @@
   Cache-Control: public, max-age=300
 /lazarus/*
   Cache-Control: public, max-age=300
+/sitemap.xml
+  Cache-Control: public, max-age=0, s-maxage=3600
 # The licence files have no extension, so Pages would not call them text.
 /lazarus/NOTICE
   Content-Type: text/plain; charset=utf-8
