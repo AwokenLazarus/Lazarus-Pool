@@ -1,4 +1,6 @@
+# HTTPS only, as on the explorer: no includeSubDomains, no preload, so it stays easy to back out.
 /*
+  Strict-Transport-Security: max-age=15552000
   X-Content-Type-Options: nosniff
   Cache-Control: public, max-age=0, s-maxage=300
 /static/*
