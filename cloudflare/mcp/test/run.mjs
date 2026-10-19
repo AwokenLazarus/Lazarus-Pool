@@ -276,9 +276,45 @@ section("gateway_status");
   let r = await call("gateway_status", { query: "nine009" });
   const g = r.data.gateways?.[0];
   check("a Ratum gateway is named as Ratum, not by its wire generation", g?.software === "ratum-gateway 0.1.28" && g?.generation === "convoy", g);
-  check("a Ratum gateway is not flagged as an old stock build", g && !g.flags.some((f) => /older stock build/.test(f)), g?.flags);
+  check("a Ratum gateway is not flagged as an old stock build", g && !g.flags.some((f) => /out-of-date build/.test(f)), g?.flags);
   r = await call("gateway_status", { query: "XBT-GW01" });
   check("a C gateway is named datum_gateway", r.data.gateways?.[0]?.software === "datum_gateway 0.4.1-beta", r.data.gateways?.[0]);
+}
+
+// ---------------------------------------------------------------- out-of-date gateways and the custody fee
+section("out-of-date gateways");
+{
+  const minerFix = (addr) => JSON.parse(readFileSync(join(FIX, `miner-${addr}.json`), "utf8"));
+  reset();
+  let r = await call("gateway_status", { query: "XBT-GW01" });
+  let g = r.data.gateways?.[0];
+  check("a v0.4.1-beta gateway is flagged out of date, naming the recommended release", g && g.flags.some((f) => /out-of-date build \(v0\.4\.1-beta\)/.test(f) && /v0\.5\.0beta/.test(f)), g?.flags);
+  check("no miner verdict -> no improperly-split flag", g && !g.flags.some((f) => /improperly split/.test(f)), g?.flags);
+  check("gateway_status, cold cache: within its fan-out (5)", fetches.length <= 5, fetches.length);
+  reset();
+  fetchOverride = async (url) => (url.endsWith("/api/miner/19dzauDLb4W1NgP4ZotwcJRrCZVuHoBrf3")
+    ? new Response(JSON.stringify({ ...minerFix(A1), gateway_outdated: true, gateway_outdated_reason: "gateway's latest block was partial", custody_fee_percent: 10 }), { status: 200, headers: { "Content-Type": "application/json" } }) : null);
+  r = await call("gateway_status", { query: "XBT-GW01" });
+  g = r.data.gateways?.[0];
+  check("the pool's offender verdict is flagged with its reason and the custody fee", g && g.flags.some((f) => /improperly split coinbases \(gateway's latest block was partial\)/.test(f) && /10% less/.test(f)), g?.flags);
+  r = await call("gateway_status", { query: "nine009" });
+  check("a Ratum gateway is not flagged out of date", r.data.gateways?.[0] && !r.data.gateways[0].flags.some((f) => /out-of-date|improperly/.test(f)), r.data.gateways?.[0]?.flags);
+
+  // A make-good that carried the custody fee pays net_sats on chain: verify_payout must compare that.
+  const a2 = minerFix(A2), net = 624425, fee = 69381;
+  const charged = { ...a2, makegoods: (a2.makegoods || []).map((m) => (Number(m.height) === 973257 ? { ...m, sats: net + fee, custody_fee_sats: fee, net_sats: net, custody: "charged" } : m)) };
+  const serve = (doc) => async (url) => (url.endsWith("/api/miner/" + A2) ? new Response(JSON.stringify(doc), { status: 200, headers: { "Content-Type": "application/json" } }) : null);
+  reset(); fetchOverride = serve(charged);
+  r = await call("verify_payout", { address: A2, height: 973257 });
+  const mg = r.data.make_goods?.[0];
+  check("custody-charged make-good: on-chain net matches, gross and fee reported", mg && mg.match === true && mg.owed_sats === net && mg.gross_owed_sats === net + fee && mg.custody_fee_sats === fee && r.data.verdict.startsWith("match"), [mg, r.data.verdict]);
+  reset(); fetchOverride = serve(charged);
+  r = await call("miner_makegoods", { address: A2, status: "paid" });
+  const row = r.data.make_goods?.find((m) => m.block_height === 973257);
+  check("miner_makegoods shows custody_fee_sats and net_sats on a charged one", row && row.custody_fee_sats === fee && row.net_sats === net && /custody fee less/.test(row.custody_note), row);
+  reset();
+  r = await call("miner_makegoods", { address: A2, status: "paid" });
+  check("an uncharged make-good carries no custody fields", r.data.make_goods?.every((m) => m.custody_fee_sats === undefined), r.data.make_goods?.[0]);
 }
 
 // ---------------------------------------------------------------- validation and abuse

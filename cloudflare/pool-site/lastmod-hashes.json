@@ -1,7 +1,7 @@
 {
  "/": {
-  "lastmod": "2026-10-18",
-  "sha256": "0a71d59210b3e5b16079f37e3174ec4af9584f863eb0a1cc2f8e4d5f20919e58"
+  "lastmod": "2026-10-19",
+  "sha256": "94f82e833d56ffd7f8c0c13dc7e49077d1f26183c3eb53434822ce5452473197"
  },
  "/api": {
   "lastmod": "2026-10-18",
@@ -20,8 +20,8 @@
   "sha256": "60308fb7e5b109b9ff969400008d223dfa93df9b205d90a6d79b8560a68c5d3c"
  },
  "/connect": {
-  "lastmod": "2026-10-18",
-  "sha256": "41ef9da1a097df8bf3b40384b88c80bec94ab9ba79fe12a5a2a55ae79b077751"
+  "lastmod": "2026-10-19",
+  "sha256": "e9c9340c57edb8dfa00eae7e4483512fd4a632c8adf44f40380da1198fff23a8"
  },
  "/datum-subsidy": {
   "lastmod": "2026-10-18",
@@ -60,8 +60,8 @@
   "sha256": "07b86a4cbf7cb11fe76f3740a69d8f5d085599c8b4e2b8b8c8ee1a90863e52ed"
  },
  "/zh/": {
-  "lastmod": "2026-10-18",
-  "sha256": "6a948a34da47602fd29bbcae9039f55b5938d625a630296d36a61cb6f834a5eb"
+  "lastmod": "2026-10-19",
+  "sha256": "83488d0f6137f4c9673a2aeb4ae6732c61b6303fce87fdd3bde5d728ea03bdf2"
  },
  "/zh/api": {
   "lastmod": "2026-10-18",
@@ -80,8 +80,8 @@
   "sha256": "e3ea83838f4430bb1d5f8f1e7f0fb7c13c00c29d87c6da36fcf13d0c6b30d4a9"
  },
  "/zh/connect": {
-  "lastmod": "2026-10-18",
-  "sha256": "c9c9c53a3e2643e3588ea84bc370468520624b7e729cb5815ac4c7eb95421dc8"
+  "lastmod": "2026-10-19",
+  "sha256": "746700eba91b4faaad9a61868fbf613e511293de85ed8188a4b50494f779b250"
  },
  "/zh/datum-subsidy": {
   "lastmod": "2026-10-18",

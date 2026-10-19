@@ -371,7 +371,7 @@ window.LZ_I18N_DICTS["en"] = {
     "whichNote": "Pick one of these. All three speak BLAKE2b and connect here with no patch. Keep whichever you run up to date.",
     "reco": "Recommended",
     "ratum": "iohzrd’s Rust gateway: one binary for Linux, macOS and Windows, with the same config file. Set <code>mining.pool_address</code> to your own address. <a href=\"/ratum\">Setup guide</a>.",
-    "convoy": "The reference BLAKE2b DATUM gateway, and the most actively maintained. Every miner gets the whole split, so a found block pays the whole window.",
+    "convoy": "The reference BLAKE2b DATUM gateway, and the most actively maintained. Run the <a href=\"https://github.com/CONVOYMining/datum_gateway/releases/tag/v0.5.0beta\" target=\"_blank\" rel=\"noreferrer\">v0.5.0beta</a> release; v0.4.1-beta builds are out of date. Every miner gets the whole split, so a found block pays the whole window.",
     "fly": "CONVOY’s code plus FlyTheElephant’s own work. Every miner gets the whole split, so a found block pays the whole window. <a href=\"/flytheelephant\">Setup guide</a>.",
     "guide": "Want a full walkthrough? <a href=\"https://convoy.xyz/getstarted\" target=\"_blank\" rel=\"noreferrer\">CONVOY’s get-started guide</a> (<a href=\"https://convoy.xyz/getstarted?lang=zh\" target=\"_blank\" rel=\"noreferrer\">中文</a>) covers Knots and the gateway. Then use the host, port and pubkey below.",
     "paths": "Connect",
