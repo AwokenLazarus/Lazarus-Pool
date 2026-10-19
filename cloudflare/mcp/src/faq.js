@@ -6,7 +6,7 @@
 // security findings). Figures that move (fees, bonus, minimum output) are given with the date they
 // were true and a pointer to the live tool, so an assistant never presents them as permanent.
 
-export const FAQ_VERSION = "2026-10-19.1";
+export const FAQ_VERSION = "2026-10-19.2";
 
 const S = "https://pool.lazarus-xbt.xyz";
 const E = "https://mempool.lazarus-xbt.xyz";
@@ -71,7 +71,7 @@ export const FAQ = [
     keywords: ["gateway", "datum", "build", "builds", "which", "should", "run", "best", "recommend", "recommended", "fork", "convoy", "flytheelephant", "fte", "datum_gateway", "version", "update", "upgrade", "0.4.1", "0.5.0", "v0.5.0beta", "old", "outdated"],
     answer:
       "Several gateway builds connect to Lazarus with no patch. The pool ranks them by what it measures against its own Prime (whether a found block pays the whole window, and how often a gateway hands miners a job whose coinbase pays only the pool); " +
-      "the ranked list, best first, is connection_info.gateway_builds and the 'Which DATUM gateway' list on the Connect page. CONVOY's build is the recommended one, then FlyTheElephant's (see 'flytheelephant'). Run CONVOY's v0.5.0beta release (69c61a9, 10 Oct 2026). Every v0.4.1-beta build is out of date: some of them mine coinbases that pay only the pool or only part of the window, which leaves miners waiting for a make-good and costs the gateway's own address the custody fee (see 'makegoods'). gateway_status flags them. " +
+      "the ranked list, best first, is connection_info.gateway_builds and the 'Which DATUM gateway' list on the Connect page. CONVOY's build is the recommended one, then FlyTheElephant's (see 'flytheelephant'). Run CONVOY's v0.5.0beta release (69c61a9, 10 Oct 2026); v0.4.1-beta builds are out of date and gateway_status flags them. Updating makes a gateway's blocks come out partial less often, but no build is at zero yet: any gateway can occasionally mine a partial coinbase, and the miners it leaves out are repaid by a make-good (see 'makegoods'). " +
       "CONVOY 971af86 and FlyTheElephant 280cf54 give every miner the whole split: on regtest, blocks found by an Antminer A3 and by a generic miner each paid all 60 miners in the window. Keep whichever build you run up to date. " +
       "ratum-gateway, iohzrd's Rust gateway, is also on the list (see 'ratum'). Whatever the build, run it against Bitcoin Knots 29.4.2 (see 'node-version').",
     links: [`${S}/connect`, `${S}/flytheelephant`, `${S}/ratum`],
@@ -143,7 +143,7 @@ export const FAQ = [
       "Sometimes a block is found on a job whose coinbase paid only part of the window (partial) or only the pool (pool-only), usually because a stock DATUM gateway sent miners a job before the pool's split arrived. The block is valid; the pool then owes the window what the coinbase left out. " +
       "It repays with a make-good: a transaction signed when the block is found, spending that same block's pool output to the addresses that were left out, so its txid is known in advance. It is queued until the chain will accept it (the coinbase it spends must mature; see 'coinbase-maturity'), then broadcast. " +
       "Status queued means waiting for that height; paid means broadcast and confirmed. miner_makegoods lists yours with the payable height and estimated date, and verify_payout checks a paid one on chain. Make-goods are delayed, not lost. " +
-      "From block 977,665 the pool keeps a 10% custody fee on the make-good to an address whose own DATUM gateway is producing pool-only or partial coinbases; every other payee is paid in full. miner_makegoods shows custody_fee_sats and net_sats on a charged one, and miner_audit says when your gateway is the cause. Update the gateway (see 'which-gateway') and later make-goods are paid in full.",
+      "From block 977,665 the pool keeps a 10% custody fee on the make-good to an address whose own DATUM gateway is producing pool-only or partial coinbases (its latest block in the last 30 days was pool-only or partial, or at least 10% of 200 or more accepted shares in its current connection paid only the pool); every other payee is paid in full. miner_makegoods shows custody_fee_sats and net_sats on a charged one, and miner_audit says when your gateway is the cause. Run a current build (see 'which-gateway'); once the gateway's next block splits correctly, later make-goods are paid in full.",
     links: [`${S}/non-custodial`],
   },
   {

@@ -75,8 +75,8 @@ window.LZ_I18N_DICTS["en"] = {
   },
   "minerwarn": {
     "kicker": "Action needed",
-    "title": "Your gateway is out of date",
-    "text": "This address mines through a DATUM gateway on an <b>out-of-date build</b> that is producing improperly split coinbases (pool-only or partial). Gateways like this have been warned for a long time. <b>You must update.</b> From block {height}, {pct}% of what the pool pays you for those coinbases is kept as a fee for custodying them. Miners on current gateways are paid in full.",
+    "title": "Your gateway is producing bad coinbases",
+    "text": "This address mines through a DATUM gateway that is producing improperly split coinbases (pool-only or partial). From block {height}, while this notice shows, {pct}% of what the pool pays you for those coinbases is kept as a fee for custodying them. <b>Run a current build</b> (CONVOY v0.5.0beta, not v0.4.1-beta); the notice clears once your gateway’s next block splits correctly. Miners whose gateways split correctly are paid in full.",
     "textFee": "A make-good to this address in the last 7 days carried the {pct}% custody fee. From block {height}, that fee falls only on miners whose own gateway is producing pool-only or partial coinbases. <b>Update to a current DATUM gateway</b> and you are paid in full.",
     "setup": "Update your gateway →",
     "discord": "Ask for help on Discord"

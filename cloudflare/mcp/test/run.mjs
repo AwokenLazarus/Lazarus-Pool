@@ -297,6 +297,13 @@ section("out-of-date gateways");
   r = await call("gateway_status", { query: "XBT-GW01" });
   g = r.data.gateways?.[0];
   check("the pool's offender verdict is flagged with its reason and the custody fee", g && g.flags.some((f) => /improperly split coinbases \(gateway's latest block was partial\)/.test(f) && /10% less/.test(f)), g?.flags);
+  reset();
+  fetchOverride = async (url) => (url.endsWith("/api/miner/bc1qukgk03gdsp2s6qpyav3wpspy6z677984nrxrz9")
+    ? new Response(JSON.stringify({ ...minerFix(A1), gateway_outdated: true, gateway_outdated_reason: "gateway's latest block was partial", custody_fee_percent: 10 }), { status: 200, headers: { "Content-Type": "application/json" } }) : null);
+  r = await call("gateway_status", { query: "nine009" });
+  g = r.data.gateways?.[0];
+  check("a current build with a partial block is not told to update", g && g.flags.some((f) => /improperly split/.test(f) && /clears once its next block splits/.test(f)) && !g.flags.some((f) => /update to/.test(f)), g?.flags);
+  reset();
   r = await call("gateway_status", { query: "nine009" });
   check("a Ratum gateway is not flagged out of date", r.data.gateways?.[0] && !r.data.gateways[0].flags.some((f) => /out-of-date|improperly/.test(f)), r.data.gateways?.[0]?.flags);
 

@@ -4,8 +4,8 @@
   "sha256": "94f82e833d56ffd7f8c0c13dc7e49077d1f26183c3eb53434822ce5452473197"
  },
  "/api": {
-  "lastmod": "2026-10-18",
-  "sha256": "9aa6b6b0c7eb1208ed31d2552f6ff1ee5d04e5a7a307208d12a4fec2ea87c4b0"
+  "lastmod": "2026-10-19",
+  "sha256": "e961f7ac52e1fae31a5cfed90eaeb35ffdb29c4c2eb1ea2d80ec765eb0921eed"
  },
  "/bip110": {
   "lastmod": "2026-10-18",
@@ -64,8 +64,8 @@
   "sha256": "83488d0f6137f4c9673a2aeb4ae6732c61b6303fce87fdd3bde5d728ea03bdf2"
  },
  "/zh/api": {
-  "lastmod": "2026-10-18",
-  "sha256": "ca3e057a914ed462f33177b4857b7dfce9a785db7f9aa46d39a1303d3781db30"
+  "lastmod": "2026-10-19",
+  "sha256": "62d985254a71ee821f0018d156b14cc1e7f672348e97bdd995a9f54fa7fd569b"
  },
  "/zh/bip110": {
   "lastmod": "2026-10-18",
