@@ -364,9 +364,10 @@ pub fn build(shared: &Shared) -> Value {
         "template_faults": shared.faults.all().into_iter().map(|(k, f)| serde_json::json!({"gateway": &k[..16.min(k.len())], "fault": f})).collect::<Vec<_>>(),
         "blocks": blocks,
     });
-    // Only with `class-budget`, or once a block carries a class-budget reserve, so a Prime that
-    // has never had the key writes the document it always has.
-    if shared.cfg.class_budget || carry_reserved > 0 {
+    // Only with `class-budget` or `template-budget`, or once a block carries a reserve, so a
+    // Prime that has never had either key writes the document it always has. Replies held to a
+    // template budget count as class-budget replies: one budget, the smaller of the two.
+    if shared.cfg.class_budget || shared.cfg.template_budget || carry_reserved > 0 {
         if let Some(o) = doc["totals"].as_object_mut() {
             // coinbasers held to a session's class budget, and ones a budget would have held
             // but for carry being over `class-budget-carry-ceiling` (`class_budget_held_off`)

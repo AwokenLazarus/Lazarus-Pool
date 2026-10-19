@@ -169,14 +169,61 @@ fn kept_payee_bytes(issued: &[Output], pool_script: &[u8], cb: &coinbase::Coinba
     (kept > 0 && skipped).then_some(kept)
 }
 
-/// The block weight CONVOY fits a coinbase class into (`datum_stratum_coinbase_fit_to_template`
-/// in `datum_coinbaser.c`): the consensus limit less the header and coinbase frame it counts. A
-/// template of `txn_total_weight` leaves a class `(this - txn_total_weight) / 4` bytes.
-const TEMPLATE_WEIGHT_LIMIT: u32 = 4_000_000 - 340 - 36;
+/// The weight CONVOY counts for a block besides its coinbase and transactions
+/// (`datum_stratum_coinbase_fit_to_template` in `datum_coinbaser.c` at v0.5.0beta): four units a
+/// byte for the BLAKE2b header (`DATUM_BLAKE2B_BLOCK_HEADER_SIZE`, 164 bytes, `datum_pow.h`) and
+/// the transaction count (at most 5 bytes), and the coinbase's 36 bytes of witness. A template
+/// of `txn_total_weight` under a limit of `weight_limit` leaves a class
+/// `(weight_limit - txn_total_weight - this) / 4` bytes.
+const TEMPLATE_FRAME_WEIGHT: u32 = ((164 + 5) << 2) + 36;
+/// The most a CONVOY size class takes of its room besides the payee outputs it is handed: 124
+/// static bytes, the scriptSig data (the extranonce sits in it only up to 85 bytes) and the
+/// 10-byte OP_RETURN extranonce (`cb_req_sz`, `datum_coinbaser.c:756` at v0.5.0beta), plus its
+/// own pool output's script, which `template_payee_room` adds.
+const CONVOY_CLASS_FIXED_BYTES: usize = 124 + 85 + 10;
+/// Held back from what a template left: the next one is built off a mempool that has grown.
+const TEMPLATE_BUDGET_MARGIN_BYTES: usize = 128;
+/// A session's template budget is set by the fullest template its shares cited this recently.
+/// Long enough to span the gateway's template refreshes (about every ten seconds) and the
+/// coinbaser asked for at a new height, before any share on the new template has arrived.
+const TEMPLATE_BUDGET_WINDOW: Duration = Duration::from_secs(60);
+/// Template weights a session keeps for its budget, newest last.
+const TEMPLATE_BUDGET_SEEN: usize = 32;
+
+/// Payee bytes, measured as `SplitParams::output_budget_bytes` measures them (`8 + 1 + script`),
+/// that every CONVOY size class keeps whole under a template of `txn_total_weight`: the room
+/// [`TEMPLATE_FRAME_WEIGHT`] leaves, less the class's fixed part with the gateway's pool output,
+/// the list's own last output to the pool, and [`TEMPLATE_BUDGET_MARGIN_BYTES`]. When the mempool
+/// fills a template to `template-weight-limit` this is the node's coinbase reserve, about 2 000
+/// bytes less those: the room a full block left for the 50 to 66 payees CONVOY kept of lists of
+/// over 100 (blocks 977088, 977570, 977906, 977949, 977993).
+fn template_payee_room(weight_limit: u32, txn_total_weight: u32, pool_script_len: usize) -> usize {
+    let room = (weight_limit.saturating_sub(txn_total_weight).saturating_sub(TEMPLATE_FRAME_WEIGHT) / 4) as usize;
+    room.saturating_sub(
+        CONVOY_CLASS_FIXED_BYTES + pool_script_len + (8 + 1 + pool_script_len) + TEMPLATE_BUDGET_MARGIN_BYTES,
+    )
+}
 /// Room a template must leave beyond the payee bytes a section kept for the cut to have been its
 /// class's and not the template's: a class's fixed part (the coinbase frame, scriptSig and pool
 /// output, about 250 bytes on a live CONVOY gateway) and one more output, with margin.
 const CLASS_BUDGET_TEMPLATE_SLACK: usize = 512;
+
+/// [`Session::template_budget`] for the template weights `seen`, newest last.
+fn template_budget_of(
+    seen: &VecDeque<(Instant, u32)>,
+    now: Instant,
+    weight_limit: u32,
+    pool_script_len: usize,
+    pool_budget: usize,
+) -> Option<usize> {
+    let fullest = seen
+        .iter()
+        .filter(|(t, _)| now.saturating_duration_since(*t) < TEMPLATE_BUDGET_WINDOW)
+        .map(|(_, w)| *w)
+        .max()?;
+    let room = template_payee_room(weight_limit, fullest, pool_script_len);
+    (room < pool_budget).then_some(room)
+}
 
 /// Whether a template of `txn_total_weight` left room enough that a section keeping `kept` payee
 /// bytes was cut by its size class, not by the template. Bitcoin Core's default template (4 000
@@ -184,8 +231,8 @@ const CLASS_BUDGET_TEMPLATE_SLACK: usize = 512;
 /// needs; one packed to the last few thousand weight units does not, and says nothing about the
 /// class. The weight is the gateway's word: a gateway that lies about it can only stop itself
 /// teaching a budget, or teach itself a smaller one, as it could with the shares it sends anyway.
-fn template_left_room(kept: usize, txn_total_weight: u32) -> bool {
-    let left = (TEMPLATE_WEIGHT_LIMIT.saturating_sub(txn_total_weight) / 4) as usize;
+fn template_left_room(kept: usize, txn_total_weight: u32, weight_limit: u32) -> bool {
+    let left = (weight_limit.saturating_sub(txn_total_weight).saturating_sub(TEMPLATE_FRAME_WEIGHT) / 4) as usize;
     left >= kept + CLASS_BUDGET_TEMPLATE_SLACK
 }
 
@@ -742,6 +789,9 @@ struct Session {
     /// key, and for a session it does not apply to (`class_budget_applies`, the house gateway,
     /// a held-split build).
     class_budget: Option<ClassBudget>,
+    /// `template-budget`: when this session's shares cited each template weight, newest last, up
+    /// to [`TEMPLATE_BUDGET_SEEN`]; `None` without the key and wherever `class_budget` would be.
+    template_weights: Option<VecDeque<(Instant, u32)>>,
     /// `prev_hash` of the last flushed coinbaser (hex), i.e. the tip that split is for.
     last_split_prev: Option<String>,
     /// Convoy configure v3 resume token; reused for every mid-session configure so the
@@ -903,6 +953,11 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         && held_build.is_none()
         && class_budget_applies(hello.generation, &hello.user_agent))
     .then(ClassBudget::default);
+    let template_weights = (shared.cfg.template_budget
+        && !house
+        && held_build.is_none()
+        && class_budget_applies(hello.generation, &hello.user_agent))
+    .then(VecDeque::new);
     // Shown as a client once it has proved it holds the session key (`Session::establish`). A
     // hello can be replayed by anyone who saw one, and re-sealed to us by any other pool its
     // gateway connects to; whoever does that cannot read our reply or send a frame, but would
@@ -969,6 +1024,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         pins_script,
         refused_coinbase_warned: None,
         class_budget,
+        template_weights,
         last_split_prev: None,
         resume_token: {
             let mut t = [0u8; mining::RESUME_TOKEN_LEN];
@@ -1208,9 +1264,48 @@ impl Session {
     /// pool's output as the one that does not fit, and the gateway pays the remainder to the
     /// script it is configured with: on the pool's, that is the same output, and on its own it
     /// makes the coinbase the gateway's solo work.
+    ///
+    /// With `template-budget`, the smaller of that and [`Session::template_budget`].
     fn reply_class_budget(&self) -> Option<usize> {
         let on_own_script = self.held_script().is_some() || self.stay_on_gateway();
-        self.class_budget.as_ref()?.bytes.filter(|_| !on_own_script)
+        if on_own_script {
+            return None;
+        }
+        let class = self.class_budget.as_ref().and_then(|b| b.bytes);
+        match (class, self.template_budget(Instant::now())) {
+            (Some(c), Some(t)) => Some(c.min(t)),
+            (c, t) => c.or(t),
+        }
+    }
+
+    /// `template-budget`: the payee bytes the fullest template this session's shares cited in the
+    /// last [`TEMPLATE_BUDGET_WINDOW`] leaves every CONVOY class ([`template_payee_room`]), where
+    /// that is under the pool's own budget; `None` while its templates leave more, or it has cited
+    /// none lately.
+    fn template_budget(&self, now: Instant) -> Option<usize> {
+        template_budget_of(
+            self.template_weights.as_ref()?,
+            now,
+            self.shared.cfg.template_weight_limit,
+            self.shared.pool_script.len(),
+            self.shared.split_params.output_budget_bytes,
+        )
+    }
+
+    /// Note the template weight a share's job cited, for [`Session::template_budget`].
+    fn note_template_weight(&mut self, txn_total_weight: u32) {
+        let Some(seen) = self.template_weights.as_mut() else { return };
+        let now = Instant::now();
+        if let Some(last) = seen.back_mut() {
+            if last.1 == txn_total_weight {
+                last.0 = now;
+                return;
+            }
+        }
+        if seen.len() >= TEMPLATE_BUDGET_SEEN {
+            seen.pop_front();
+        }
+        seen.push_back((now, txn_total_weight));
     }
 
     /// The script a held-split gateway is left paying itself with: its own payout, while its
@@ -1757,6 +1852,7 @@ impl Session {
             Some(j) => (j.height, j.coinbaser_id, j.prev_hash, j.nbits_u32(), j.txn_total_weight),
             None => return self.reject(&s, mining::REJECT_BAD_JOB_ID).await,
         };
+        self.note_template_weight(txn_total_weight);
         // The job section is the gateway's account of the chain; the node's is the one that
         // counts. Height, parent and target are all held to it before any work is credited.
         // Until the node has answered once there is no chain to hold a job to. That is this
@@ -2302,7 +2398,7 @@ impl Session {
             return;
         }
         let Some(kept) = kept_payee_bytes(issued, &self.shared.pool_script, cb) else { return };
-        if !template_left_room(kept, txn_total_weight) {
+        if !template_left_room(kept, txn_total_weight, self.shared.cfg.template_weight_limit) {
             return;
         }
         self.expire_class_budget();
@@ -3704,17 +3800,52 @@ mod tests {
         assert_eq!(kept_payee_bytes(&list, &pool, &paying(&[], value)), None);
     }
 
+    /// Full blocks from v0.5.0beta gateways, held to [`template_payee_room`] of the templates they
+    /// were found on (weight of their transactions, from the node): each budget fits the payee
+    /// bytes the class kept, so a list held to it is paid whole, and gives up no more than seven
+    /// P2WPKH payees (217 bytes) of it to the margins.
+    #[test]
+    fn a_template_budget_fits_what_full_blocks_kept() {
+        // blocks 977088, 977570, 977906, 977949, 977993: (template weight, payee bytes kept)
+        for (w, kept) in [(791_969, 1_618), (791_564, 1_739), (789_989, 2_126), (791_811, 1_680), (791_761, 1_677)] {
+            let b = template_payee_room(800_000, w, 22);
+            assert!(b <= kept && kept - b <= 7 * 31, "{w}: budget {b}, kept {kept}");
+        }
+        // over the limit, or exactly at it: no room, and everyone waits in carry
+        assert_eq!(template_payee_room(800_000, 800_000, 22), 0);
+        assert_eq!(template_payee_room(800_000, 900_000, 22), 0);
+    }
+
+    /// The budget is set by the fullest template cited in the last minute, and only where it is
+    /// under the pool's own budget.
+    #[test]
+    fn a_template_budget_is_the_fullest_recent_template_s() {
+        let now = Instant::now();
+        let ago = |s: u64| now.checked_sub(Duration::from_secs(s)).unwrap();
+        let pool = 14_000 - 9 - 64;
+        let seen = VecDeque::from([(ago(90), 799_000), (ago(30), 791_000), (ago(5), 600_000)]);
+        assert_eq!(template_budget_of(&seen, now, 800_000, 22, pool), Some(template_payee_room(800_000, 791_000, 22)));
+        // the full one has aged out, and the rest leave more than the pool's own budget
+        assert_eq!(
+            template_budget_of(&VecDeque::from([(ago(61), 799_000), (ago(5), 600_000)]), now, 800_000, 22, pool),
+            None
+        );
+        assert_eq!(template_budget_of(&VecDeque::new(), now, 800_000, 22, pool), None);
+        // Bitcoin's limit leaves a template of this weight a whole class's room
+        assert_eq!(template_budget_of(&VecDeque::from([(ago(5), 791_000)]), now, 4_000_000, 22, pool), None);
+    }
+
     /// A section is taken for its class only where the template left it more room than it kept.
     #[test]
     fn a_section_cut_by_a_full_template_is_not_taken_for_its_class() {
         // what a node's default template leaves (4 000 weight units kept for the coinbase)
-        assert!(template_left_room(527, 3_992_000));
-        assert!(template_left_room(310, 3_992_000) && template_left_room(1_300, 3_992_000));
-        assert!(template_left_room(527, 0));
+        assert!(template_left_room(527, 3_992_000, 4_000_000));
+        assert!(template_left_room(310, 3_992_000, 4_000_000) && template_left_room(1_300, 3_992_000, 4_000_000));
+        assert!(template_left_room(527, 0, 4_000_000));
         // packed to the last few thousand, or past the limit
-        assert!(!template_left_room(527, 3_996_000));
-        assert!(!template_left_room(1_500, 3_992_000));
-        assert!(!template_left_room(31, 4_100_000));
+        assert!(!template_left_room(527, 3_996_000, 4_000_000));
+        assert!(!template_left_room(1_500, 3_992_000, 4_000_000));
+        assert!(!template_left_room(31, 4_100_000, 4_000_000));
     }
 
     /// CONVOY C gateways only. iohzrd's `7491a50` is one, and never learns a budget: every

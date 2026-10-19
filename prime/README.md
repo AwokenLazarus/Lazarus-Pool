@@ -472,6 +472,33 @@ the key does not apply to), `class_budget_replies` the coinbasers held to it, an
 appears in the stats of a Prime that has never had the key; one that had it and no longer does
 keeps reporting `carry_reserved` while the blocks it recorded are in memory.
 
+### Template budgets
+
+A gateway on a current CONVOY build (v0.5.0beta) fits every size class to its template
+(`datum_stratum_coinbase_fit_to_template`). While the mempool fills blocks to the chain's
+800 000 weight units, all a template leaves is the node's coinbase reserve, about 2 000 bytes,
+and every class keeps the first 50 or so payees of a list of over 100. Blocks 977088, 977570,
+977906, 977949 and 977993 were each Partial that way, and in the week to 2026-10-19 so were 7 of
+33 blocks from v0.5.0beta gateways and 65 of 179 from v0.4.1-beta ones. Each owes the rest
+through a make-good that waits 6 480 blocks, and the fee wallet's offender rule charged the
+gateway's own address the custody fee for a block that was only full.
+
+`template-budget = true` holds a session's coinbasers to the payee bytes the fullest template its
+shares cited in the last minute leaves every class: `(template-weight-limit - txn_total_weight -
+712) / 4`, less the class's fixed part (124 + 85 + 10 bytes and the pool's script), the list's
+own pool output and a 128-byte margin. On the five blocks above that is 189 to 208 bytes under
+what CONVOY kept, so a list held to it is kept whole. Where it is under the pool's own budget it
+is the reply's budget, or the smaller of it and a learned class budget; otherwise nothing
+changes. Whoever does not fit is `OverBudget` and waits in carry, largest balances placed first,
+exactly as under a class budget.
+
+It is a class budget in every other respect: the same sessions (CONVOY-generation, not the house
+gateway, lazarus-gateway, lazarus-split, ratum or a held-split build), the carry ceiling,
+`carry_reserved_sats` on capped blocks, the `class_budget_replies` counters, and it needs
+`class-budget-fee-wallet-reserves = true` (the live fee wallet holds `carry_reserved_sats` back).
+`template-weight-limit` (default 800 000) is the `weightlimit` the gateways' nodes report; the
+class-budget check that a template left room uses it too, and the 164-byte BLAKE2b header.
+
 ### Restarts used to throw away a burst of good work
 
 A reconnecting gateway is still serving jobs whose coinbases carry the split from coinbaser ids
