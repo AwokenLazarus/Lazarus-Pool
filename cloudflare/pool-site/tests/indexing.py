@@ -57,4 +57,5 @@ assert 'Disallow: /\n' not in (out/'robots.txt').read_text()
 for route in ['/static/', '/static/index.html', '/static/index']:
     assert f'{route} / 301' in (out/'_redirects').read_text()
 assert (out/'404.html').exists(), 'Pages would enable SPA fallback without 404.html'
+assert '/*\n  Strict-Transport-Security: max-age=' in (out/'_headers').read_text(), 'HSTS missing from _headers /*'
 print(f'PASS: {count} canonical HTML pages, languages, document navigation, sitemap and template exclusion')
