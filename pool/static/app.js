@@ -98,6 +98,42 @@
     }
   }
 
+  // ------------------------------------------------------------ article fold
+  // A keyword page puts its article above the live sections it is about. Read in full, the article
+  // pushes the dashboard a screen or two down, so after its first paragraph the rest folds behind
+  // "Read more". The words stay in the document (crawlers and no-JS readers get all of them); a page
+  // that is only an article (/bip110, /ratum, /api) is left open. /zh/ has one above its hero too.
+  function foldArticle() {
+    if (!article || article.__folded) return;
+    const box = article.querySelector(".wrap");
+    const view = SECTION_VIEW[article.id];
+    const live = [...document.querySelectorAll("main > section")].some((sec) => sec !== article && SECTION_VIEW[sec.id] === view);
+    if (!box || !live) return;
+    const parts = [...box.children].filter((n) => !/^H[1-3]$/.test(n.tagName));
+    if (parts.length < 2) return;
+    article.__folded = true;
+    parts[0].classList.add("seo-lede");
+    const rest = document.createElement("div");
+    rest.className = "seo-more";
+    rest.id = "seo-more";
+    parts.slice(1).forEach((n) => rest.appendChild(n));
+    box.appendChild(rest);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "seo-toggle";
+    btn.setAttribute("aria-controls", "seo-more");
+    const set = (open) => {
+      article.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = T(open ? "article.less" : "article.more");
+    };
+    btn.addEventListener("click", () => set(!article.classList.contains("is-open")));
+    document.addEventListener("lz:i18n", () => set(article.classList.contains("is-open")));
+    box.appendChild(btn);
+    set(false);
+  }
+  foldArticle();
+
   // ------------------------------------------------------------ sub-navigation
   // A view with more than one section gets a slim bar of its parts under the header.
   const SUB = {

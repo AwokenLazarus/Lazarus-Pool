@@ -61,14 +61,10 @@
     });
   });
   if (tabs.length) selectTab(tabs[0].id);
-  // The fee cards are the "why"; clicking one opens the matching "how" tab. Any link with
-  // data-tab (the DATUM calls to action) does the same, so it lands on the setup it promises.
+  // Any link with data-tab (the DATUM calls to action, the hero rate cards) opens that tab, so it
+  // lands on the setup it promises.
   document.querySelectorAll("[data-tab]").forEach((el) => {
-    el.addEventListener("click", () => {
-      const id = el.getAttribute("data-tab");
-      selectTab(id);
-      if (el.classList.contains("fee-card")) $(id)?.focus({ preventScroll: true });
-    });
+    el.addEventListener("click", () => selectTab(el.getAttribute("data-tab")));
   });
 
   const PROMO_DISMISS_KEY = "lz.promo.datum";
@@ -81,10 +77,16 @@
     if (el) el.hidden = true;
   });
 
+  // While the custody fee is on, the notice has new copy and its own dismiss key, so a reader who
+  // dismissed the old notice sees it once more. The server marks the notice `data-custody` when
+  // it rendered that copy; otherwise /api/pool turns it on (custodyNotice below).
   const NOTICE_DISMISS_KEY = "lazarus.gatewayupdate.v2.dismissed";
-  try { if (localStorage.getItem(NOTICE_DISMISS_KEY) === "1") { const el = $("gatewaynotice"); if (el) el.hidden = true; } } catch (e) { /* private mode */ }
+  const CUSTODY_DISMISS_KEY = "lazarus.gatewayupdate.v3.custody.dismissed";
+  let noticeKey = $("gatewaynotice")?.hasAttribute("data-custody") ? CUSTODY_DISMISS_KEY : NOTICE_DISMISS_KEY;
+  const noticeDismissed = () => { try { return localStorage.getItem(noticeKey) === "1"; } catch (e) { return false; } };
+  if (noticeDismissed()) { const el = $("gatewaynotice"); if (el) el.hidden = true; }
   $("gatewaynotice-dismiss")?.addEventListener("click", () => {
-    try { localStorage.setItem(NOTICE_DISMISS_KEY, "1"); } catch (e) { /* private mode */ }
+    try { localStorage.setItem(noticeKey, "1"); } catch (e) { /* private mode */ }
     const el = $("gatewaynotice"); if (el) el.hidden = true;
   });
 
@@ -304,9 +306,6 @@
     const upliftPhrase = fees.uplift > 0
       ? t("connect.upliftPhrase", { uplift: upliftTxt })
       : "";
-    const upliftBecause = fees.uplift > 0
-      ? t("connect.upliftBecause", { datumPct: pctSmart(fees.datumWorkPct), stratumPct: pctSmart(fees.stratumWorkPct) })
-      : "";
 
     show("datum-promo", on && !promoDismissed());
     show("promo-live", on && !!upliftTxt);
@@ -341,10 +340,6 @@
       pillar.hidden = !on;
     }
 
-    show("fee-datum-bonus", on && !!upliftTxt);
-    setText("fee-datum-bonus", upliftTxt ? t("connect.bonusSmall", { uplift: upliftTxt }) : "");
-    setText("fee-datum-copy", on ? t("connect.datumCopyOn", { fee: feePct(fees.stratum) }) : "");
-    setText("fee-stratum-copy", on ? t("connect.stratumCopyOn", { pts: pts(fees.rebate) }) : "");
     show("tab-bonus-datum", on && !!upliftTxt);
     setText("tab-bonus-datum", upliftTxt || "");
 
@@ -361,7 +356,7 @@
       explain.innerHTML = t("connect.bonusExplain", {
         fee: feePct(fees.stratum),
         Pts: Pts(fees.rebate),
-        uplift: upliftPhrase ? upliftPhrase + upliftBecause : "",
+        uplift: "",
       });
     }
     show("datum-bonus-dt", on && !!upliftTxt);
@@ -571,6 +566,37 @@
     }).join(", "));
   }
 
+  // The custody fee on make-goods for pool-only and partial coinbases. Off (percent 0): nothing
+  // here changes the page. On: the gateway notice takes its custody copy and dismiss key, and the
+  // fee card gets one line, the same words the server puts there when it renders them itself.
+  function custodyNotice(c) {
+    const pct = Number(c && c.percent) || 0;
+    const height = Number(c && c.from_height) || 0;
+    if (!(pct > 0 && height > 0)) return;
+    const vars = { pct: String(pct), height: num(height) };
+    const el = $("gatewaynotice");
+    const text = el && el.querySelector(".softfork-text");
+    if (text) {
+      text.removeAttribute("data-i18n-html");
+      text.innerHTML = t("gatewaynotice.custodyText", vars);
+      if (noticeKey !== CUSTODY_DISMISS_KEY) {
+        noticeKey = CUSTODY_DISMISS_KEY;
+        el.hidden = noticeDismissed();
+      }
+    }
+    const cta = document.querySelector(".fee-lede-cta");
+    if (cta) {
+      let line = $("fee-custody");
+      if (!line) {
+        line = document.createElement("p");
+        line.className = "note fee-lede-custody";
+        line.id = "fee-custody";
+        cta.after(line);
+      }
+      line.textContent = t("hero.custodyFee", vars);
+    }
+  }
+
   function stats(p, so) {
     const pr = p.prime || {};
     const tot = pr.totals || {};
@@ -582,10 +608,11 @@
       if (Number.isFinite(Number(p.fees.datum_work_percent))) fees.datumWorkPct = Number(p.fees.datum_work_percent);
       if (Number.isFinite(Number(p.fees.stratum_work_percent))) fees.stratumWorkPct = Number(p.fees.stratum_work_percent);
       fees.datumMiners = Number(p.fees.datum_miners) || 0;
+      custodyNotice(p.fees.custody);
     }
     const setText = (id, text) => { const e = $(id); if (e) e.textContent = text; };
-    for (const id of ["fee-datum", "tab-fee-datum", "datum-fee-line", "top-fee-datum"]) setText(id, feePct(fees.datum));
-    for (const id of ["fee-stratum", "tab-fee-stratum", "stratum-fee-line", "pillar-stratum-fee", "top-fee-stratum"]) setText(id, feePct(fees.stratum));
+    for (const id of ["tab-fee-datum", "datum-fee-line", "top-fee-datum"]) setText(id, feePct(fees.datum));
+    for (const id of ["tab-fee-stratum", "stratum-fee-line", "top-fee-stratum"]) setText(id, feePct(fees.stratum));
     rebateCopy(p);
     if (fees.datum === 0 && fees.stratum > 0) {
       setText("fee-ratio", t("connect.noCut"));
@@ -628,7 +655,6 @@
     const gws = Number(pr.gateways_online) || 0;
     const remote = Number(pr.gateways_remote) || 0;
     const thsDatum = thsDay(p, fees.datum);
-    const thsStratum = thsDay(p, fees.stratum);
     // Headline yield is the DATUM one including the bonus: it is the number we want a miner
     // comparing pools to see, and it is what they actually get through a gateway.
     const thsBonus = fees.rebate > 0 ? thsDay(p, fees.datum, "datum_bonus") : thsDatum;
@@ -647,8 +673,7 @@
         : t("status.sharesVerified", { rej: rejPct });
     const cells = [
       [t("status.thsEst", { label: t("hero.ths") }), thsBonus != null ? t("status.perDay", { amt: amt(thsBonus) + money(thsBonus) }) : "\u2014",
-        (fees.rebate > 0 ? t("status.thsSubOn") : t("status.thsSubOff"))
-        + " · " + (thsStratum != null ? t("status.perDay", { amt: amt(thsStratum) + money(thsStratum) }) : "\u2014") + " · " + feePct(fees.stratum)],
+        fees.rebate > 0 ? t("status.thsSubOn") : t("status.thsSubOff")],
       [t("status.hashrate"), fmtHr(p.pool_hr_ghs), hrSub],
       [t("status.miners"), String(inWindow || p.miners_online || 0), inWindow ? t("status.minersSub", { seen: p.miners_seen ?? "\u2014" }) : t("status.minersEver", { seen: p.miners_seen ?? "\u2014" })],
       [t("status.shares"), num(sharesMain), sharesSub],
@@ -1117,13 +1142,12 @@
 
   function solo(s) {
     const on = !!(s && s.enabled);
-    for (const id of ["solo", "nav-solo", "fee-card-solo", "tab-solo"]) {
+    for (const id of ["solo", "nav-solo", "tab-solo"]) {
       const el = $(id);
       if (el) el.hidden = !on;
     }
     if (!on) return;
     const fee = s.fee_percent;
-    setText("fee-solo", pctFee(fee));
     setText("tab-fee-solo", pctFee(fee));
     setText("solo-fee-line", pctFee(fee));
 
