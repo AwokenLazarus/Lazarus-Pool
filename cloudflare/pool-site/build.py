@@ -75,7 +75,7 @@ def main():
     body, _ = fetch(origin, "/miner")
     (out / "miner.html").write_bytes(body)
 
-    texts = ["/robots.txt", "/sitemap.xml", "/llms.txt", "/.well-known/llms.txt", f"/{indexnow}.txt", stratum_doc]
+    texts = ["/robots.txt", "/sitemap.xml", "/sitemap-en.xml", "/sitemap-zh.xml", "/llms.txt", "/.well-known/llms.txt", f"/{indexnow}.txt", stratum_doc]
     # The Google proof is a .html path, which Pages would 308; _worker.js answers it instead.
     texts += [v for v in verify if not v.endswith(".html")] + ["/bingsiteauth.xml"]
     for p in dict.fromkeys(texts):

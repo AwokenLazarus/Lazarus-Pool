@@ -24,7 +24,13 @@ class Page(HTMLParser):
 
 out = Path(sys.argv[1])
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-urls = [e.text for e in ET.parse(out/'sitemap.xml').findall('s:url/s:loc', ns)]
+children = [urlsplit(e.text).path for e in ET.parse(out/'sitemap.xml').findall('s:sitemap/s:loc', ns)]
+assert children == ['/sitemap-en.xml', '/sitemap-zh.xml'], children
+urls = []
+for child in children:
+    locs = [e.text for e in ET.parse(out/child.lstrip('/')).findall('s:url/s:loc', ns)]
+    assert all(urlsplit(u).path.startswith('/zh/') == child.endswith('-zh.xml') for u in locs), child
+    urls += locs
 assert len(urls) == len(set(urls)), 'duplicate sitemap URLs'
 count = 0
 for url in urls:

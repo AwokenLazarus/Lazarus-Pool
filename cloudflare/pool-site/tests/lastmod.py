@@ -32,7 +32,8 @@ def crawlable(html):
 
 
 current = {}
-for url in ET.parse(out / "sitemap.xml").findall("s:url", ns):
+children = [urlsplit(e.text).path for e in ET.parse(out / "sitemap.xml").findall("s:sitemap/s:loc", ns)]
+for url in (u for c in children for u in ET.parse(out / c.lstrip("/")).findall("s:url", ns)):
     loc = url.find("s:loc", ns).text
     path = urlsplit(loc).path
     file = out / (path.lstrip("/") + ("index.html" if path.endswith("/") else ".html"))
