@@ -7001,7 +7001,7 @@ _SEO_ARTICLE = {
     "/non-custodial": ("Article", "2026-09-13", "2026-10-18"),
     "/bip110": ("Article", "2026-09-13", "2026-10-18"),
     "/how": ("Article", "2026-09-13", "2026-10-18"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-10-18"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-10-19"),
     "/ratum": ("TechArticle", "2026-09-28", "2026-10-18"),
     "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-18"),
     "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-18"),
@@ -7012,7 +7012,7 @@ _SEO_ARTICLE = {
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-10-18",
+    "/": "2026-10-19",
     "/calculator": "2026-10-18",
     "/blocks": "2026-10-18",
 }

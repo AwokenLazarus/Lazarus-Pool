@@ -371,7 +371,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "whichNote": "从下面选一个。三者都支持 BLAKE2b，无需补丁即可连到这里。无论用哪个，都请保持更新。",
     "reco": "推荐",
     "ratum": "iohzrd 用 Rust 写的网关：Linux、macOS、Windows 各一个二进制文件，配置文件相同。请把 <code>mining.pool_address</code> 设成你自己的地址。<a href=\"/zh/ratum\">安装指南</a>。",
-    "convoy": "BLAKE2b DATUM 网关的参考实现，也是维护最活跃的一个。每台矿机都拿到完整分账，所以找到的区块会付给整个窗口。",
+    "convoy": "BLAKE2b DATUM 网关的参考实现，也是维护最活跃的一个。请使用 <a href=\"https://github.com/CONVOYMining/datum_gateway/releases/tag/v0.5.0beta\" target=\"_blank\" rel=\"noreferrer\">v0.5.0beta</a> 版本；v0.4.1-beta 构建已过时。每台矿机都拿到完整分账，所以找到的区块会付给整个窗口。",
     "fly": "CONVOY 的代码加上 FlyTheElephant 自己的工作。每台矿机都拿到完整分账，所以找到的区块会付给整个窗口。<a href=\"/zh/flytheelephant\">安装指南</a>。",
     "guide": "想看完整教程？<a href=\"https://convoy.xyz/getstarted?lang=zh\" target=\"_blank\" rel=\"noreferrer\">CONVOY 入门指南</a>（<a href=\"https://convoy.xyz/getstarted\" target=\"_blank\" rel=\"noreferrer\">English</a>）讲解 Knots 和网关的安装。之后填入下面的主机、端口和公钥即可。",
     "paths": "接入",

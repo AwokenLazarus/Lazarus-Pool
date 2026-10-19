@@ -61,6 +61,9 @@ function coinbaseRow(b, tip, interval) {
 function makegoodRow(g, tip, interval) {
   const status = MG_STATUSES.has(g.status) ? g.status : label(g.status) || "unknown";
   const row = { block_height: g.height, kind: g.kind === "pool-only" ? "pool-only" : g.kind === "partial" ? "partial" : label(g.kind), owed_sats: sats(g.sats ?? g.owed_sats), owed_xbt: xbt((g.sats ?? g.owed_sats ?? 0) / 1e8), status, txid: hex(g.txid) };
+  const fee = Number(g.custody_fee_sats) || 0;
+  if (fee > 0) Object.assign(row, { custody_fee_sats: sats(fee), net_sats: sats(g.net_sats ?? (g.sats ?? g.owed_sats ?? 0) - fee),
+    custody_note: "This address's own DATUM gateway was producing pool-only or partial coinbases, so the make-good pays it the custody fee less. Miners on current gateways are paid in full; update the gateway and later make-goods are paid in full." });
   const why = g.kind === "pool-only"
     ? "The block was found on a job whose coinbase paid only the pool, so the whole window is repaid by this make-good."
     : "The block's coinbase paid only part of the window (it filled up or a gateway used an early job), so the addresses left out are repaid by this make-good.";
@@ -97,7 +100,7 @@ export const AUDIT_TOOLS = [
       const mgs = (m.makegoods || []).slice(0, 200).map((g) => makegoodRow(g, tip, interval));
       const byStatus = (s) => mgs.filter((g) => g.status === s);
       const queued = byStatus("queued").sort((a, b) => a.payable_at_height - b.payable_at_height), paid = byStatus("paid"), failed = byStatus("failed");
-      const sum = (rows) => xbt(rows.reduce((s, g) => s + g.owed_sats, 0) / 1e8);
+      const sum = (rows) => xbt(rows.reduce((s, g) => s + (g.net_sats ?? g.owed_sats), 0) / 1e8);
       const minOut = xbt(m.min_payout_btc), carry = xbt(m.carry_btc);
       const row = cb && (cb.miners || []).find((x) => x.address === address), un = cb && (cb.unpaid || []).find((x) => x.address === address);
       const nextCoinbase = row ? { in_coinbase: true, sats: sats(row.sats), note: "This address has an output in the coinbase being built right now; any carry it is owed rides on it." }
@@ -110,6 +113,7 @@ export const AUDIT_TOOLS = [
       if (relayOnly.length) delays.push(`${relayOnly.length} of those are mature under consensus (pre-973,440, 100 confirmations) but still under 6,480 confirmations, so Knots 29.4.2 nodes will not relay a spend yet; a 100-confirmation wallet may show them as spendable.`);
       if (queued.length) delays.push(`${queued.length} make-good(s) (${sum(queued)} XBT) are queued: each spends the pool's output of its own block's coinbase, so it waits for that coinbase to mature (block height + 6,480) and is then broadcast automatically; the next is payable at ${queued[0].payable_at_height}.`);
       if (carry > 0) delays.push(`${carry} XBT is carried: earned, but not yet large enough for its own coinbase output (minimum ${minOut} XBT) or not placed in the last coinbase; it is paid on top of a later output once share plus carry clears the minimum. The DATUM bonus is credited as carry too.`);
+      if (m.gateway_outdated) delays.push(`This address's own DATUM gateway is producing improperly split coinbases (${label(m.gateway_outdated_reason) || "pool-only or partial"}). Update it to a current build (connection_info gateway_builds)${Number(m.custody_fee_percent) ? `: until then, make-goods to this address pay ${Number(m.custody_fee_percent)}% less (the custody fee)` : ""}.`);
       if (failed.length) delays.push(`${failed.length} make-good(s) failed to broadcast; ask in the pool's Discord with the block heights.`);
       if (!delays.length) delays.push("Nothing is delayed right now.");
 
@@ -128,7 +132,8 @@ export const AUDIT_TOOLS = [
           queued: { count: queued.length, xbt: sum(queued), next_payable_height: queued[0]?.payable_at_height ?? null, next_estimated: queued[0]?.estimated_payable ?? null, pool_figure_xbt: xbt(m.makegood_pending_btc), pool_figure_blocks: m.makegood_pending_blocks },
           paid: { count: paid.length, xbt: sum(paid), pool_figure_xbt: xbt(m.makegood_paid_btc) },
           failed: { count: failed.length, pool_figure_blocks: m.makegood_failed_blocks ?? 0 },
-          note: "miner_makegoods lists each one; paid ones show confirmations, never a future payable height.",
+          custody_fee_sats: sats(m.makegood_custody_fee_sats ?? 0), custody_fee_percent: Number(m.custody_fee_percent) || 0,
+          note: "Amounts are what lands on chain, after any custody fee. The custody fee is charged only to an address whose own gateway produced pool-only or partial coinbases. miner_makegoods lists each one; paid ones show confirmations, never a future payable height.",
         },
         path: { path, gateway_name: label(m.gateway_name) || null, fee_percent: pct(m.fee_percent_path ?? m.est_fee_percent, 2), datum_bonus_percent_points: m.fee_path === "datum" ? pct(m.datum_rebate_percent, 2) : 0 },
         window: { share_percent: pct(m.window_percent, 4), next_block_pays_xbt: xbt(m.block_payout_btc), figure_is_exact: !!m.next_block_exact, window_fill_percent: pct(m.window_fill_percent, 1) },
@@ -176,7 +181,7 @@ export const AUDIT_TOOLS = [
       if (!m) return unknown(address);
       const tip = tipOf(m), rows = (m.makegoods || []).slice(0, 200).map((g) => makegoodRow(g, tip, interval)).sort((a, b) => b.block_height - a.block_height);
       const pick = status === "all" ? rows : rows.filter((g) => g.status === status);
-      const total = (s) => { const r = rows.filter((g) => g.status === s); return { count: r.length, xbt: xbt(r.reduce((t, g) => t + g.owed_sats, 0) / 1e8) }; };
+      const total = (s) => { const r = rows.filter((g) => g.status === s); return { count: r.length, xbt: xbt(r.reduce((t, g) => t + (g.net_sats ?? g.owed_sats), 0) / 1e8) }; };
       return { address, tip_height: tip, totals: { queued: total("queued"), paid: total("paid"), failed: total("failed") }, next_payable_height: m.makegood_next_payable_at ?? null,
         listed: pick.length > limit ? limit : pick.length, make_goods: pick.slice(0, limit),
         what_is_a_make_good: "A make-good is signed when the block is found, spending that block's own pool output to the addresses its coinbase left out; so it is self-funded, its txid is fixed in advance, and it can only be broadcast once that coinbase matures.",
@@ -223,7 +228,8 @@ export const AUDIT_TOOLS = [
 
       const make_goods = [];
       for (const g of mgs.slice(0, 1)) {
-        const txid = hex(g.txid), owed = sats(g.sats ?? g.owed_sats), st = MG_STATUSES.has(g.status) ? g.status : label(g.status);
+        // A make-good that carried the custody fee pays net_sats on chain, not the gross amount owed.
+        const txid = hex(g.txid), gross = sats(g.sats ?? g.owed_sats), fee = Number(g.custody_fee_sats) || 0, owed = fee > 0 ? sats(g.net_sats ?? gross - fee) : gross, st = MG_STATUSES.has(g.status) ? g.status : label(g.status);
         if (!txid) { make_goods.push({ status: st, owed_sats: owed, check: "no txid recorded" }); continue; }
         let tx = null;
         try { tx = await chain(ctx, "/api/tx/" + txid, 60); } catch (e) { if (e.message !== "not found") throw e; }
@@ -233,7 +239,7 @@ export const AUDIT_TOOLS = [
           continue;
         }
         const paidSats = (tx.vout || []).filter((o) => o.scriptpubkey_address === address).reduce((s, o) => s + (Number(o.value) || 0), 0), stx = tx.status || {};
-        make_goods.push({ txid, status: st, owed_sats: owed, onchain_sats_to_address: paidSats, confirmed: !!stx.confirmed, block_height: stx.block_height ?? null,
+        make_goods.push({ txid, status: st, owed_sats: owed, ...(fee > 0 ? { gross_owed_sats: gross, custody_fee_sats: sats(fee) } : {}), onchain_sats_to_address: paidSats, confirmed: !!stx.confirmed, block_height: stx.block_height ?? null,
           confirmations: stx.confirmed ? tip - stx.block_height + 1 : 0, match: paidSats === owed, explorer: `${EXPLORER}/tx/${txid}` });
       }
 
