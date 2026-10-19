@@ -49,6 +49,7 @@ for url in urls:
     for key, target in {'home':'/', 'mine':'/connect', 'payouts':'/blocks', 'learn':'/how'}.items():
         assert page.nav[key] == prefix + target, (url, key, page.nav)
     assert set(page.alts) == {'en', 'zh-CN', 'x-default'}, url
+    assert '<script src="/static/analytics.js?v=1" defer></script>' in text, (url, 'no analytics')
     for alt in page.alts.values(): assert alt in urls, (url, alt)
     count += 1
 assert count == 30, count  # 15 documents in two languages
@@ -62,5 +63,10 @@ for api in ['/api/pool', '/api/coinbaser', '/api/price', '/api/solo', '/api/mine
 for route in ['/static/', '/static/index.html', '/static/index']:
     assert f'{route} / 301' in (out/'_redirects').read_text()
 assert (out/'404.html').exists(), 'Pages would enable SPA fallback without 404.html'
+for name in ('404.html', 'miner.html'):
+    assert '/static/analytics.js' in (out/name).read_text(), (name, 'no analytics')
+# The hub and the pool load the same analytics file; one copy must not drift from the other.
+hub_analytics = Path(__file__).resolve().parents[2] / 'map-site/public/assets/analytics.js'
+assert (out/'static/analytics.js').read_bytes() == hub_analytics.read_bytes(), 'pool and hub analytics.js differ'
 assert '/*\n  Strict-Transport-Security: max-age=' in (out/'_headers').read_text(), 'HSTS missing from _headers /*'
 print(f'PASS: {count} canonical HTML pages, languages, document navigation, sitemap and template exclusion')

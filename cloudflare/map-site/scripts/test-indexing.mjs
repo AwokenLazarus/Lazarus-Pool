@@ -17,6 +17,7 @@ for (const url of urls) {
   assert.ok(html.includes(`rel="canonical" href="${url}"`), url);
   assert.ok(!/<meta[^>]+name="robots"[^>]+noindex/i.test(html), url);
   assert.ok(/<h1\b/.test(html), url);
+  assert.ok(html.includes('<script src="/assets/analytics.js?v=1" defer></script>'), `${url}: no analytics`);
 }
 for (const path of ['/naughtylist', '/naughtylist/index.html']) {
   const r = await worker.fetch(new Request('https://lazarus-xbt.xyz'+path+'?pool=Lazarus'), {}, {});

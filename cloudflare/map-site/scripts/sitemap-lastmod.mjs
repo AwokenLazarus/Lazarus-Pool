@@ -25,15 +25,24 @@ function pageFiles(loc) {
   return [join("public", pathname.replace(/^\/|\/$/g, ""), "index.html")];
 }
 
+// Commits that touched every page without changing what it says (an analytics tag, a CSP), listed
+// in lastmod-ignore-revs like .git-blame-ignore-revs, so they do not move lastmod. Merge such a PR
+// with a merge commit: a squash or rebase gives the commit a new hash and the dates move after all.
+const ignored = new Set(
+  readFileSync(join(here, "scripts", "lastmod-ignore-revs"), "utf8")
+    .split("\n").map((l) => l.replace(/#.*/, "").trim()).filter(Boolean),
+);
+
 // Local calendar date, the same one git's %cs prints for a commit made here.
 const today = () => new Date().toLocaleDateString("en-CA");
 
 function lastChanged(files) {
   const dirty = execFileSync("git", ["status", "--porcelain", "--", ...files], { cwd: here, encoding: "utf8" }).trim();
   if (dirty) return today();
-  const date = execFileSync("git", ["log", "-1", "--format=%cs", "--", ...files], { cwd: here, encoding: "utf8" }).trim();
-  if (!date) throw new Error(`no git history for ${files.join(", ")}; add the page to RENDERED or commit it`);
-  return date;
+  const log = execFileSync("git", ["log", "--format=%H %cs", "--", ...files], { cwd: here, encoding: "utf8" }).trim();
+  if (!log) throw new Error(`no git history for ${files.join(", ")}; add the page to RENDERED or commit it`);
+  const commits = log.split("\n").map((l) => l.split(" "));
+  return (commits.find(([hash]) => !ignored.has(hash)) || commits.at(-1))[1];
 }
 
 const xml = readFileSync(sitemapPath, "utf8");
