@@ -262,3 +262,40 @@ fn a_class_limited_session_learns_its_budget_and_its_next_list_is_mined_whole() 
     let st = settled_stats(&primed);
     assert_eq!((row(&st, &gw)["accepted"].as_u64(), row(&st, &gw)["rejected"].as_u64()), (Some(4), Some(0)));
 }
+
+/// `template-budget`: a share citing a template filled to 795 664 of the 800 000 weight units
+/// leaves every CONVOY class room for 16 of the 40 payees. The next list names those 16 and the
+/// pool, in the order the split placed them, so whichever class mines it keeps it whole; the
+/// rest wait in carry. Without the key, or with it but not the fee wallet's, the list is whole.
+#[test]
+fn a_full_template_holds_the_next_list_to_the_room_it_leaves() {
+    // (800 000 - 795 664 - 712) / 4 = 906 bytes of class; less 124 + 85 + 10 and the pool's
+    // script (22), the list's pool output (31) and the 128 margin: 506, 16 P2WPKH payees.
+    const FULL: u32 = 795_664;
+    let node = node();
+    for (key, held) in [
+        ("template-budget = true\nclass-budget-fee-wallet-reserves = true", true),
+        ("template-budget = true", false),
+        ("", false),
+    ] {
+        let gw = Identity::generate();
+        let pool = Identity::generate();
+        let (primed, port) = start(&node, &pool, key);
+        let (mut g, _) = Gateway::connect_convoy_as(port, &pool, &gw, CONVOY_UA);
+        let (_, _, list) = g.request_coinbaser_seeing(VALUE, &TIP);
+        assert_eq!(list.len(), usize::from(MINERS) + 1, "nothing cited yet: the whole list");
+        // The gateway's word on its template, carried by any share, ground or not.
+        let _ = g.submit(&pool_only_share(3, HEIGHT, TIP, TIP_BITS, FULL, unix_now()));
+        let (_, _, next) = g.request_coinbaser_seeing(VALUE + 1, &TIP);
+        if held {
+            assert_eq!(next.len(), 17, "{key}: 16 payees, then the pool");
+            assert_eq!(next[..16], list[..16], "the head of the list, in its order");
+            assert_eq!(hex::encode(&next[16].script), POOL_SCRIPT);
+            assert_eq!(next.iter().map(|o| o.sats).sum::<u64>(), VALUE + 1);
+            let st = settled_stats(&primed);
+            assert_eq!(st["totals"]["class_budget_replies"], 1, "{}", st["totals"]);
+        } else {
+            assert_eq!(next.len(), usize::from(MINERS) + 1, "{key}: the whole list");
+        }
+    }
+}

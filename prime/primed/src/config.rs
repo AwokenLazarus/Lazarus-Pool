@@ -105,6 +105,22 @@ pub struct Config {
     /// meanwhile are Partial and owe as they do without `class-budget`. Default 5 XBT.
     #[serde(default = "d_class_budget_carry_ceiling")]
     pub class_budget_carry_ceiling: u64,
+    /// Hold each coinbaser to what the gateway's recent templates leave room for. CONVOY fits
+    /// every size class to the template (`datum_stratum_coinbase_fit_to_template`): when the
+    /// mempool fills a block to `template-weight-limit`, only the node's coinbase reserve is left,
+    /// about 2 000 bytes, and the class keeps the first 50 or so of a list of over 100. Every such
+    /// block was Partial: 7 of 33 from v0.5.0beta gateways and 65 of 179 from v0.4.1-beta in the
+    /// week to 2026-10-19, each owing the rest through a make-good that waits 6 480 blocks. Held to
+    /// that room, the list fits, the block is a full split, and whoever does not fit waits in
+    /// carry for a later coinbase instead. Same sessions, guards and accounting as `class-budget`
+    /// (`carry_reserved_sats`, the carry ceiling); ignored, and said so at startup, unless
+    /// `class-budget-fee-wallet-reserves` is set too. Off (default): replies are as they were.
+    #[serde(default)]
+    pub template_budget: bool,
+    /// The block weight a gateway's template is filled to: the `weightlimit` its node's
+    /// `getblocktemplate` reports (800 000 on this chain).
+    #[serde(default = "d_template_weight_limit")]
+    pub template_weight_limit: u32,
     /// Test hook: sleep this long before answering a coinbaser, so a stock gateway's
     /// 5 s fetch times out. 0 (default) is production.
     #[serde(default)]
@@ -254,6 +270,9 @@ pub struct Config {
     /// `class-budget = true` without `class-budget-fee-wallet-reserves`, turned off by `load`.
     #[serde(skip)]
     class_budget_unreserved: bool,
+    /// The same for `template-budget = true`.
+    #[serde(skip)]
+    template_budget_unreserved: bool,
 }
 
 fn d_listen() -> SocketAddr {
@@ -344,6 +363,10 @@ fn d_solo_tag() -> String {
 /// simulation of a 17-output cap put the added float at: a guard at the level it was expected
 /// to settle, so that a float that keeps growing (CONVOY hashrate leaving, the pool shrinking)
 /// stops growing there, not one that trims the expected case.
+fn d_template_weight_limit() -> u32 {
+    800_000
+}
+
 fn d_class_budget_carry_ceiling() -> u64 {
     500_000_000
 }
@@ -472,6 +495,13 @@ impl Config {
             c.class_budget = false;
             c.class_budget_unreserved = true;
         }
+        if c.template_budget && !c.class_budget_fee_wallet_reserves {
+            c.template_budget = false;
+            c.template_budget_unreserved = true;
+        }
+        if c.template_weight_limit < 100_000 {
+            return Err(format!("template-weight-limit {} is not a block's weight", c.template_weight_limit));
+        }
         if c.key_file.is_none() {
             // A data dir left by lazarus-prime keeps its identity: same key file, same pubkey.
             let ours = c.data_dir.join("prime.key");
@@ -510,6 +540,14 @@ impl Config {
                  holds back carry_reserved_sats: a class-capped block is a split owing nothing whose pool output \
                  holds the earnings its budget deferred to carry, and a wallet that sweeps it pays them out as fee \
                  while Prime still owes them (README, \"Class budgets\")"
+                    .into(),
+            );
+        }
+        if self.template_budget_unreserved {
+            v.push(
+                "template-budget = true is ignored until class-budget-fee-wallet-reserves = true says the fee wallet \
+                 holds back carry_reserved_sats: a template-capped block is a split owing nothing whose pool output \
+                 holds the earnings its budget deferred to carry (README, \"Class budgets\")"
                     .into(),
             );
         }
@@ -790,6 +828,33 @@ require-split-gateway = true
         assert!(!c.class_budget && notes(&c).is_empty());
         let c = load("class-budget-fee-wallet-reserves = true\nclass-budget = true\n");
         assert!(c.class_budget && notes(&c).is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// `template-budget` takes the same word from the operator as `class-budget`, and alone is
+    /// off; the weight limit defaults to this chain's.
+    #[test]
+    fn template_budget_is_off_until_the_fee_wallet_is_said_to_hold_back_its_carry() {
+        let dir = std::env::temp_dir().join(format!("primed-cfg-tb-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("prime.toml");
+        let base = LEGACY.replace("/home/umbrel/blake2b/lazarus-prime", dir.to_str().unwrap());
+        let load = |extra: &str| {
+            std::fs::write(&p, format!("{base}{extra}")).unwrap();
+            Config::load(&p)
+        };
+        let notes = |c: &Config| -> Vec<String> {
+            c.legacy_notes().into_iter().filter(|n| n.contains("template-budget")).collect()
+        };
+        let c = load("").unwrap();
+        assert!(!c.template_budget && c.template_weight_limit == 800_000 && notes(&c).is_empty());
+        let c = load("template-budget = true\n").unwrap();
+        assert!(!c.template_budget && notes(&c).len() == 1);
+        let c = load("template-budget = true\nclass-budget-fee-wallet-reserves = true\n").unwrap();
+        assert!(c.template_budget && !c.class_budget && notes(&c).is_empty());
+        let c = load("template-weight-limit = 4000000\n").unwrap();
+        assert_eq!(c.template_weight_limit, 4_000_000);
+        assert!(load("template-weight-limit = 4000\n").is_err());
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }
