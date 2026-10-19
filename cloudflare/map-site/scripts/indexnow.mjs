@@ -3,7 +3,7 @@
 // Google does not use IndexNow; it reads the sitemap.
 //
 //   node scripts/indexnow.mjs                 dry run: print what would be sent
-//   node scripts/indexnow.mjs --live          submit every URL in public/sitemap.xml
+//   node scripts/indexnow.mjs --live          submit every URL in public/sitemap-en.xml
 //   node scripts/indexnow.mjs --live /blake2b/ /learn/   submit only these paths
 //
 // The key is the public/<key>.txt file served at the site root; it is public by design.
@@ -21,7 +21,7 @@ const key = readFileSync(join(pub, keyFile), "utf8").trim();
 const args = process.argv.slice(2);
 const live = args.includes("--live");
 const paths = args.filter((a) => a.startsWith("/"));
-const fromSitemap = [...readFileSync(join(pub, "sitemap.xml"), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+const fromSitemap = [...readFileSync(join(pub, "sitemap-en.xml"), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 const urlList = paths.length ? paths.map((p) => `https://${HOST}${p}`) : fromSitemap;
 
 const body = { host: HOST, key, keyLocation: `https://${HOST}/${keyFile}`, urlList };

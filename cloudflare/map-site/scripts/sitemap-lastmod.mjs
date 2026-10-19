@@ -1,8 +1,8 @@
-// Set each <lastmod> in public/sitemap.xml to the date of the last commit that changed that
+// Set each <lastmod> in public/sitemap-en.xml to the date of the last commit that changed that
 // page's HTML (or, for Worker-rendered pages, its source files). Run it in the commit that changes a page (npm run sitemap), so the sitemap never
 // says "today" for pages that did not change: search engines only use lastmod while it stays true.
 //
-//   node scripts/sitemap-lastmod.mjs          rewrite public/sitemap.xml
+//   node scripts/sitemap-lastmod.mjs          rewrite public/sitemap-en.xml
 //   node scripts/sitemap-lastmod.mjs --check  exit 1 and list the URLs whose date is stale
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
-const sitemapPath = join(here, "public", "sitemap.xml");
+const sitemapPath = join(here, "public", "sitemap-en.xml");
 const check = process.argv.includes("--check");
 
 // Pages the Worker renders have no HTML file; their words live in these sources.
@@ -46,11 +46,11 @@ const out = xml.replace(/<url><loc>([^<]+)<\/loc><lastmod>([^<]*)<\/lastmod>/g, 
 
 if (check) {
   if (stale.length) {
-    console.error(`sitemap.xml lastmod is out of date (run: npm run sitemap):\n  ${stale.join("\n  ")}`);
+    console.error(`sitemap-en.xml lastmod is out of date (run: npm run sitemap):\n  ${stale.join("\n  ")}`);
     process.exit(1);
   }
-  console.log("sitemap.xml lastmod matches git");
+  console.log("sitemap-en.xml lastmod matches git");
 } else {
   writeFileSync(sitemapPath, out);
-  console.log(stale.length ? `updated:\n  ${stale.join("\n  ")}` : "sitemap.xml already current");
+  console.log(stale.length ? `updated:\n  ${stale.join("\n  ")}` : "sitemap-en.xml already current");
 }
