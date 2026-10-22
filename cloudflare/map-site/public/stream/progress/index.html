@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lightning Stream: Progress and Status</title>
+<meta name="description" content="What of Lightning Stream is built and what is not, the packages for node boxes, the reviews, the earlier design and what comes next.">
+<link rel="canonical" href="https://lazarus-xbt.xyz/stream/progress/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Lazarus · Bitcoin BLAKE2b">
+<meta property="og:title" content="Lightning Stream: progress and status">
+<meta property="og:description" content="What of Lightning Stream is built and what is not, the packages for node boxes, the reviews, the earlier design and what comes next.">
+<meta property="og:url" content="https://lazarus-xbt.xyz/stream/progress/">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lazarus XBT, lazarus-xbt.xyz">
+<meta name="twitter:site" content="@LazarusPoolXBT">
+<meta name="twitter:title" content="Lightning Stream: progress and status">
+<meta name="twitter:description" content="What of Lightning Stream is built and what is not, the packages for node boxes, the reviews, the earlier design and what comes next.">
+<meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta name="theme-color" content="#1a1712">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="stylesheet" href="/assets/hub.css?v=7">
+<link rel="stylesheet" href="/stream/stream.css?v=1">
+<script src="/assets/js.js"></script>
+<script src="/assets/analytics.js?v=1" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://lazarus-xbt.xyz/stream/progress/#article",
+ "headline": "Lightning Stream: progress and status",
+ "description": "What of Lightning Stream is built and what is not, the packages for node boxes, the reviews, the earlier design and what comes next.",
+ "url": "https://lazarus-xbt.xyz/stream/progress/",
+ "image": "https://lazarus-xbt.xyz/assets/og.png",
+ "dateModified": "2026-10-22",
+ "inLanguage": "en",
+ "author": {
+  "@type": "Organization",
+  "name": "Lightning Stream",
+  "url": "https://github.com/AwokenLazarus/Lightning-Stream"
+ },
+ "publisher": {
+  "@id": "https://lazarus-xbt.xyz/#org"
+ },
+ "isPartOf": {
+  "@id": "https://lazarus-xbt.xyz/stream/#article"
+ },
+ "about": [
+  "Lightning Network",
+  "hold invoices",
+  "x402",
+  "AI agents",
+  "streaming payments",
+  "probabilistic payments",
+  "XBT"
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="topbar wrap">
+    <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <a href="/learn/">The chain</a><a href="/ecosystem/">Ecosystem</a><a href="/map/">Galaxy map</a><a href="/naughtylist/">Naughty list</a><a href="/key/">Lazarus Key</a><a href="/faq/">FAQ</a>
+      <a class="btn small" href="https://pool.lazarus-xbt.xyz" rel="noopener">Lazarus Pool</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero wrap">
+  <h1><span class="kicker">Lightning Stream · Progress</span>Progress and <em>status</em></h1>
+  <p class="lede">Where Lightning Stream stands: what is built and what is not, what has run and where, what has been reviewed, and what comes next. Nothing of Lightning Stream has run on XBT mainnet yet.</p>
+  <p class="note">This page accompanies Draft 10 of the Lightning Stream whitepaper, 22 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <nav class="toc" aria-label="On this page">
+    <p class="category">On this page</p>
+    <a href="#status">Status and limits</a><a href="#built">Built and not built</a><a href="#packages">Packages for node boxes</a><a href="#earlier">The earlier design</a><a href="#changes">Changes by draft</a>
+  </nav>
+  <nav class="toc" aria-label="More pages">
+    <p class="category">The whitepaper and its pages</p>
+    <a href="/stream/">The whitepaper</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a>
+  </nav>
+</section>
+
+<section class="section wrap">
+  <div class="prose paper" data-reveal>
+    <h2 id="status"><span class="n">1</span>Status and limits</h2>
+    <dl class="status">
+      <dt>Works</dt><dd>On XBT's regtest: the agent wallet pays Lightning invoices and offers through a Lightning Fork node under the owner's policy. For tickets, also on regtest and against Lightning Fork nodes: the wallet's ticket book locks, releases and books tickets, and the seller's gateway sells an HTTP service to a test buyer for tickets. And the two together: the agent's pay tool buys a page and a 100&nbsp;MB file from a stock web server behind the gateway, through a routing node, paying as the file arrives (<code>scripts/ticket_e2e_regtest.sh</code>). The lottery, in the form where the buyer pays after a win: the same pay tool buys the 100&nbsp;MB file by rolls, and pays 100 sellers at once from one 30-slot channel (<code>scripts/lottery_regtest.sh</code>). The demo: a film behind the gateway, paid for piece by piece as a player reads it, through one routing node and through two (<code>scripts/demo_film.sh</code>; see <a href="/stream/tests/#demo">A demo</a>). The packages: a packaged wallet buying from a packaged gateway with tickets, in simulations of both platforms and on a real umbrelOS box with stand-ins for the node apps (<a href="#packages">Packages</a>). Everything in this entry ran on regtest, between our own nodes, and all but the umbrelOS box on one machine.</dd>
+      <dt>Evidence</dt><dd>Public CI, the lab reports and a guide for an outside tester: see <a href="/stream/tests/#evidence">Evidence anyone can check</a>.</dd>
+      <dt>Lab-tested</dt><dd>The design of stream tickets, by scripts on three Lightning Fork nodes, and its slot and dust limits on six nodes, three of them the Core Lightning fork; see <a href="/stream/tests/#numbers">Numbers</a>. Tickets to many sellers, and the win that pays itself, which ran as scripts and a prototype on three and five nodes. Nothing of tickets or of the lottery is in a release.</dd>
+      <dt>Reviewed</dt><dd>There has been no independent audit. Our internal review found three critical and five high-severity issues; we changed the code for each and added tests. A first outside review of the published code by Chris Guida (October 2026) then found more serious issues: in the agent wallet's budget accounting, the hub, the pay-with-work audit and the HTTP layer. Six rounds of fixes are in the public tree. Four follow-up audits of our own checked them: the first found 14 items (3 high), the second 20 (6 high), the third 23 (none high, 11 medium), the fourth 18 (none high, 9 medium). After the sixth round every finding is fixed or ends as a stated limit, and two items were open; a later run of the failure cases through the release binaries added three, of which the one an agent could be steered by is fixed. That left four open. Three were on the on-chain channel's path and left the tree with its code; the Python references, which keep the channel, still have one of them. One remains open, and it is not in this tree's code: it is on a rail of the Python reference wallet that is off by default. The channel was what most of the review's findings were about, and the findings on it and its stated limits left the tree with it. Neither removal, the hub's or the channel's, has been reviewed by anyone. The source tree's <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/docs/LIMITS.md" rel="noopener"><code>docs/LIMITS.md</code></a> lists every limit, the open items and what nobody has reviewed. A Lightning developer who read the design pointed out both limits that the defaults are built around, the 30 slots and the dust limits; that was a reading of the design, not an audit of the code. Chris Guida then made a second review, in October 2026, of the ticket design, the lottery and the tree as they stood on 13 October: a static reading, in which nothing was built or run. He found the ticket mechanism and the lottery's roll sound as specified and as coded, and that much of what was said around them did not hold: "no change to the node" was true of lnd only; the losses were stated at regtest's fee rate and on anchor channels; held tickets are jamming by design, and a stranger could fill a seller's held places for free; the spec said two things about where a secret travels; the lottery's void path and its "exact price" needed bounds and a horizon; "regtest only" was a sentence, not a guard; and the evidence could not be checked from outside. The code and the whitepaper's pages answer each of those, as their sections say. Nobody outside the project has reviewed those answers. Nobody has reviewed the argument that the win that pays itself rests on, and that form will not be built before a cryptographer has. Two reviews are still wanted, an audit of the code and a cryptographer's reading of that argument; neither has been arranged. Treat it all as unaudited software.</dd>
+      <dt>Retired and removed</dt><dd>The hub was retired on 11 October 2026 and its code removed. The on-chain channel was frozen that day and removed later in October 2026, with the light client that watched it, the fair exchange built on its states and the flow in which a paid call waited for a person's approval. The code is in the history, last at commit <code>1ad0c48</code>. What ran on that channel is history too: on regtest it opened, paid, streamed, closed and refunded, and a Claude agent given only the wallet's tools bought an analytics API over it and refused a tampered chunk. None of that can be run with the tree as it is. See <a href="#earlier">The earlier design</a>.</dd>
+      <dt>Next</dt><dd>Mainnet, in small steps. The project's owner has decided on a small test on mainnet with amounts that can be lost entirely, once the software is ready for it: first one rehearsal between two of our own nodes with a small channel, then people outside the project, by invitation, with the packages. What a tester could lose is the balance of the channel the wallet pays from. It has not started: nothing of Lightning Stream has run on mainnet. Then signed service lists; see <a href="#built">Built and not built</a>.</dd>
+      <dt>Not yet</dt><dd>The win that pays itself. Fair exchange on tickets. A Core Lightning node as a seller: it needs a hold plugin that keeps the secret off the node, carries XBT's feature bit and cancels a ticket before it expires, and no published one does. A step where a paid call asks a person: ticket and lottery payments are bounded by the task's budget and do not ask one. XBT mainnet: regtest only so far, and the mainnet test above has not started. An independent audit. A published specification. Packages that start beside Lightning Fork on StartOS, and a wallet that pays sellers over Tor (<a href="#packages">Packages</a>). A stock media app that pays, and a person watching a paid film on a screen; see <a href="/stream/tests/#demo">A demo</a>.</dd>
+      <dt>Trade-offs</dt><dd>Money moves a ticket at a time, and the buyer can lose one ticket. Unused tickets are locked until cancelled or expired. A held ticket takes a slot on every channel of its route, a channel has as few as 30 for everyone, and a held ticket is never under 546&nbsp;sat: so held tickets suit one seller or a few, and many sellers are paid by lottery. At mainnet's fee rates, on channels without anchors, a 1,000&nbsp;sat ticket can have no output at all, so on mainnet at the defaults nothing is held through a routing node. The seller needs an lnd-family Lightning node with inbound capacity, online while tickets are locked; a Core Lightning node cannot hold tickets today; a seller that cannot run one has no rail here but pay with work. Routing nodes hold tickets without a fee when they are cancelled. Paid by lottery, income and cost are uneven in the short run, and where the buyer pays after a win the seller goes first by about one win. The Lightning nodes on both sides hold hot keys for their channels. XBT's Lightning network is young and small, so a route may not exist.</dd>
+    </dl>
+    <h2 id="built"><span class="n">2</span>Built and not built</h2>
+    <dl class="status">
+      <dt>Built</dt><dd>The agent wallet and its policy engine: budgets, per-seller caps, approvals for single payments and the log. The wallet's Lightning payer, which pays BOLT&nbsp;11 invoices and BOLT&nbsp;12 offers through the owner's node. The HTTP 402 wire and signed receipts, for tickets and the lottery. Pay with work, where a miner pays with pool shares instead of coins; it is built around OCEAN's DATUM and TIDES <a href="/stream/design/#ref-66">[66]</a>. All of it is in the public tree and runs on test networks only.</dd>
+      <dt>Built, for tickets</dt><dd>Both sides, each on a regtest against Lightning Fork nodes. The <em>ticket book</em> in the wallet's signer makes the secrets, locks tickets through the owner's node, writes each release down as spent before the secret leaves, and keeps to the owner's policy; <code>scripts/ticket_book_regtest.sh</code> in the public tree runs it. The <em>seller's gateway</em> stands beside a seller's Lightning node in front of any HTTP service: it offers ticket terms in a 402, issues hold invoices for a buyer's hashes, collects a ticket when its secret arrives, meters the answer per request, per byte or per second, and signs a receipt; <code>scripts/gateway_regtest.sh</code> runs it with a test buyer. And the two together: the agent's pay tool reads a seller's terms, locks tickets and pays as the answer arrives, with prepaid tickets as the fallback when slots are short; <code>scripts/ticket_e2e_regtest.sh</code> runs it through a routing node.</dd>
+      <dt>Built, the lottery</dt><dd>The form where the buyer pays after a win, in the wallet and in the gateway, on a regtest against Lightning Fork nodes. The gateway offers it beside tickets and the wallet chooses between them. The wallet's signer works out every roll itself, pays a win at once with an ordinary Lightning payment, and locks nothing with any seller. <code>scripts/lottery_regtest.sh</code> in the public tree runs it on channels of 30 slots: a 100&nbsp;MB file bought by rolls, 20 and 100 sellers paid at once, a buyer that never pays, a seller that lies about wins, and a kill of each part. The argument that the roll is fair is our own, read by one outside reviewer and proved by nobody.</dd>
+      <dt>Built, a demo</dt><dd>A stock media server behind the gateway, and a film bought piece by piece through the wallet while a player reads it; then the same file from 20 gateways at once, paid by rolls. <code>scripts/demo_film.sh</code> in the public tree runs it, on a regtest, on one machine. The players were ffmpeg and a script, not a person at a screen; see <a href="/stream/tests/#demo">A demo</a>.</dd>
+      <dt>Built, packages</dt><dd>A wallet app and a gateway app for Umbrel and StartOS, over the box's Lightning Fork node, with their images published and pinned by digest. Run on regtest only: in simulations of both platforms, and on a real umbrelOS box with stand-ins for the node apps. They do not start on StartOS beside Lightning Fork yet; see <a href="#packages">Packages</a>.</dd>
+      <dt>Built for Draft 9</dt><dd>The answers to the second outside review: a seller the owner has not named paid a prepaid ticket first and held with one ticket at a time; hold invoices only for a session that has paid; the floor for held tickets that follows from the fee rate; voids counted against the lottery's window, and the lottery offered only for pieces of a quarter of a win or less; small calls kept off the lottery where prepaid tickets are offered; lottery sessions that outlive a restart of the gateway; mainnet refused unless asked for, on both sides; no request to an unnamed seller at a private address or over plain http; the chain named by its standard name; public CI; and the lab reports in the tree.</dd>
+      <dt>Removed</dt><dd>The earlier design's hub, and later its on-chain channel, with the light client that watched it, the fair exchange built on its states and the flow in which a paid call waited for a person's approval. The code is in the history; see <a href="#earlier">The earlier design</a>.</dd>
+      <dt>Next</dt><dd>The packages Draft 8 listed are built. What comes next: one rehearsal on mainnet between two of our own nodes, with a small channel; then a small, bounded test on mainnet with people outside the project, by invitation, with the packages; and signed service lists, so that a seller can publish what it sells and a buyer can check who published it. None of the mainnet steps has started.</dd>
+      <dt>The defaults in the code</dt><dd>The ticket book and the gateway now have the defaults of <a href="/stream/design/#slots">Slots and dust</a>: 2 tickets a session, no held ticket under 546&nbsp;sat, held tickets within half of a channel's slots, and holding less, then paying another way, after a lock that finds no slot. They were tested on channels opened with 30 slots between Lightning Fork nodes, which stand in for Core Lightning there: such a channel carries 30 one way and 483 the other, and its dust limit is 354&nbsp;sat, so the test is close and not the same. A policy written before this change that does not set these values now gets the new ones; the tree's <code>docs/LIMITS.md</code> says what that means.</dd>
+      <dt>Lab-tested</dt><dd>The design itself. The lock, release, cancel and failure cases in <a href="/stream/tests/#numbers">Numbers</a> were run by scripts on three Lightning Fork nodes, and the slot and dust cases on six nodes, three of them the Core Lightning fork. Tickets to many sellers at once, and both forms of <a href="/stream/#lottery">the lottery</a> before the first was built, were run the same way, by scripts and prototypes on three and five Lightning nodes. The win that pays itself has been run in no other way.</dd>
+      <dt>Not built</dt><dd>The win that pays itself: it will not be built before a cryptographer has reviewed the argument it rests on. Fair exchange on tickets. A step where a paid call asks a person. A seller's software for a Core Lightning node. Signed service lists. Packages that start on StartOS beside Lightning Fork. A wallet that pays a seller over Tor. A proxy that lets a stock media app pay.</dd>
+      <dt>Planned</dt><dd>A deeper upgrade: a stream output inside a Lightning channel. Two direct peers would add one output to their channel, and the payer would pay out of it by signing a rising total for each piece, with no Lightning payment round per piece. It would bring back exact settlement per piece, which tickets give up. It needs a new channel type in the Lightning node software, so it can only be done with the maintainers of the XBT Lightning forks, and we mean to raise it with them. As designed it covers two direct peers only; tickets would still carry a payment across a route. For many sellers and for the lottery, the change that would help most is a different one, point locks; see <a href="/stream/design/#costs">The costs, stated plainly</a>.</dd>
+    </dl>
+    <h2 id="packages"><span class="n">3</span>Packages for node boxes</h2>
+    <p>Most people who run a Lightning node run it on a home box, under umbrelOS or StartOS. There are now packages for both: a wallet app, which buys, and a gateway app, which sells a service of the owner's. Both use the box's own Lightning Fork node. Neither holds the node's admin credential: the owner pastes narrow ones, and the wallet's tool server for agents cannot read the one that pays. The images they run are published on GitHub's container registry, for three kinds of processor, and the packages name each image by its digest, so a box gets exactly the image that was checked. Whether a rebuild gives the same digest has not been checked. Nothing is submitted to either platform's store; a tester installs from a store of our own.</p>
+    <dl>
+      <dt>Where they have run</dt><dd>On regtest only. In simulations of each platform's install, on one machine, a packaged wallet bought from a packaged gateway with tickets, also after a restart, and on StartOS after a backup was restored into a new install. On a real umbrelOS 2.0 box, a test machine of our own, both apps installed from a community store, and the wallet bought from the gateway with a ticket, again after a restart and a reboot. That box ran regtest stand-ins for the node apps the packages depend on, with their names, and the images came from a registry of our own, not from GitHub's: no box has yet pulled them from there. The Lightning Fork and node packages themselves were read, not run. Nothing was run on a small computer such as a Raspberry Pi.</dd>
+      <dt>StartOS is blocked</dt><dd>StartOS mounts a folder of another package, never a single file, and Lightning Fork's StartOS package keeps the certificate the wallet needs at the top of its data, beside its credentials. Mounting that folder would hand the apps the node's admin credential, so neither app starts beside Lightning Fork on StartOS today. The fix is a change to Lightning Fork's StartOS package, the certificate in a folder of its own, which its maintainer has agreed to look at for the release after next. A test with the certificate alone in a folder ran.</dd>
+      <dt>Umbrel needs the seller's own TLS</dt><dd>umbrelOS gives apps no https of their own, and the wallet pays tickets only over https with a publicly trusted certificate. So a seller on Umbrel points a TLS proxy it runs itself at the gateway. On StartOS the owner adds a public domain to the gateway's interface.</dd>
+      <dt>No sellers over Tor</dt><dd>Both platforms can give the gateway an onion address, but that is plain http, and the wallet does not pay tickets over plain http. It cannot pay a seller reached over Tor.</dd>
+      <dt>Mainnet off by default</dt><dd>The gateway's setup page writes a regtest config unless the owner picks mainnet, and then asks for the acknowledgement and writes low caps: 4 sessions, 1 from one address, 4 held tickets of 1,000&nbsp;sat. The wallet's starter policy on mainnet caps a payment at 2,000&nbsp;sat and a day at 10,000&nbsp;sat, and its signer refuses tickets and rolls without the acknowledgement, whatever the page did.</dd>
+    </dl>
+    <p>The tree's <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/packaging/README.md" rel="noopener"><code>packaging/README.md</code></a> and <code>packaging/DESIGN.md</code> have the details, the sizes and memory measured, and what cannot be done yet.</p>
+    <h2 id="earlier"><span class="n">4</span>The earlier design</h2>
+    <p>The first version of Lightning Stream did not carry payments over Lightning. It used its own one-way payment channel on the chain: Jeremy Spilman's channel of 2013 <a href="/stream/design/#ref-1">[1]</a>, in the <code>CHECKLOCKTIMEVERIFY</code> form that BIP&nbsp;65 gives as one of its examples <a href="/stream/design/#ref-2">[2]</a>. The buyer locked coins once in an output on the chain, signed a slightly larger running total for every piece, and the seller settled once. To reach many sellers with one channel it added a hub, with each forwarded payment locked by an adaptor signature <a href="/stream/design/#ref-16">[16]</a><a href="/stream/design/#ref-17">[17]</a><a href="/stream/design/#ref-18">[18]</a>. A hub that forwards payments it cannot take was not new either: TumbleBit <a href="/stream/design/#ref-19">[19]</a> and A2L <a href="/stream/design/#ref-20">[20]</a> are its ancestors.</p>
+    <p>Chris Guida's review of the published code (October 2026) found the hub the weakest part. One-way channels with no revocation give a hub nothing to fall back on when a channel closes or is replaced while a payment is in flight, and that is the problem Lightning's commitment protocol <a href="/stream/design/#ref-3">[3]</a> was built to solve. The review advised using Lightning for what a network is good at, reaching many sellers, and keeping the direct channel as a fast path. We went further and moved the whole payment path onto Lightning.</p>
+    <dl>
+      <dt>The hub is retired</dt><dd>Its code, tests and packages have been removed from the tree, and they remain in its history, last at commit <code>0911cc0</code>. Lightning's own routing replaces it. The 59 stated limits that belonged to the hub, to the hub beside a Lightning node and to the routed client go with it.</dd>
+      <dt>The on-chain channel is removed</dt><dd>It was frozen on 11 October 2026, when the payment path moved onto Lightning, and nothing new was built on it after that. Once tickets ran end to end and the lottery was built, it was taken out of the tree, later in October 2026: tickets and the lottery do its job on Lightning, and the channel carried the open defects that were left. With it went its provider and its client, the wallet's channel rail, the light client that watched the chain for it, the fair exchange built on its states (<a href="/stream/uses/#fair">Paying only for what checks out</a>), the flow in which a paid call waited for the owner's approval (<a href="/stream/uses/#wallet">A wallet for agents</a>), and their tests, vectors and scripts. The code stays in the history, last at commit <code>1ad0c48</code>. The two Python reference repositories still hold the channel.</dd>
+      <dt>What the removal leaves behind</dt><dd>Three things. A wallet that was upgraded with channels on record cannot close or refund them with this version: it leaves their records and sealed keys untouched and says which revision settles them. The wallet pays sellers over Lightning only; its Umbrel and StartOS packages have since been redone to use the box's Lightning node (<a href="#packages">Packages</a>). And the channel's one remaining case, a seller who cannot run a Lightning node, is given up: such a seller has no rail here, and pay with work is the other way in. Nobody has reviewed the removal.</dd>
+      <dt>What the channel did that tickets do not</dt><dd>It settled each piece exactly, it left nothing in flight when a buyer stopped, and its seller needed no Lightning node. Tickets give those three up, as <a href="/stream/design/#cost">What it gives and what it costs</a> says. What they bring is Lightning's routing in place of a hub, and no transaction on the chain for each buyer and seller.</dd>
+    </dl>
+    <p>An earlier draft of this paper had a section, "Beside Lightning", which argued that Lightning could not hold a buyer's coins under a lock for the length of a session. Hold invoices do that, for a ticket at a time. That section no longer describes Lightning Stream.</p>
+    <h2 id="changes"><span class="n">5</span>Changes by draft</h2>
+    <dl>
+      <dt>Draft 10, 22 October 2026</dt><dd>The whitepaper is cut to the idea, and the detail moved to four pages: design details, tests and numbers, this page, and uses. Nothing in the design or the code changed with it.</dd>
+      <dt>Draft 9, 18 October 2026</dt><dd>Answering a second outside review, with packages for node boxes. Most of what was new came from Chris Guida's second review: the claim of "no change to the node" is narrowed to the nodes it holds for (<a href="/stream/#ticket">How a ticket works</a>); the costs are given at three fee rates, with a floor for held tickets that follows from them (<a href="/stream/design/#fees">Fee rates</a>); a seller the owner has not named is paid a prepaid ticket first; the lottery's limits are tighter and its horizon is stated (<a href="/stream/#lottery">The lottery</a>); the software refuses mainnet unless it is asked for; the evidence can be checked from outside; and there are packages for Umbrel and StartOS (<a href="#packages">Packages</a>).</dd>
+    </dl>
+
+    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 10, 22 October 2026.</p>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+      <p class="note" style="margin-top:.8rem;max-width:22rem">A hub for Bitcoin on BLAKE2b proof of work: the chain, the pools, the software and the people building on it.</p>
+      <p class="note faint"><i>Proverbs 11:1</i> — a just weight is his delight.</p>
+    </div>
+    <div class="footer-col">
+      <p class="category">Network</p>
+      <a href="/learn/">What XBT is</a>
+      <a href="/blake2b/">BLAKE2b vs SHA-256</a>
+      <a href="/learn/#softfork">Soft fork status</a>
+      <a href="https://mempool.lazarus-xbt.xyz" rel="noopener">Block explorer</a>
+      <a href="/map/">Galaxy map</a>
+      <a href="/ecosystem/#pools">Pool directory</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Mine</p>
+      <a href="https://pool.lazarus-xbt.xyz" rel="noopener">XBT mining pool</a>
+      <a href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Connect a Siacoin ASIC</a>
+      <a href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">ASICs that mine XBT</a>
+      <a href="https://pool.lazarus-xbt.xyz/how" rel="noopener">How the pool pays</a>
+      <a href="/ecosystem/#pools">Other pools</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Build</p>
+      <a href="https://github.com/AwokenLazarus/Bitcoin" rel="noopener">Source on GitHub</a>
+      <a href="https://github.com/AwokenLazarus/lazarus-key" rel="noopener">Lazarus Key source</a>
+      <a href="/ecosystem/#software">Software</a>
+      <a href="/stream/">Stream whitepaper</a>
+      <a href="https://mcp.lazarus-xbt.xyz" rel="noopener">MCP server</a>
+      <a href="https://mempool.lazarus-xbt.xyz/api" rel="noopener">Explorer API</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Community</p>
+      <a href="https://discord.gg/fD33dJXnzz" rel="noopener">Discord</a>
+      <a href="https://x.com/Awoken_Lazarus" rel="noopener">X</a>
+      <a href="/faq/">FAQ</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>Lazarus · Bitcoin BLAKE2b (XBT). Public data, no accounts, no custody.</span>
+    <span class="live">live</span>
+  </div>
+</footer>
+<script src="/assets/hub.js?v=2" defer></script>
+</body>
+</html>
