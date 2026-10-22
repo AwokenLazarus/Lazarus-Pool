@@ -71,7 +71,7 @@
   <p class="note">Draft 10 · 22 October 2026 · Lightning Stream (<a href="https://github.com/AwokenLazarus/Lightning-Stream" rel="noopener">source</a>). This draft is the short version: it explains the idea, and the detail lives on four pages of its own, listed below. Everything here is built and runs on a regtest, a private test network of our own nodes. Nothing of Lightning Stream has run on XBT mainnet yet; see <a href="#status">Status</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
-    <a href="#problem">The problem</a><a href="#idea">The idea</a><a href="#ticket">How a ticket works</a><a href="#lottery">Smaller than a ticket: the lottery</a><a href="#many">Many sellers</a><a href="#agents">Over HTTP, for agents</a><a href="#cost">What it costs</a><a href="#prior">Prior art</a><a href="#status">Status</a><a href="#references">References</a><a href="#thanks">Acknowledgements</a>
+    <a href="#problem">The problem</a><a href="#idea">The idea</a><a href="#ticket">How a ticket works</a><a href="#lottery">Smaller than a ticket: the lottery</a><a href="#many">Many sellers</a><a href="#agents">Paying over HTTP</a><a href="#cost">What it costs</a><a href="#prior">Prior art</a><a href="#status">Status</a><a href="#references">References</a><a href="#thanks">Acknowledgements</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">More, for readers who want it</p>
@@ -245,9 +245,9 @@
     </div>
     <p>The full rule, with its edge cases, is under <a href="/stream/design/#session">How it comes together</a>.</p>
 
-    <h2 id="agents"><span class="n">6</span>Over HTTP, for agents</h2>
+    <h2 id="agents"><span class="n">6</span>Paying over HTTP</h2>
     <p>A seller puts a gateway in front of any web service it already runs, beside its Lightning node. The gateway answers a first request with <code>402 Payment Required</code> and its terms, in the shape the x402 standard gives that status <a href="#ref-22">[22]</a>, and every answer after that comes with a receipt the seller signs. The ticket and lottery entries are our own, so only Lightning Stream clients can pay with them.</p>
-    <p>On the buyer's side is a wallet for AI agents. An agent should be able to spend but never to hold a key, because a model can be tricked by what it reads. So the agent asks the wallet to pay, over the Model Context Protocol <a href="#ref-26">[26]</a>, and the wallet decides: it holds the keys and the ticket secrets, keeps to a policy the owner signs (budgets, caps for each seller, and a small cap for sellers the owner has never heard of), and books what its node paid, never a number a seller sends. Mainnet is refused on both sides unless the owner asks for it in so many words. <a href="/stream/uses/">Uses</a> has the wire, the wallet and what they are for.</p>
+    <p>The buyer can be anything that makes HTTP requests through a Lightning Stream client: a person's app or media player, a script, a server, or an AI agent. The client we have built is a wallet, made first for the hardest case, an AI agent, which should be able to spend but never to hold a key, because a model can be tricked by what it reads. So the agent asks the wallet to pay, over the Model Context Protocol <a href="#ref-26">[26]</a>, and the wallet decides: it holds the keys and the ticket secrets, keeps to a policy the owner signs (budgets, caps for each seller, and a small cap for sellers the owner has never heard of), and books what its node paid, never a number a seller sends. Mainnet is refused on both sides unless the owner asks for it in so many words. <a href="/stream/uses/">Uses</a> has the wire, the wallet and what they are for.</p>
 
     <h2 id="cost"><span class="n">7</span>What it costs</h2>
     <dl>
