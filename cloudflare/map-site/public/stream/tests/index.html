@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lightning Stream: Tests and Numbers</title>
-<meta name="description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. All on a regtest; nothing on mainnet.">
+<meta name="description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. On a regtest, and one rehearsal on mainnet between our own nodes.">
 <link rel="canonical" href="https://lazarus-xbt.xyz/stream/tests/">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Lazarus · Bitcoin BLAKE2b">
 <meta property="og:title" content="Lightning Stream: tests and numbers">
-<meta property="og:description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. All on a regtest; nothing on mainnet.">
+<meta property="og:description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. On a regtest, and one rehearsal on mainnet between our own nodes.">
 <meta property="og:url" content="https://lazarus-xbt.xyz/stream/tests/">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
@@ -18,7 +18,7 @@
 <meta property="og:image:alt" content="Lazarus XBT, lazarus-xbt.xyz">
 <meta name="twitter:site" content="@LazarusPoolXBT">
 <meta name="twitter:title" content="Lightning Stream: tests and numbers">
-<meta name="twitter:description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. All on a regtest; nothing on mainnet.">
+<meta name="twitter:description" content="Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. On a regtest, and one rehearsal on mainnet between our own nodes.">
 <meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
 <meta name="theme-color" content="#1a1712">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -37,10 +37,10 @@
  "@type": "TechArticle",
  "@id": "https://lazarus-xbt.xyz/stream/tests/#article",
  "headline": "Lightning Stream: tests and numbers",
- "description": "Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. All on a regtest; nothing on mainnet.",
+ "description": "Every measurement behind the Lightning Stream whitepaper, what it was run on, and what each run does not show. On a regtest, and one rehearsal on mainnet between our own nodes.",
  "url": "https://lazarus-xbt.xyz/stream/tests/",
  "image": "https://lazarus-xbt.xyz/assets/og.png",
- "dateModified": "2026-10-22",
+ "dateModified": "2026-10-24",
  "inLanguage": "en",
  "author": {
   "@type": "Organization",
@@ -81,11 +81,11 @@
 
 <section class="hero wrap">
   <h1><span class="kicker">Lightning Stream · Tests</span>Tests and <em>numbers</em></h1>
-  <p class="lede">What was run, on what, and what each run does not show. Every figure on this page was measured on a regtest, a private test network, between our own nodes, unless it says it was computed or simulated. Nothing on this page ran on XBT mainnet.</p>
+  <p class="lede">What was run, on what, and what each run does not show. Every figure on this page was measured on a regtest, a private test network, between our own nodes, unless it says it was computed or simulated, or is in <a href="#mainnet">On mainnet</a>, the one rehearsal on XBT mainnet between two of our own nodes.</p>
   <p class="note">This page accompanies Draft 10 of the Lightning Stream whitepaper, 22 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
-    <a href="#evidence">Evidence anyone can check</a><a href="#numbers">Tickets in the lab</a><a href="#lottery-built">The lottery as built</a><a href="#design-runs">The design's measurements</a><a href="#demo">The film demo</a>
+    <a href="#evidence">Evidence anyone can check</a><a href="#numbers">Tickets in the lab</a><a href="#lottery-built">The lottery as built</a><a href="#design-runs">The design's measurements</a><a href="#demo">The film demo</a><a href="#mainnet">On mainnet</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
@@ -240,7 +240,32 @@
     </dl>
     <p>For a seller: what a buyer can reach is decided by the gateway's routes, one film each, so the service's own port must never be published, only the gateway's. In the demo a second film on the same server, and the server's own pages, answered 404 through the gateway.</p>
 
-    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 10, 22 October 2026.</p>
+    <h2 id="mainnet"><span class="n">6</span>On mainnet: a rehearsal between our own nodes</h2>
+    <p><strong>The conditions.</strong> Two runs on XBT mainnet, on 23 and 24 October 2026, with real coins in amounts we could lose. The buyer and the seller were our own Lightning Fork nodes, version 0.21.4-beta-blake2b.21 (the version Umbrel ships), on one machine, with one direct private channel of the anchor type between them: 100,000&nbsp;sat, opened for 329&nbsp;sat at 2&nbsp;sat/vB. The seller's gateway stood in front of a test file server, and the agent wallet paid through its own pay tool; everything listened on loopback only. The wallet's policy named this one seller, with a task budget of 10,000&nbsp;sat and at most 3,000&nbsp;sat a payment. Tickets were 1,000&nbsp;sat, with 2 held at a time.</p>
+    <div class="table-wrap prose-table">
+      <table>
+        <thead><tr><th>What</th><th>First run, 23 October</th><th>Second run, 24 October, after the fixes</th></tr></thead>
+        <tbody>
+          <tr><td>A page (100&nbsp;sat) and a 5&nbsp;MB file (1,000&nbsp;sat), with tickets</td><td>One prepaid ticket, then held ones. Before the prepaid one the wallet offered 2 held tickets that the seller refused, and booked them as failed (nothing was paid for them).</td><td>One prepaid ticket first, then held ones; no ticket refused or failed.</td></tr>
+          <tr><td>Paid for the tickets</td><td>2,000&nbsp;sat for 1,420&nbsp;sat served: 580&nbsp;sat, what was left of the last ticket, stayed with the seller</td><td>2,000&nbsp;sat for 1,100&nbsp;sat served: 900&nbsp;sat stayed with the seller, and the wallet now reports it when the session stops</td></tr>
+          <tr><td>Unused held tickets when the session stopped</td><td>2, cancelled by the seller and back on the buyer's node</td><td>2, the same</td></tr>
+          <tr><td>20 pieces by lottery, 320&nbsp;sat expected</td><td>3 wins of 64&nbsp;sat: 192&nbsp;sat, all settled</td><td>3 wins of 64&nbsp;sat: 192&nbsp;sat, all settled</td></tr>
+          <tr><td>The gateway's count of paid wins</td><td>0 while the session was open; it counted them only when the session was swept</td><td>3 within 10&nbsp;s, with the session still open</td></tr>
+          <tr><td>The wallet's spending cap (<code>ln.exposure_cap_sats</code>)</td><td>Had to be set at 140,000&nbsp;sat, since it counted the node's on-chain coins too</td><td>100,000&nbsp;sat, counting the channel only (96,864&nbsp;sat; 33,599&nbsp;sat on chain shown and not counted)</td></tr>
+          <tr><td>Bodies and fees</td><td colspan="2">Every body matched its file. No routing fees: the channel is direct. Over both runs the buyer's side of the channel went from 99,056 to 94,672&nbsp;sat, and the seller's from 0 to 4,384&nbsp;sat: what the two runs paid. No payment failed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The four faults and their fixes.</strong> The cap counted coins on chain, which a payment cannot spend, so any cap below the node's whole balance refused every payment; it now counts the channels and what is in flight. The gateway did not say in its 402 that it holds tickets only after a prepaid one, so the wallet tried held tickets first; the terms now say so, and the wallet buys the prepaid ticket first. The gateway looked at a win's invoice only when the buyer next asked for something; it now looks on every round of its janitor. And what is left of the last ticket stays with the seller when a session ends: that is by design and less than one ticket, and the wallet now reports it. The fixes are in the public tree, with tests.</p>
+    <h3>What the rehearsal does not show</h3>
+    <dl>
+      <dt>Anyone else's node</dt><dd>Both nodes are ours, on one machine, on one direct channel: no route, no routing node, no fee policy but our own, no network latency.</dd>
+      <dt>Anyone outside the project</dt><dd>No outside buyer or seller has used it, and the gateway was not reachable from outside.</dd>
+      <dt>A force close</dt><dd>The channel is still open, and no channel was closed with tickets in it on mainnet.</dd>
+      <dt>Load</dt><dd>One buyer, one session at a time, a few calls.</dd>
+    </dl>
+
+    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 10, 22 October 2026, updated 24 October 2026.</p>
   </div>
 </section>
 

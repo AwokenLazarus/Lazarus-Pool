@@ -41,7 +41,7 @@
  "url": "https://lazarus-xbt.xyz/stream/",
  "image": "https://lazarus-xbt.xyz/assets/og.png",
  "datePublished": "2026-10-07",
- "dateModified": "2026-10-22",
+ "dateModified": "2026-10-24",
  "inLanguage": "en",
  "author": { "@type": "Organization", "name": "Lightning Stream", "url": "https://github.com/AwokenLazarus/Lightning-Stream" },
  "publisher": { "@id": "https://lazarus-xbt.xyz/#org" },
@@ -68,7 +68,7 @@
   <h1><span class="kicker">Whitepaper · XBT</span>Lightning Stream: pay as it <em>arrives</em></h1>
   <p class="lede">The people who run Lightning nodes should be able to connect any service they want to offer to the network (a file or media server, AI compute, storage, software of their own) and be paid for it piece by piece, by anyone. Sometimes that is one buyer and one seller, as with a streamed film. Sometimes it is many sellers at once, as in a torrent swarm.</p>
   <p class="lede">Lightning Stream is an upgrade to Lightning built for that: a way for people and AI agents to pay for a service while it is being delivered, an answer token by token, a file chunk by chunk, an API call by call. A few small payments are locked ahead of the service, each request releases one, and the ones not used come back. For pieces too small to be worth a payment of their own, a fair roll decides which pieces are paid: the price is exact on average, and evens out only over many wins.</p>
-  <p class="note">Draft 10 · 22 October 2026 · Lightning Stream (<a href="https://github.com/AwokenLazarus/Lightning-Stream" rel="noopener">source</a>). This draft is the short version: it explains the idea, and the detail lives on four pages of its own, listed below. Everything here is built and runs on a regtest, a private test network of our own nodes. Nothing of Lightning Stream has run on XBT mainnet yet; see <a href="#status">Status</a>.</p>
+  <p class="note">Draft 10 · 22 October 2026, updated 24 October 2026 · Lightning Stream (<a href="https://github.com/AwokenLazarus/Lightning-Stream" rel="noopener">source</a>). This draft is the short version: it explains the idea, and the detail lives on four pages of its own, listed below. Everything here is built and runs on a regtest, a private test network of our own nodes. On XBT mainnet it has run only in a rehearsal between two of our own nodes; see <a href="#status">Status</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
     <a href="#problem">The problem</a><a href="#idea">The idea</a><a href="#ticket">How a ticket works</a><a href="#lottery">Smaller than a ticket: the lottery</a><a href="#many">Many sellers</a><a href="#agents">Paying over HTTP</a><a href="#cost">What it costs</a><a href="#prior">Prior art</a><a href="#status">Status</a><a href="#references">References</a><a href="#thanks">Acknowledgements</a>
@@ -268,7 +268,7 @@
 
     <h2 id="status"><span class="n">9</span>Status</h2>
     <p><strong>Built, and run on a regtest only, between our own nodes:</strong> tickets on both sides, the ticket book in the wallet and the seller's gateway; the lottery in the form where the buyer pays after a win; a demo in which a film is paid for piece by piece as a player reads it; and packages for Umbrel and StartOS node boxes. On StartOS they cannot start beside Lightning Fork until a change to its package, which its maintainer has agreed to look at for the release after next. Lab scripts in the public tree rerun the tests, and a guide lets anyone outside the project run them.</p>
-    <p><strong>Not run on mainnet.</strong> Nothing of Lightning Stream has run on XBT mainnet. The next steps are one rehearsal between two of our own nodes with a small channel, then a small test with people outside the project, by invitation, with amounts that can be lost entirely. Neither has started.</p>
+    <p><strong>On mainnet, a rehearsal between our own nodes.</strong> On 23 and 24 October 2026 a buyer and a seller of our own, on one machine, paid each other on XBT mainnet over one direct channel of 100,000&nbsp;sat: a page and a 5&nbsp;MB file with tickets, and 20 small pieces by lottery. Both runs paid what they should, and the bodies matched their files. The first run found four faults, which were fixed before the second; <a href="/stream/tests/#mainnet">On mainnet</a> has the figures. Nothing has yet run through anyone else's node or with anyone outside the project. The next step is a small test with people outside the project, by invitation, with amounts that can be lost entirely. It has not started.</p>
     <p><strong>Not audited.</strong> Chris Guida has reviewed the code and the design twice, and his findings are answered in the code and on these pages; nobody outside the project has reviewed those answers. There has been no independent audit, and the win that pays itself waits for a cryptographer. Treat it all as unaudited software.</p>
     <p><a href="/stream/progress/">Progress and status</a> has what is built and not built, and <a href="/stream/tests/">Tests and numbers</a> every measurement and what it does not show.</p>
 
