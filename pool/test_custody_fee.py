@@ -224,6 +224,24 @@ class OutdatedGateways(unittest.TestCase):
         self.assertEqual(sorted(bad), ["i1", "i4"])
         self.assertIn("partial", bad["i4"])
 
+    def test_current_build_needs_two_of_five(self):
+        b = Book(self)
+        cur, old = "v0.5.0-beta/69c61a95cb941c35138c30b8d738e789ad8cdac1(v0.5.0beta)", "v0.4.1-beta/b9ea7dc3eb91352565ab487ec55ed6ee5964a440"
+        n = 0
+        for gw, kinds in {"g1": ["pool-only", "split", "split", "split", "split", "partial"], "g2": ["partial", "split", "pool-only"],
+                          "g3": ["partial"], "g4": ["split", "partial", "partial"]}.items():
+            for i, kind in enumerate(kinds):
+                b.log.append({"ts": NOW - 600 * (i + 1), "height": H + n, "hash": h(H + n), "kind": kind, "gateway": gw})
+                n += 1
+        b.write()
+        clients = [dict(client("one-bad", "g1", 10), user_agent=cur), dict(client("two-bad", "g2", 10), user_agent=cur),
+                   dict(client("old-one", "g3", 10), user_agent=old), dict(client("healed", "g4", 10), user_agent=cur),
+                   dict(client("cur-rate", "g5", 1000, 999), user_agent=cur)]
+        bad = server.gateway_offenders(clients, now=NOW)
+        self.assertEqual(sorted(bad), ["cur-rate", "old-one", "two-bad"], "one bad block on a current build is the build's bug")
+        self.assertTrue(server.current_gateway_build("v0.5.0-beta/UNKNOWN_GIT_HASH") and server.current_gateway_build("v1.0.0"))
+        self.assertFalse(server.current_gateway_build(old) or server.current_gateway_build("ratum-gateway/0.1.74/b9ea9f605eba"))
+
     def test_miner_flags(self):
         Book(self).write()
         clients = [client(A, "g1", 1000, 500)]

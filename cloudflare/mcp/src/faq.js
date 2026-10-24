@@ -6,7 +6,7 @@
 // security findings). Figures that move (fees, bonus, minimum output) are given with the date they
 // were true and a pointer to the live tool, so an assistant never presents them as permanent.
 
-export const FAQ_VERSION = "2026-10-19.2";
+export const FAQ_VERSION = "2026-10-24.1";
 
 const S = "https://pool.lazarus-xbt.xyz";
 const E = "https://mempool.lazarus-xbt.xyz";
@@ -143,7 +143,7 @@ export const FAQ = [
       "Sometimes a block is found on a job whose coinbase paid only part of the window (partial) or only the pool (pool-only), usually because a stock DATUM gateway sent miners a job before the pool's split arrived. The block is valid; the pool then owes the window what the coinbase left out. " +
       "It repays with a make-good: a transaction signed when the block is found, spending that same block's pool output to the addresses that were left out, so its txid is known in advance. It is queued until the chain will accept it (the coinbase it spends must mature; see 'coinbase-maturity'), then broadcast. " +
       "Status queued means waiting for that height; paid means broadcast and confirmed. miner_makegoods lists yours with the payable height and estimated date, and verify_payout checks a paid one on chain. Make-goods are delayed, not lost. " +
-      "From block 977,665 the pool keeps a 10% custody fee on the make-good to an address whose own DATUM gateway is producing pool-only or partial coinbases (its latest block in the last 30 days was pool-only or partial, or at least 10% of 200 or more accepted shares in its current connection paid only the pool); every other payee is paid in full. miner_makegoods shows custody_fee_sats and net_sats on a charged one, and miner_audit says when your gateway is the cause. Run a current build (see 'which-gateway'); once the gateway's next block splits correctly, later make-goods are paid in full.",
+      "From block 977,665 the pool keeps a 10% custody fee on the make-good to an address whose own DATUM gateway is producing pool-only or partial coinbases (its latest block in the last 30 days was pool-only or partial, or at least 10% of 200 or more accepted shares in its current connection paid only the pool; a gateway on v0.5.0 or later is charged for its blocks only when two of its last five were pool-only or partial, since the newest build still finds the odd one through its own bugs); every other payee is paid in full. miner_makegoods shows custody_fee_sats and net_sats on a charged one, and miner_audit says when your gateway is the cause. Run a current build (see 'which-gateway'); once the gateway's next block splits correctly, later make-goods are paid in full.",
     links: [`${S}/non-custodial`],
   },
   {
