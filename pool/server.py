@@ -3392,14 +3392,35 @@ def gateway_names_by_address():
 # Every build, v0.5.0beta included, mines the odd pool-only share after a reconnect or a new height
 # (on 2026-10-19 all live sessions but two were at 1.1% or less; the two paying only the pool were
 # at 99.98%), so 0.5% of 50 warned a current gateway for one share (Mike, 2026-10-19).
+# A gateway on v0.5.0 or later is called out for its blocks only when two of its last five were
+# pool-only or partial: the newest build still finds the odd one through its own coinbaser
+# timeout or coinbase fit, nothing its miner can change (Mike, 2026-10-24, after 978754).
 OFFENDER_MIN_ACCEPTED = 200
 OFFENDER_POOL_ONLY_RATE = 0.10
 OFFENDER_BLOCK_WINDOW_S = 30 * 86400
+CURRENT_BUILD_MIN = (0, 5, 0)
+OFFENDER_RECENT_BLOCKS = 5
+OFFENDER_RECENT_BAD = 2
 _offender_blocks_cache = {"key": None, "latest": {}}
 
 
+def current_gateway_build(user_agent):
+    """A DATUM gateway at CURRENT_BUILD_MIN or later, by its user agent (`v0.5.0-beta/<hash>`)."""
+    m = re.match(r"v(\d+)\.(\d+)\.(\d+)", str(user_agent or ""))
+    return bool(m) and tuple(int(x) for x in m.groups()) >= CURRENT_BUILD_MIN
+
+
+def block_offender_kind(kinds, user_agent):
+    """The kind that calls this gateway out for its blocks, or '': `kinds` newest first."""
+    if not kinds or kinds[0] not in MAKEGOOD_KINDS:
+        return ""
+    if current_gateway_build(user_agent) and sum(k in MAKEGOOD_KINDS for k in kinds[:OFFENDER_RECENT_BLOCKS]) < OFFENDER_RECENT_BAD:
+        return ""
+    return kinds[0]
+
+
 def _gateway_latest_blocks(now):
-    """gateway -> kind of its latest non-orphan block in the last 30 days, from blocks.jsonl."""
+    """gateway -> kinds of its non-orphan blocks in the last 30 days, newest first, from blocks.jsonl."""
     sig, by_hash = _block_log_latest()
     if sig is None:
         return {}
@@ -3408,14 +3429,13 @@ def _gateway_latest_blocks(now):
     key = (sig, int(now) // 600)
     if c["key"] == key:
         return c["latest"]
-    latest = {}
+    found = {}
     for rec in by_hash.values():
         gw, kind, ts = rec.get("gateway"), str(rec.get("kind") or ""), int(rec.get("ts") or 0)
         if not gw or kind.startswith("orphan") or now - ts > OFFENDER_BLOCK_WINDOW_S:
             continue
-        if gw not in latest or ts >= latest[gw][0]:
-            latest[gw] = (ts, kind)
-    out = {gw: kind for gw, (_ts, kind) in latest.items()}
+        found.setdefault(gw, []).append((ts, kind))
+    out = {gw: [k for _ts, k in sorted(v, reverse=True)] for gw, v in found.items()}
     c.update(key=key, latest=out)
     return out
 
@@ -3437,8 +3457,8 @@ def gateway_offenders(clients=None, now=None):
             acc, pof = int(c.get("accepted") or 0), int(c.get("pool_only_full_jobs") or 0)
         except (TypeError, ValueError):
             continue
-        kind = latest.get(str(c.get("gateway") or ""), "")
-        if kind in MAKEGOOD_KINDS:
+        kind = block_offender_kind(latest.get(str(c.get("gateway") or ""), []), c.get("user_agent"))
+        if kind:
             out.setdefault(ident, f"gateway's latest block was {kind}")
         elif acc >= OFFENDER_MIN_ACCEPTED and pof / acc >= OFFENDER_POOL_ONLY_RATE:
             out.setdefault(ident, f"gateway sends pool-only work ({100.0 * pof / acc:.1f}% of accepted jobs)")
