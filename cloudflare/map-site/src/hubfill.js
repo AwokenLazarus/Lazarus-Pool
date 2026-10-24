@@ -52,7 +52,6 @@ export function fillHub(res, { stats, galaxy }) {
       text("#s-difficulty", `${(net.difficulty / 1e9).toFixed(2)} G`, net.retargetChange != null ? `${net.retargetChange >= 0 ? "+" : ""}${net.retargetChange.toFixed(1)}% in ${n(net.retargetBlocks)} blocks` : "");
     }
     if (Number.isFinite(p.stratumFeePercent)) text("[data-fee-stratum]", `${p.stratumFeePercent}%`);
-    if (Number.isFinite(p.datumRebatePercent)) text("[data-fee-rebate]", `${p.datumRebatePercent}%`);
     text(".live", `as of ${clock(stats.asOf)}`);
   }
   if (galaxy) {

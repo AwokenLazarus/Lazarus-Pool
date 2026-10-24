@@ -867,28 +867,27 @@
       const note = t("miner.earned24Note", { need: num(m.maturity_confs || 100), a: `<a data-mtab="payouts" href="${esc(payoutsHref)}">`, enda: "</a>" });
       return panelBox("earned", `<dt>${t("miner.earned24")}</dt><dd title="${esc(t("miner.earned24Since", { amt: amtExact(total), when: when(e.since_ts) }))}">${amt(total)}${money(total)}<small>${t("miner.earned24Split", { n: Number(e.blocks) || 0, blocks: amtSats(e.block_sats), mg: amtSats(e.makegood_sats) })}${failed}<br>${note}</small></dd>`);
     };
-    // The DATUM bonus for this address. On the gateway path it is money already accruing, so
-    // it gets a ticker cell; on the stratum path it is money being left on the table, so it
-    // gets a callout with what switching would pay. Both vanish when the rebate is off.
+    // The DATUM bonus for this address, while the rebate is on: on the gateway path it is money
+    // already accruing, so it gets a ticker cell. A stratum address gets a callout with what its
+    // own DATUM gateway would pay at 0% (the bonus ended on 2026-10-24; the callout stays).
     const onStratum = String(m.fee_path || "").toLowerCase() === "stratum";
     const upliftPct = Number(m.datum_uplift_percent) || 0;
     const rebatePct = Number(m.datum_rebate_percent) || 0;
-    const bonusDay = Number(m.est_bonus_btc_day) || 0;
     const datumDay = Number(m.est_datum_btc_day) || 0;
     const bonusCell =
       rebatePct > 0 && !onStratum && (Number(m.rebate_btc) > 0 || upliftPct > 0)
         ? panelBox("bonus", `<dt>${t("miner.bonus")}</dt><dd title="${amtExact(m.rebate_btc)}">${amt(m.rebate_btc)}${money(m.rebate_btc)}<small>${t("miner.bonusSub", { uplift: upliftPct > 0 ? t("miner.bonusUplift", { pct: pctSmart(upliftPct) }) : "" })}</small></dd>`)
         : "";
-    // A gateway miner's daily estimate already includes the bonus; a stratum miner's does not,
-    // and the pitch below says what it would be worth.
+    // A gateway miner's daily estimate includes the bonus while it is on; a stratum miner's
+    // does not, and the pitch below says what the 0% path would pay.
     const withBonus = rebatePct > 0 && !onStratum && upliftPct > 0 && datumDay > 0;
     const estDay = withBonus ? datumDay : Number(m.est_btc_day) || 0;
     const estDayNote = withBonus
       ? t("miner.estBonus", { fee: feePct(billedFee), uplift: pctSmart(upliftPct) })
       : t("miner.estPlain", { fee: feePct(billedFee) });
     const switchPitch =
-      rebatePct > 0 && onStratum && upliftPct > 0
-        ? `<p class="note callout rebate-callout">${t("miner.pitch", { fee: feePct(fees.stratum), rebate: feePct(rebatePct), datum: amt(datumDay), datumUsd: money(datumDay), now: amt(m.est_btc_day), nowUsd: money(m.est_btc_day), uplift: pctSmart(upliftPct), bonus: amt(bonusDay), bonusUsd: money(bonusDay) })}</p>`
+      onStratum && datumDay > (Number(m.est_btc_day) || 0)
+        ? `<p class="note callout rebate-callout">${t("miner.pitch", { fee: feePct(billedFee), datum: amt(datumDay), datumUsd: money(datumDay), now: amt(m.est_btc_day), nowUsd: money(m.est_btc_day) })}</p>`
         : "";
     const nWorkers = (m.workers || []).length + relayed.length;
     const nPending = Number(m.immature_blocks) || (m.blocks_found || []).filter((b) => payStatus(b) === "immature").length;
