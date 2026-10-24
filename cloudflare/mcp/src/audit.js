@@ -83,10 +83,10 @@ function makegoodRow(g, tip, interval) {
 export const AUDIT_TOOLS = [
   {
     name: "miner_audit",
-    title: "Full payout audit for one address: paid, maturing, carried, owed make-goods, bonus, and why each delay exists",
+    title: "Full payout audit for one address: paid, maturing, carried, owed make-goods, and why each delay exists",
     description:
       "One structured audit of a payout address on Lazarus Pool: total paid, coinbase payouts still maturing (with the next unlock heights and estimated dates), carry and why it is carried, make-goods queued / paid / failed with totals and the next payable height, " +
-      "DATUM bonus earned, fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window and 29.4.2's relay policy on every coinbase spend). " +
+      "DATUM bonus earned before it ended on 2026-10-24, fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window and 29.4.2's relay policy on every coinbase spend). " +
       "Start here for 'audit my payouts' or 'where is my money'. Estimates are labelled as estimates. Counts as 2 per-address lookups.",
     heavy: true, cost: 2, fanout: 3,
     inputSchema: { type: "object", properties: { address: addressArg }, required: ["address"], additionalProperties: false },
@@ -112,7 +112,7 @@ export const AUDIT_TOOLS = [
       if (locked.length) delays.push(`${locked.length} recent coinbase payout(s) are on chain but locked until the maturity height (the next at ${locked[0].unlock_height}). ${MATURITY_WHY}`);
       if (relayOnly.length) delays.push(`${relayOnly.length} of those are mature under consensus (pre-973,440, 100 confirmations) but still under 6,480 confirmations, so Knots 29.4.2 nodes will not relay a spend yet; a 100-confirmation wallet may show them as spendable.`);
       if (queued.length) delays.push(`${queued.length} make-good(s) (${sum(queued)} XBT) are queued: each spends the pool's output of its own block's coinbase, so it waits for that coinbase to mature (block height + 6,480) and is then broadcast automatically; the next is payable at ${queued[0].payable_at_height}.`);
-      if (carry > 0) delays.push(`${carry} XBT is carried: earned, but not yet large enough for its own coinbase output (minimum ${minOut} XBT) or not placed in the last coinbase; it is paid on top of a later output once share plus carry clears the minimum. The DATUM bonus is credited as carry too.`);
+      if (carry > 0) delays.push(`${carry} XBT is carried: earned, but not yet large enough for its own coinbase output (minimum ${minOut} XBT) or not placed in the last coinbase; it is paid on top of a later output once share plus carry clears the minimum. DATUM bonus credited before it ended on 2026-10-24 is held as carry too.`);
       if (m.gateway_outdated) delays.push(`This address's own DATUM gateway is producing improperly split coinbases (${label(m.gateway_outdated_reason) || "pool-only or partial"}). Update it to a current build (connection_info gateway_builds)${Number(m.custody_fee_percent) ? `: until then, make-goods to this address pay ${Number(m.custody_fee_percent)}% less (the custody fee)` : ""}.`);
       if (failed.length) delays.push(`${failed.length} make-good(s) failed to broadcast; ask in the pool's Discord with the block heights.`);
       if (!delays.length) delays.push("Nothing is delayed right now.");
@@ -271,7 +271,7 @@ export const AUDIT_TOOLS = [
       const hits = searchFaq(q);
       return { version: FAQ_VERSION, matches: hits.map(({ id, title, answer, links }) => ({ id, title, answer, links })),
         weak_match: !hits.length || hits[0].score < 4, topics: !hits.length || hits[0].score < 4 ? topics : undefined,
-        note: "Answers are the pool's own public explanations as of the version date; figures that change (fees, bonus, minimum output) are marked with their date. For an address's own numbers use miner_audit." };
+        note: "Answers are the pool's own public explanations as of the version date; figures that change (fees, minimum output) are marked with their date. For an address's own numbers use miner_audit." };
     },
   },
 ];

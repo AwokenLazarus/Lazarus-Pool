@@ -9,8 +9,8 @@ window.LZ_I18N_DICTS["en"] = {
   },
   "skip": "Skip to pool status",
   "nojs": {
-    "p1": "Lazarus Pool is a mining pool for Bitcoin (XBT and BTCB2 are the tickers), the <a href=\"/bip110\">BIP-110 Bitcoin fork</a> that mines with BLAKE2b instead of SHA-256d. Any ASIC that can mine Siacoin can mine it. You mine with your own DATUM gateway pointed at <code>datum.lazarus-xbt.xyz:28915</code>, at 0% plus the <a href=\"/datum-subsidy\">DATUM subsidy</a>. The public stratum, <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code> (username = your payout address, password <code>x</code>), is a donation, validation and fallback endpoint at 100%, with 50 points to DATUM gateways and 50 to the pool, and a 24 h / 96 h grace at 25%, then 100%. <a href=\"/how\">TIDES</a> pays every miner inside the coinbase of each block found, so the pool never holds your coins.",
-    "p2": "Lazarus Pool is the first pool confirmed to pay TIDES as a split coinbase on BLAKE2b Bitcoin mainnet, and the first pool anywhere to use its stratum hashers to subsidize DATUM miners — paying miners for securing and decentralizing the network instead of charging them for it.",
+    "p1": "Lazarus Pool is a mining pool for Bitcoin (XBT and BTCB2 are the tickers), the <a href=\"/bip110\">BIP-110 Bitcoin fork</a> that mines with BLAKE2b instead of SHA-256d. Any ASIC that can mine Siacoin can mine it. You mine with your own DATUM gateway pointed at <code>datum.lazarus-xbt.xyz:28915</code>, at 0%. The public stratum, <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code> (username = your payout address, password <code>x</code>), is a donation, validation and fallback endpoint at 100%, with a 24 h / 96 h grace at 25%, then 100%. The pool keeps the whole fee. <a href=\"/how\">TIDES</a> pays every miner inside the coinbase of each block found, so the pool never holds your coins.",
+    "p2": "Lazarus Pool is the first pool confirmed to pay TIDES as a split coinbase on BLAKE2b Bitcoin mainnet. Miners who run their own DATUM gateway build their own blocks and pay 0%.",
     "p3": "Nothing is ever held for you: payouts are <a href=\"/non-custodial\">outputs of the block itself</a>, with no balance and no withdrawal. Once its stratum passes 15% of network hashrate the pool <a href=\"/self-cap\">relays new miners to another pool</a> rather than keep growing. <a href=\"/pools\">How the pools on this chain compare</a>.",
     "p4": "See <a href=\"/hardware\">Siacoin BLAKE2b ASICs</a> and their estimated earnings, <a href=\"/rentals\">rent BLAKE2b hashrate</a> onto your own node, work out <a href=\"/calculator\">what your hashrate earns per day</a>, or read <a href=\"/connect\">how to point a miner here</a>. Longer DATUM gateway setup: <a href=\"https://convoy.xyz/getstarted\">CONVOY get started</a> / <a href=\"https://convoy.xyz/getstarted?lang=zh\">中文</a>. Developers: <a href=\"/stratum-protocol.md\">the stratum protocol on this chain</a> and the <a href=\"/api\">public API</a>. Block explorer: <a href=\"https://mempool.lazarus-xbt.xyz\">mempool.lazarus-xbt.xyz</a>. 中文：<a href=\"/zh/\">简体中文版</a>."
   },
@@ -54,16 +54,6 @@ window.LZ_I18N_DICTS["en"] = {
     "joinDiscord": "Join Discord",
     "joinDiscordTitle": "Chat with miners and the team on the Lazarus Pool Discord"
   },
-  "promo": {
-    "aria": "DATUM miners are paid a bonus",
-    "tag": "DATUM bonus",
-    "lead": "DATUM miners pay 0% and earn a bonus.",
-    "cta": "Run a gateway →",
-    "dismiss": "Dismiss DATUM bonus",
-    "live": "{uplift} right now",
-    "liveTitle": "DATUM work is {datumPct} of the window and the public stratum is {stratumPct}, so the {pts} taken from stratum work is worth {uplift} to DATUM work.",
-    "text": "{Pts} of the stratum fee goes to DATUM miners on every block."
-  },
   "gatewaynotice": {
     "kicker": "Action needed",
     "title": "Running an old DATUM gateway? Update it.",
@@ -87,7 +77,7 @@ window.LZ_I18N_DICTS["en"] = {
     "title": "Lazarus Pool.<br>The Bitcoin mining pool for Sia ASICs.<br><em>Get paid in the block itself.</em>",
     "define": "Bitcoin now runs on BLAKE2b, so any Siacoin ASIC can mine it. Point yours here and every payout lands straight in the block’s coinbase.",
     "pt1": "<b>0% fee</b> through your own DATUM gateway",
-    "pt2": "<b>DATUM bonus</b> on every block: the first pool to pay miners for decentralizing",
+    "pt2": "<b>You build the block</b>: your own node picks the transactions, the pool only splits the coinbase",
     "pt3": "<b>Paid on chain</b>, in the coinbase. The pool never holds your coins",
     "pt4": "<b>Open source</b> on <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>, run by <a href=\"https://x.com/Awoken_Lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus</a> since day one",
     "setup": "Set up DATUM",
@@ -98,17 +88,19 @@ window.LZ_I18N_DICTS["en"] = {
     "price": "Bitcoin price",
     "priceTitle": "Bitcoin (BTCB2) · volume-weighted Neoxa BTCB2/USDC and NonKYC BTCB2/USDT",
     "ths": "1 TH/s yields",
-    "thsTitle": "Estimate: 1 TH/s versus the current network, base subsidy only (no tx fees), through your own DATUM gateway including the DATUM bonus at today's work split. Luck and fees in the next block can move this.",
+    "thsTitle": "Estimate: 1 TH/s versus the current network, base subsidy only (no tx fees), through your own DATUM gateway at 0% fee. Luck and fees in the next block can move this.",
     "bonus": "DATUM bonus",
     "bonusTitle": "What DATUM work earns above its proportional share of each block right now: the slice of the stratum fee credited to DATUM miners, divided over the DATUM work in the window.",
     "feesTitle": "One way in: DATUM",
     "feesBody": "Run your own node and DATUM gateway: you build the block, pay 0%, and earn {pts} of the public stratum’s fee on every block.",
+    "feesBodyOff": "Run your own node and DATUM gateway: you build the block and pay 0%.",
     "datumSmall": "Your DATUM gateway",
     "datumSubOn": "You keep 100%, build your own blocks and earn the bonus",
     "datumSubOff": "You keep 100% and build your own blocks",
     "stratumSmall": "Donation, validation and fallback",
     "stratumSub": "For testing a miner, or as a fallback · ",
     "stratumRebate": "25% for the first 24 h (96 h for DATUM miners), then {fee}; {pts} goes to DATUM miners",
+    "stratumGrace": "25% for the first 24 h (96 h for DATUM miners), then {fee}; the pool keeps the fee",
     "ctaStrong": "Set up a DATUM gateway.",
     "ctaBody": "Pick one from <a href=\"#gw-pick\">our tested list</a>.",
     "topBonus": "{uplift} DATUM bonus"
@@ -145,7 +137,7 @@ window.LZ_I18N_DICTS["en"] = {
     "offline": "Prime is not answering right now. Window, gateway and payout figures are the last ones it published.",
     "pillarsAria": "What makes Lazarus different",
     "p1": "<b>Paid in the block itself.</b> No pool balance, no withdrawals. When a block is found, its coinbase pays your address directly. <a href=\"#payout\">See the next payout</a>.",
-    "p2a": "<b>Your own gateway: 0% fee, plus a bonus.</b> Your node builds the block; the pool only sets the split.",
+    "p2a": "<b>Your own gateway: 0% fee.</b> Your node builds the block; the pool only sets the split.",
     "p3": "<b>Verifiable end to end.</b> Every share is rebuilt and hashed; every block found is on the <a href=\"https://mempool.lazarus-xbt.xyz/mining/pool/lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus Mempool</a>. Source on <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>.",
     "pillarRebate": ", and {pts} of that is credited to DATUM miners on every block, with a 24 h / 96 h grace at 25%, then 100%",
     "hashrate": "Hashrate",
@@ -261,7 +253,7 @@ window.LZ_I18N_DICTS["en"] = {
       "datumHead": "Subsidy to DATUM gateways",
       "datum": "<b>{pts}</b> of the stratum fee — <b>{amt}</b> on this block — is credited to the {n} DATUM miners in the window, pro rata by their DATUM work. It is not one of the outputs above: it joins each miner’s carry, the same balance under-floor earnings use, and is paid with their next output that clears the {floor} floor. <a href=\"#connect\" data-tab=\"tab-datum\">Run a gateway</a> and you are in it.{owed}",
       "datumOwed": " {owed} of earlier credits is still waiting for a DATUM miner to credit it to.",
-      "datumOff": "No DATUM subsidy is running right now; the whole stratum fee stays with the pool.",
+      "datumOff": "The DATUM bonus ended on 24 October 2026; the whole stratum fee stays with the pool. Bonus already credited to a miner’s balance is still paid with their next output.",
       "poolHead": "What Lazarus keeps",
       "poolFeeDatumFree": " Every sat of that fee came off public stratum work, charged at <b>{stratum}</b>. Lazarus takes <b>0%</b> from work through your own DATUM gateway, so no part of this output is a cut of a gateway’s share.{giveBack}",
       "poolFeeGiveBack": " Of what the stratum did pay, {pts} goes straight back out as the subsidy in step 5.",
@@ -378,7 +370,7 @@ window.LZ_I18N_DICTS["en"] = {
     "tabStratum": "Donation, validation and fallback",
     "tabStratumSub": "Confirm it connects, or fall back if your gateway is down",
     "tabDatum": "Your own DATUM gateway",
-    "tabDatumSub": "Your node builds the block · we only split the coinbase · you collect the bonus",
+    "tabDatumSub": "Your node builds the block · we only split the coinbase · 0% fee",
     "tabSolo": "Solo",
     "tabSoloSub": "Keep the whole block · no window, no sharing",
     "dtStratum": "Stratum",
@@ -391,6 +383,7 @@ window.LZ_I18N_DICTS["en"] = {
     "stratumFee": "{fee} of your window share, taken inside the coinbase",
     "stratumFeeTail": " of your window share, taken inside the coinbase",
     "stratumRebate": ". {pts} of it goes to DATUM miners, after a 25% grace for the first 24 h (96 h for DATUM miners). <a href=\"#pane-datum\" data-tab=\"tab-datum\">Run your own gateway</a> and you receive it instead",
+    "stratumGrace": ", after a 25% grace for the first 24 h (96 h for DATUM miners). The pool keeps the fee. <a href=\"#pane-datum\" data-tab=\"tab-datum\">Run your own gateway</a> and you pay 0%",
     "algo": "BLAKE2b — Sia-style header, not SHA-256d",
     "payout": "Your share of the TIDES window, in the coinbase of every block the pool finds. See <a href=\"#payout\">Next payout</a>.",
     "stratumNote": "Our public endpoint on <strong>:23334</strong> is itself a DATUM gateway on Prime (see <a href=\"#gateways\">Gateways</a>), so its work lands in the same window under your address. Sessions start at difficulty <strong>4096</strong>; vardiff doubles about every 20 s toward your hashrate.",
@@ -459,7 +452,7 @@ window.LZ_I18N_DICTS["en"] = {
   "hardware": {
     "eyebrow": "Buy a miner",
     "title": "BLAKE2b machines that hash this chain.",
-    "lede": "Any Siacoin ASIC mines Bitcoin (XBT): it is the same BLAKE2b hardware. Machines and prices come from BT-Miners’ <a href=\"https://bt-miners.com/collections/btcb2-miners/\" target=\"_blank\" rel=\"noreferrer\">BTCB2 collection</a>. Earnings assume your own DATUM gateway, bonus included, before electricity.",
+    "lede": "Any Siacoin ASIC mines Bitcoin (XBT): it is the same BLAKE2b hardware. Machines and prices come from BT-Miners’ <a href=\"https://bt-miners.com/collections/btcb2-miners/\" target=\"_blank\" rel=\"noreferrer\">BTCB2 collection</a>. Earnings assume your own DATUM gateway at 0% fee, before electricity.",
     "shopAll": "All BTCB2 miners on BT-Miners",
     "price": "Price",
     "xbtDay": "Est. XBT / day",
@@ -507,7 +500,7 @@ window.LZ_I18N_DICTS["en"] = {
     "label": "Your hashrate",
     "perDay": "Per day",
     "perMonth": "Per 30 days",
-    "note": "Live difficulty and price, base subsidy with no transaction fees, through your own DATUM gateway with the subsidy included. Electricity is not in the number."
+    "note": "Live difficulty and price, base subsidy with no transaction fees, through your own DATUM gateway at 0% fee. Electricity is not in the number."
   },
   "dash": {
     "mcp": "Prefer to ask? Connect any AI assistant to <a href=\"https://mcp.lazarus-xbt.xyz\" target=\"_blank\" rel=\"noreferrer\">our MCP server</a>. Read-only, no login.",
@@ -776,7 +769,7 @@ window.LZ_I18N_DICTS["en"] = {
     "learn": "Learn",
     "bip110": "What is BIP-110?",
     "tides": "How TIDES pays",
-    "subsidy": "The DATUM subsidy",
+    "subsidy": "DATUM bonus (ended)",
     "calc": "Mining calculator",
     "asics": "Siacoin BLAKE2b ASICs",
     "compare": "Compare XBT pools",
@@ -807,9 +800,7 @@ window.LZ_I18N_DICTS["en"] = {
     "claudeTitle": "Ask Claude about Lazarus Pool: opens a new chat with the question already typed in",
     "grokAria": "Ask Grok about Lazarus Pool",
     "grokTitle": "Ask Grok about Lazarus Pool: opens a new chat with the question already typed in",
-    "prompt": "I'm checking out Lazarus Pool (https://pool.lazarus-xbt.xyz), a non-custodial mining pool for Bitcoin on BLAKE2b proof of work. Sia-family ASICs (Goldshell SC series, iBeLink BM-S3, Antminer A3) can mine it, and every payout goes straight to the miner's own address inside the block's coinbase, with no pool balance to withdraw. Miners who run their own Bitcoin Knots node and DATUM gateway build their own block templates, pay no pool fee, and earn a DATUM bonus: a share of the public stratum's fee is credited to them on every block the pool finds. {bonusLine} Please read the site and explain in plain language how the pool, its TIDES payouts and the DATUM bonus work. Then help me get started by asking me: am I interested in mining here, which miner do I have (or am I considering) and how many, would I point it at the public stratum or run my own DATUM gateway, and do I want help setting up the node and gateway? After that, walk me through the setup step by step.",
-    "bonusLive": "Right now the site shows the DATUM bonus at {bonus} above a miner's proportional share of each block.",
-    "bonusUnknown": "The site shows the current DATUM bonus live."
+    "prompt": "I'm checking out Lazarus Pool (https://pool.lazarus-xbt.xyz), a non-custodial mining pool for Bitcoin on BLAKE2b proof of work. Sia-family ASICs (Goldshell SC series, iBeLink BM-S3, Antminer A3) can mine it, and every payout goes straight to the miner's own address inside the block's coinbase, with no pool balance to withdraw. Miners who run their own Bitcoin Knots node and DATUM gateway build their own block templates, and pay no pool fee. Please read the site and explain in plain language how the pool, its TIDES payouts and DATUM gateways work. Then help me get started by asking me: am I interested in mining here, which miner do I have (or am I considering) and how many, would I point it at the public stratum or run my own DATUM gateway, and do I want help setting up the node and gateway? After that, walk me through the setup step by step."
   },
   "path": {
     "stratumGw": "stratum + {gw}",
@@ -961,7 +952,7 @@ window.LZ_I18N_DICTS["en"] = {
     "bonusUplift": " · {pct} above your proportional share",
     "estBonus": "at current difficulty, {fee} fee and the {uplift} DATUM bonus included · once the window matches this hashrate",
     "estPlain": "at current difficulty, after the {fee} fee · once the window matches this hashrate",
-    "pitch": "<strong>You are paying {fee} and funding the DATUM bonus.</strong> Of that fee, {rebate} of your work's value is not kept by the pool at all — it is credited to the miners who build their own blocks. Point this hashrate through your own DATUM gateway and you stop paying the fee <em>and</em> start collecting that credit: about <b>{datum}</b>{datumUsd} a day at this hashrate instead of {now}{nowUsd}, and {uplift} of that is the bonus alone ({bonus}{bonusUsd} a day). Your accepted work comes with you. <a href=\"/#connect\">Set up a gateway</a>.",
+    "pitch": "<strong>You are paying {fee} on the public stratum, and the pool keeps it.</strong> Point this hashrate through your own DATUM gateway and you pay 0%: about <b>{datum}</b>{datumUsd} a day at this hashrate instead of {now}{nowUsd}. Your accepted work comes with you. <a href=\"/#connect\">Set up a gateway</a>.",
     "pendingTab": "{n} pending",
     "maturingTab": "{n} maturing",
     "payoutTabBoth": "{maturing} maturing · {pending} pending",
@@ -1182,8 +1173,8 @@ window.LZ_I18N_DICTS["en"].app = {
     },
     "c3": {
       "t": "What DATUM changes",
-      "b": "On an ordinary pool, the pool picks what goes in the block. With your own DATUM gateway and Knots node, you build the template and the pool only splits the reward. Here that costs 0% and earns a bonus.",
-      "a": "The DATUM subsidy"
+      "b": "On an ordinary pool, the pool picks what goes in the block. With your own DATUM gateway and Knots node, you build the template and the pool only splits the reward. Here that costs 0%.",
+      "a": "Set up a DATUM gateway"
     },
     "c4": {
       "t": "How TIDES pays",
@@ -1247,6 +1238,6 @@ window.LZ_I18N_DICTS["en"].app.sub.live = "Live numbers";
 window.LZ_I18N_DICTS["en"].app.chart.rangeSoon = "Longer ranges arrive with the next node update";
 window.LZ_I18N_DICTS["en"].app.scroll = {"prev": "Scroll left", "next": "Scroll right"};
 window.LZ_I18N_DICTS["en"].app.article = {"more": "Read more", "less": "Show less"};
-Object.assign(window.LZ_I18N_DICTS["en"].app.learn, {"pathTitle": "From zero to mining, the DATUM way", "p1": "<b>Get a payout address.</b> Any wallet that gives you a bc1… address on this chain. That address is your username; there is nothing to register.", "p2": "<b>Run your own node.</b> Bitcoin Knots for this chain, with <code>server=1</code> and a cookie or RPC user your gateway can read. Your node is what chooses the transactions in your blocks.", "p3": "<b>Start a DATUM gateway.</b> Build one (CONVOY is recommended), paste in the Lazarus host, port and pubkey from the Connect page, and set <code>mining.pool_address</code> to your address.", "p4": "<b>Point your miner at your gateway.</b> Any Siacoin BLAKE2b ASIC, aimed at your own gateway’s stratum port, with the username <code>address.worker</code>.", "p5": "<b>Watch it work.</b> Your gateway shows up under Gateways and your address under Miners. You pay 0%, you build your own blocks, and every block the pool finds pays you the DATUM bonus on top.", "pathCta": "Set up DATUM", "pathCalc": "What would I earn?"});
+Object.assign(window.LZ_I18N_DICTS["en"].app.learn, {"pathTitle": "From zero to mining, the DATUM way", "p1": "<b>Get a payout address.</b> Any wallet that gives you a bc1… address on this chain. That address is your username; there is nothing to register.", "p2": "<b>Run your own node.</b> Bitcoin Knots for this chain, with <code>server=1</code> and a cookie or RPC user your gateway can read. Your node is what chooses the transactions in your blocks.", "p3": "<b>Start a DATUM gateway.</b> Build one (CONVOY is recommended), paste in the Lazarus host, port and pubkey from the Connect page, and set <code>mining.pool_address</code> to your address.", "p4": "<b>Point your miner at your gateway.</b> Any Siacoin BLAKE2b ASIC, aimed at your own gateway’s stratum port, with the username <code>address.worker</code>.", "p5": "<b>Watch it work.</b> Your gateway shows up under Gateways and your address under Miners. You pay 0%, and you build your own blocks.", "pathCta": "Set up DATUM", "pathCalc": "What would I earn?"});
 window.LZ_I18N_DICTS["en"].app.chart.m = {"title": "Your hashrate and the blocks that paid you", "blocks": "Blocks that paid you", "reward": "Paid to you in range", "rewardOne": "Paid to you", "toYou": "to you {amt}", "immature": "maturing", "spendable": "spendable", "hint": "Hover for a reading · diamonds are blocks that paid this address; click one for its payout split · ← → with the chart focused", "aria": "Hashrate for this address, {range}. Now {now}, average {avg}, peak {peak}. {blocks} blocks paid it.", "clickSplit": "Click for the payout split", "empty": "No samples for this address in this range."};
 window.LZ_I18N_DICTS["en"].app.chart.n = {"title": "Hashrate and the blocks that paid this address", "blocks": "Blocks that paid it", "reward": "Paid to it in range", "rewardOne": "Paid to this address", "toYou": "to this address {amt}"};

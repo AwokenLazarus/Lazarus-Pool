@@ -3,10 +3,10 @@
 //
 // Rule for every entry: only what the public site, llms.txt or the public APIs already say. No
 // operator internals (hosts behind the public names, failover, keys, treasury, partner terms,
-// security findings). Figures that move (fees, bonus, minimum output) are given with the date they
+// security findings). Figures that move (fees, minimum output) are given with the date they
 // were true and a pointer to the live tool, so an assistant never presents them as permanent.
 
-export const FAQ_VERSION = "2026-10-24.1";
+export const FAQ_VERSION = "2026-10-24.2";
 
 const S = "https://pool.lazarus-xbt.xyz";
 const E = "https://mempool.lazarus-xbt.xyz";
@@ -17,7 +17,7 @@ export const FAQ = [
     title: "Fees on each path (own DATUM gateway, public stratum, solo)",
     keywords: ["fee", "fees", "cost", "percent", "charge", "cheap", "expensive", "100", "50", "25", "grace", "donation", "15", "price", "take", "custody", "10"],
     answer:
-      "Own DATUM gateway: 0% fee, plus the DATUM bonus (see 'datum-bonus'). Public stratum is a donation, validation and fallback endpoint at 100% since 2026-10-07 05:00 UTC: 50 points to DATUM gateways and 50 to the pool address, with a 24 h grace at 25% (12.5 points), or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. " +
+      "Own DATUM gateway: 0% fee. Public stratum is a donation, validation and fallback endpoint at 100% since 2026-10-07 05:00 UTC, all kept by the pool since the DATUM bonus ended on 2026-10-24 (see 'datum-bonus'), with a 24 h grace at 25%, or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. " +
       "Point a miner at it to confirm it connects and submits shares while your own node and DATUM gateway are still coming online, or as a fallback if your own gateway goes down. Solo stratum is closed. The fee is applied when a block is paid, to the work in the window. " +
       "Custody fee: from block 977,665, a make-good for a pool-only or partial coinbase pays 10% less to a miner whose own DATUM gateway is producing such coinbases (an out-of-date build); miners on current gateways are paid in full (see 'makegoods'). " +
       "These are the values as of this knowledge base's version; for the live numbers call pool_status or connection_info, which read them from the pool.",
@@ -25,12 +25,12 @@ export const FAQ = [
   },
   {
     id: "datum-bonus",
-    title: "The DATUM bonus (rebate): how DATUM miners earn more than 100%",
-    keywords: ["bonus", "rebate", "subsidy", "uplift", "datum", "extra", "credited"],
+    title: "The DATUM bonus (rebate): ended on 2026-10-24",
+    keywords: ["bonus", "rebate", "subsidy", "uplift", "datum", "extra", "credited", "ended", "stopped"],
     answer:
-      "When a block is found, 50 points of the public stratum's 100% fee on that block's stratum work are credited to the addresses mining through their own DATUM gateway, split in proportion to their DATUM work in the window. During an address's 24 h grace (96 h if it mined through a DATUM gateway on Lazarus in the prior 30 days) the credit is 12.5 points of the 25% grace fee; after the grace the fee is 100% and the credit is 50 points. " +
-      "The credit is booked as carry (see 'carry') and paid with that address's next coinbase output that clears the minimum. The uplift it gives is a live number that shrinks as DATUM's share of the pool grows (about +3.9% on 26 Sep 2026); " +
-      "miner_overview shows it per address (datum_bonus_earned_xbt, if_on_datum) and pool_status shows the earnings per TH/s on each path.",
+      "The DATUM bonus ended on 2026-10-24. Until then, when a block was found, 50 points of the public stratum's 100% fee (12.5 points of the 25% grace fee) on that block's stratum work were credited to the addresses mining through their own DATUM gateway, in proportion to their DATUM work in the window. " +
+      "From 2026-10-24 the pool keeps the whole stratum fee. Nothing else changed: your own DATUM gateway still pays 0%, and the stratum fee and grace are as before (see 'fees'). " +
+      "Bonus already credited was booked as carry (see 'carry') and is still paid with that address's next coinbase output that clears the minimum; miner_overview and miner_audit show it as datum_bonus_earned_xbt.",
     links: [`${S}/datum-subsidy`],
   },
   {
@@ -38,7 +38,7 @@ export const FAQ = [
     title: "DATUM gateway or public stratum: which to use",
     keywords: ["datum", "stratum", "gateway", "which", "choose", "should", "difference", "vs", "versus", "own", "node", "sv1", "invalidate", "knots"],
     answer:
-      "With your own DATUM gateway you run a Bitcoin Knots node for this chain, build your own block templates, pay 0% and earn the DATUM bonus; the pool only supplies the coinbase split. " +
+      "With your own DATUM gateway you run a Bitcoin Knots node for this chain, build your own block templates and pay 0%; the pool only supplies the coinbase split. " +
       "The public stratum needs no node. It is a donation, validation and fallback endpoint at 100%, with a 24 h / 96 h grace at 25%, then 100%, and it is capped (see 'self-cap'). Bitcoin Knots has also announced a future rule to invalidate coinbase payouts to addresses that hash through any pool's stratum (SV1); moving to another pool does not avoid it. " +
       "The pool therefore recommends your own DATUM gateway for everyone who can run a node.",
     links: [`${S}/connect`, "https://convoy.xyz/getstarted"],
@@ -58,7 +58,7 @@ export const FAQ = [
     title: "Running a Ratum gateway (ratum-gateway, iohzrd's Rust DATUM gateway) at Lazarus",
     keywords: ["ratum", "ratum-gateway", "rust", "iohzrd", "omega", "b2pool", "ocminer", "p2block", "binary", "gateway", "release", "switch", "0.1.28", "0.1.53"],
     answer:
-      "ratum-gateway reads the same datum_gateway_config.json as the C DATUM gateway and connects to Lazarus with no patch: 0% fee and the DATUM bonus, like any own gateway. " +
+      "ratum-gateway reads the same datum_gateway_config.json as the C DATUM gateway and connects to Lazarus with no patch: 0% fee, like any own gateway. " +
       "Set datum.pool_host datum.lazarus-xbt.xyz, pool_port 28915 and the pool pubkey (connection_info returns it), pooled_mining_only true, pool_pass_full_users true; set mining.pool_address to the operator's OWN address and coinbase_tag_secondary to the gateway's name; run Bitcoin Knots 29.4.2. " +
       "Lazarus tested iohzrd releases 0.1.28, 0.1.39, 0.1.53, master and the B2Pool (ocminer) and P2Block forks against its Prime on 27 Sep 2026: all connect, carry the full split, and book found blocks as split; pool-only work is a few milliseconds per new block. " +
       "One behaviour to know: when a Ratum gateway loses the pool (a Prime restart or a network drop) it keeps miners on work paying mining.pool_address alone for about 12-26 s before disconnecting them, so a block found in that gap pays pool_address, which is why it should be the operator's own address. " +
@@ -112,7 +112,7 @@ export const FAQ = [
     keywords: ["carry", "carried", "unpaid", "small", "floor", "minimum", "under", "dust", "forward", "accumulate", "why", "not", "paid"],
     answer:
       "Each coinbase output must be at least the pool's minimum output (0.005 XBT as of 26 Sep 2026; miner_audit shows the live figure). If your share of a block is below it, or the coinbase is already full, your earned value is not lost: it is added to your carry. " +
-      "Carry is paid, on top of your share, in the first later coinbase where share plus carry clears the minimum. The DATUM bonus is credited as carry too. " +
+      "Carry is paid, on top of your share, in the first later coinbase where share plus carry clears the minimum. DATUM bonus credited before it ended on 2026-10-24 is held as carry too. " +
       "miner_audit reports your carry, whether you are in the coinbase being built right now, and the reason if not.",
     links: [`${S}/how`],
   },
@@ -198,7 +198,7 @@ export const FAQ = [
     keywords: ["audit", "read", "explain", "report", "fields", "meaning", "understand", "estimate", "estimated", "numbers"],
     answer:
       "paid: coinbase outputs to you that have matured and been counted as paid. immature: outputs already on chain but still inside the maturity wait, with the next unlock heights. carry: earned value waiting for an output (see 'carry'). " +
-      "make_goods: amounts the pool owes you from partial or pool-only blocks, split into queued (waiting for a height), paid and failed. bonus: DATUM bonus credited so far. window: your share of the current TIDES window and what the next block would pay you. " +
+      "make_goods: amounts the pool owes you from partial or pool-only blocks, split into queued (waiting for a height), paid and failed. bonus: DATUM bonus credited before it ended on 2026-10-24. window: your share of the current TIDES window and what the next block would pay you. " +
       "Figures marked estimate (earnings per day, unlock dates) depend on luck and on how fast blocks come; heights are exact, dates are not. Every amount can be checked with verify_payout.",
     links: [`${S}/how`],
   },

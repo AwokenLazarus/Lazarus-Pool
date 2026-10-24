@@ -67,16 +67,6 @@
     el.addEventListener("click", () => selectTab(el.getAttribute("data-tab")));
   });
 
-  const PROMO_DISMISS_KEY = "lz.promo.datum";
-  const promoDismissed = () => {
-    try { return localStorage.getItem(PROMO_DISMISS_KEY) === "1"; } catch (e) { return false; }
-  };
-  $("promo-dismiss")?.addEventListener("click", () => {
-    try { localStorage.setItem(PROMO_DISMISS_KEY, "1"); } catch (e) { /* private mode */ }
-    const el = $("datum-promo");
-    if (el) el.hidden = true;
-  });
-
   // While the custody fee is on, the notice has new copy and its own dismiss key, so a reader who
   // dismissed the old notice sees it once more. The server marks the notice `data-custody` when
   // it rendered that copy; otherwise /api/pool turns it on (custodyNotice below).
@@ -307,32 +297,23 @@
       ? t("connect.upliftPhrase", { uplift: upliftTxt })
       : "";
 
-    show("datum-promo", on && !promoDismissed());
-    show("promo-live", on && !!upliftTxt);
-    const promo = $("promo-live");
-    if (promo && upliftTxt) {
-      promo.textContent = t("promo.live", { uplift: upliftTxt });
-      promo.title = t("promo.liveTitle", { datumPct: pctSmart(fees.datumWorkPct), stratumPct: pctSmart(fees.stratumWorkPct), pts: pts(fees.rebate), uplift: upliftTxt });
-    }
-    setText("promo-text", on
-      ? t("promo.text", { fee: feePct(fees.stratum), Pts: Pts(fees.rebate) })
-      : "");
-
     show("live-bonus-chip", on && !!upliftTxt);
     setText("live-bonus", upliftTxt || "\u2014");
 
     setText("lede-rebate-pts", pts(fees.rebate));
     const feesBody = $("fee-lede-body");
     if (feesBody) {
-      feesBody.innerHTML = t("hero.feesBody", {
-        pts: `<span id="lede-rebate-pts">${esc(pts(fees.rebate))}</span>`,
-      });
+      feesBody.innerHTML = on
+        ? t("hero.feesBody", { pts: `<span id="lede-rebate-pts">${esc(pts(fees.rebate))}</span>` })
+        : t("hero.feesBodyOff");
     }
     show("top-bonus-datum", on && !!upliftTxt);
     setText("top-bonus-datum", upliftTxt ? t("hero.topBonus", { uplift: upliftTxt }) : "");
     setText("top-fee-datum-sub", on ? t("hero.datumSubOn") : t("hero.datumSubOff"));
-    setText("top-stratum-rebate", on ? t("hero.stratumRebate", { pts: pts(fees.rebate), fee: feePct(fees.stratum) }) : "");
-    show("top-stratum-rebate", on);
+    // With the rebate off the stratum card still names the grace; the pool keeps the fee.
+    setText("top-stratum-rebate", on
+      ? t("hero.stratumRebate", { pts: pts(fees.rebate), fee: feePct(fees.stratum) })
+      : t("hero.stratumGrace", { fee: feePct(fees.stratum) }));
 
     const pillar = $("pillar-rebate");
     if (pillar) {
@@ -345,8 +326,7 @@
 
     const stratumLine = $("stratum-rebate-line");
     if (stratumLine) {
-      stratumLine.innerHTML = on ? t("connect.stratumRebate", { pts: pts(fees.rebate) }) : "";
-      stratumLine.hidden = !on;
+      stratumLine.innerHTML = on ? t("connect.stratumRebate", { pts: pts(fees.rebate) }) : t("connect.stratumGrace");
       stratumLine.querySelector("[data-tab]")?.addEventListener("click", () => selectTab("tab-datum"));
     }
 
@@ -776,6 +756,9 @@
     $("payout-reward-sub").textContent = value ? t("payout.rewardSub", { h: p.height ? num(Number(p.height) + 1) : "\u2014" }) : t("payout.rewardSubWait");
     $("payout-miners-btc").textContent = value ? amtSats(minerSats) : "\u2014";
     $("payout-miners-sub").textContent = value ? t("payout.minersSub", { pct: pct(100 * minerSats / value, 1), n }) : "\u2014";
+    // The DATUM-credit box only means something while the rebate is on (or this block still credits one).
+    const poolSplit = $("payout-pool-split");
+    if (poolSplit) poolSplit.hidden = !(fees.rebate > 0 || rebateSats > 0);
     $("payout-pool-btc").textContent = value ? amtSats(rebateSats) : "\u2014";
     $("payout-pool-sub").textContent = value
       ? (rebateSats > 0 ? t("payout.datumSub") : t("payout.datumSubNone"))

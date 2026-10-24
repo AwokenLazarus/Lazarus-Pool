@@ -2,15 +2,15 @@ window.LZ_I18N_DICTS = window.LZ_I18N_DICTS || {};
 window.LZ_I18N_DICTS["zh-CN"] = {
   "meta": {
     "title": "Lazarus Pool — 用 Siacoin BLAKE2b 矿机挖比特币（XBT / BTCB2）的矿池",
-    "description": "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池，也是第一家用自有 stratum 算力补贴 DATUM 矿工的矿池。",
+    "description": "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池。",
     "minerTitle": "矿工 — Lazarus Pool",
     "minerDescription": "Lazarus Pool 上某个地址的实时算力、矿机、TIDES 窗口份额以及每一笔 coinbase 支付。",
     "minerTitleAddr": "{short} — Lazarus Pool"
   },
   "skip": "跳到矿池状态",
   "nojs": {
-    "p1": "Lazarus Pool 是比特币矿池（交易代码为 XBT 与 BTCB2），挖的是改用 BLAKE2b 而非 SHA-256d 的 <a href=\"/zh/bip110\">BIP-110 比特币分叉链</a>。任何能挖 Siacoin 的 ASIC 都能挖。你用自己的 DATUM 网关挖矿，网关指向 <code>datum.lazarus-xbt.xyz:28915</code>，费率 0%，另有 <a href=\"/zh/datum-subsidy\">DATUM 补贴</a>。公共 stratum <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code>（用户名 = 你的收款地址，密码 <code>x</code>）是捐赠、验证与后备端点，费率 100%，其中 50 点归 DATUM 网关、50 点归矿池，并有 24 小时 / 96 小时、费率 25%、之后 100% 的宽限期。<a href=\"/zh/how\">TIDES</a> 在每个找到的区块的 coinbase 里直接付给每位矿工，矿池从不持有你的币。",
-    "p2": "Lazarus Pool 是第一家被确认在 BLAKE2b 比特币主网上以拆分 coinbase 支付 TIDES 的矿池，也是第一家用自有 stratum 算力补贴 DATUM 矿工的矿池——为保护和去中心化网络的矿工付钱，而不是向他们收费。",
+    "p1": "Lazarus Pool 是比特币矿池（交易代码为 XBT 与 BTCB2），挖的是改用 BLAKE2b 而非 SHA-256d 的 <a href=\"/zh/bip110\">BIP-110 比特币分叉链</a>。任何能挖 Siacoin 的 ASIC 都能挖。你用自己的 DATUM 网关挖矿，网关指向 <code>datum.lazarus-xbt.xyz:28915</code>，费率 0%。公共 stratum <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code>（用户名 = 你的收款地址，密码 <code>x</code>）是捐赠、验证与后备端点，费率 100%，并有 24 小时 / 96 小时、费率 25%、之后 100% 的宽限期，手续费全部归矿池。<a href=\"/zh/how\">TIDES</a> 在每个找到的区块的 coinbase 里直接付给每位矿工，矿池从不持有你的币。",
+    "p2": "Lazarus Pool 是第一家被确认在 BLAKE2b 比特币主网上以拆分 coinbase 支付 TIDES 的矿池。自建 DATUM 网关的矿工自己组块，手续费 0%。",
     "p3": "没有任何东西被替你保管：收益是<a href=\"/zh/non-custodial\">区块本身的输出</a>，没有余额，不用提现。一旦自家 stratum 超过全网算力的 15%，矿池会<a href=\"/zh/self-cap\">把新矿工中继到另一家矿池</a>，而不是继续扩大。<a href=\"/zh/pools\">本链各矿池对比</a>。",
     "p4": "查看<a href=\"/zh/hardware\">能挖的 Siacoin BLAKE2b 矿机</a>及其预计收益，<a href=\"/zh/rentals\">租用 BLAKE2b 算力</a>指向你自己的节点，用<a href=\"/zh/calculator\">计算器</a>算出你的算力每天能挖多少，或阅读<a href=\"/zh/connect\">如何把矿机接入这里</a>。更完整的 DATUM 网关搭建：<a href=\"https://convoy.xyz/getstarted?lang=zh\">CONVOY 入门指南</a>。开发者：<a href=\"/stratum-protocol.md\">本链的 stratum 协议</a>与<a href=\"/zh/api\">公开 API</a>。区块浏览器：<a href=\"https://mempool.lazarus-xbt.xyz\">mempool.lazarus-xbt.xyz</a>。English：<a href=\"/\">English version</a>。"
   },
@@ -54,16 +54,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "joinDiscord": "加入 Discord",
     "joinDiscordTitle": "在 Lazarus Pool 的 Discord 上与矿工和团队交流"
   },
-  "promo": {
-    "aria": "DATUM 矿工获得奖励",
-    "tag": "DATUM 奖励",
-    "lead": "DATUM 矿工手续费 0%，还能拿奖励。",
-    "cta": "运行网关 →",
-    "dismiss": "关闭 DATUM 奖励通知",
-    "live": "此刻 {uplift}",
-    "liveTitle": "DATUM 工作占窗口 {datumPct}，公共 stratum 占 {stratumPct}，因此从 stratum 工作里拿出的 {pts}，对 DATUM 工作相当于 {uplift}。",
-    "text": "每个区块，stratum 手续费中的 {Pts} 分给 DATUM 矿工。"
-  },
   "gatewaynotice": {
     "kicker": "需要处理",
     "title": "还在用旧版 DATUM 网关？请更新。",
@@ -87,7 +77,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "title": "Lazarus Pool。<br>挖比特币。<br><em>在区块里直接拿到钱。</em>",
     "define": "比特币现在使用 BLAKE2b，所以任何 Siacoin 矿机都能挖。接到这里，每笔收益都直接写进区块的 coinbase。",
     "pt1": "通过自己的 DATUM 网关，<b>手续费 0%</b>",
-    "pt2": "每个区块都有 <b>DATUM 奖励</b>：第一家为去中心化付钱给矿工的矿池",
+    "pt2": "<b>区块由你构建</b>：你的节点挑选交易，矿池只拆分 coinbase",
     "pt3": "<b>链上到账</b>，写在 coinbase 里，矿池从不代管你的币",
     "pt4": "<b>开源</b>于 <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>，由 <a href=\"https://x.com/Awoken_Lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus</a> 从第一天运营至今",
     "setup": "配置 DATUM",
@@ -98,17 +88,19 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "price": "比特币价格",
     "priceTitle": "比特币（BTCB2）· 按成交量加权的 Neoxa BTCB2/USDC 与 NonKYC BTCB2/USDT",
     "ths": "1 TH/s 产出",
-    "thsTitle": "估算：相对当前全网 1 TH/s、仅基础补贴（不含交易费），走自建 DATUM 网关并计入今日算力结构下的 DATUM 奖励。下一区块的运气与手续费会让数字变动。",
+    "thsTitle": "估算：相对当前全网 1 TH/s、仅基础补贴（不含交易费），走自建 DATUM 网关，手续费 0%。下一区块的运气与手续费会让数字变动。",
     "bonus": "DATUM 奖励",
     "bonusTitle": "此刻 DATUM 工作相对其按比例份额多拿的部分：记给 DATUM 矿工的那部分 stratum 手续费，按窗口内 DATUM 工作分摊。",
     "feesTitle": "一条路：DATUM",
     "feesBody": "自己运行节点和 DATUM 网关：由你组块，手续费 0%，每个区块还能拿到公共 stratum 手续费中的 {pts}。",
+    "feesBodyOff": "自己运行节点和 DATUM 网关：由你组块，手续费 0%。",
     "datumSmall": "你的 DATUM 网关",
     "datumSubOn": "你保留 100%，自己组块，并领取奖励",
     "datumSubOff": "你保留 100%，自己组块",
     "stratumSmall": "捐赠、验证与后备",
     "stratumSub": "用于测试矿机或作后备 · ",
     "stratumRebate": "前 24 小时（DATUM 矿工 96 小时）为 25%，之后为 {fee}；其中 {pts} 分给 DATUM 矿工",
+    "stratumGrace": "前 24 小时（DATUM 矿工 96 小时）为 25%，之后为 {fee}；手续费归矿池",
     "ctaStrong": "配置 DATUM 网关。",
     "ctaBody": "从<a href=\"#gw-pick\">我们实测的列表</a>中选一个。",
     "topBonus": "{uplift} DATUM 奖励"
@@ -145,7 +137,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "offline": "Prime 此刻没有应答。窗口、网关和支付数字是它上次发布的。",
     "pillarsAria": "Lazarus 的不同之处",
     "p1": "<b>在区块里直接支付。</b>没有矿池余额，不用提现。找到区块时，其 coinbase 直接付给你的地址。<a href=\"#payout\">查看下一次支付</a>。",
-    "p2a": "<b>自带网关：手续费 0%，另有奖励。</b>由你的节点组块，矿池只定分配。",
+    "p2a": "<b>自带网关：手续费 0%。</b>由你的节点组块，矿池只定分配。",
     "p3": "<b>端到端可验证。</b>每一份 share 都会重建并哈希；找到的每个区块都在 <a href=\"https://mempool.lazarus-xbt.xyz/mining/pool/lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus Mempool</a>。源码在 <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>。",
     "pillarRebate": "，其中 {pts} 会在每个区块记给 DATUM 矿工，并有 24 小时 / 96 小时、费率为 25%、之后为 100% 的宽限期",
     "hashrate": "算力",
@@ -261,7 +253,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
       "datumHead": "给 DATUM 网关的补贴",
       "datum": "stratum 手续费的<b>{pts}</b>——本块为 <b>{amt}</b>——按 DATUM 工作量比例记给窗口内 {n} 名 DATUM 矿工。它不是上面的某一笔输出：它会并入每位矿工的结转余额——与低于门槛的收益共用同一个余额——随其下一笔跨过 {floor} 门槛的输出支付。<a href=\"#connect\" data-tab=\"tab-datum\">运行网关</a>即可加入。{owed}",
       "datumOwed": "此前记入的 {owed} 仍在等待可以记入的 DATUM 矿工。",
-      "datumOff": "当前没有 DATUM 补贴；stratum 手续费全部留给矿池。",
+      "datumOff": "DATUM 奖励已于 2026 年 10 月 24 日结束；stratum 手续费全部留给矿池。已记入矿工余额的奖励，仍会随其下一笔输出支付。",
       "poolHead": "Lazarus 留下什么",
       "poolFeeDatumFree": "这笔手续费全部来自公共 stratum 的工作量，费率为 <b>{stratum}</b>。Lazarus 对通过你自己 DATUM 网关的工作量收取 <b>0%</b>，所以这笔输出里没有任何一份是从网关的份额里抽的。{giveBack}",
       "poolFeeGiveBack": "stratum 所付的其中{pts}，又作为第 5 步的补贴直接发还出去。",
@@ -378,7 +370,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "tabStratum": "捐赠、验证与后备",
     "tabStratumSub": "确认能连上，网关中断时作后备",
     "tabDatum": "你自己的 DATUM 网关",
-    "tabDatumSub": "由你的节点组块 · 我们只分配 coinbase · 你领取奖励",
+    "tabDatumSub": "由你的节点组块 · 我们只分配 coinbase · 手续费 0%",
     "tabSolo": "独挖",
     "tabSoloSub": "独享整块 · 无窗口、不分享",
     "dtStratum": "Stratum",
@@ -390,6 +382,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "userHint": "bc1q…你的地址.矿机名",
     "stratumFee": "占你窗口份额的 {fee}，在 coinbase 内扣除",
     "stratumFeeTail": " 的窗口份额，在 coinbase 内扣除",
+    "stratumGrace": "；前 24 小时（DATUM 矿工 96 小时）按 25% 宽限。手续费归矿池。<a href=\"#pane-datum\" data-tab=\"tab-datum\">运行自己的网关</a>，手续费即为 0%",
     "stratumRebate": "。其中 {pts} 分给 DATUM 矿工；前 24 小时（DATUM 矿工 96 小时）按 25% 宽限。<a href=\"#pane-datum\" data-tab=\"tab-datum\">运行自己的网关</a>，这笔就归你",
     "algo": "BLAKE2b — Sia 风格区块头，不是 SHA-256d",
     "payout": "你在 TIDES 窗口中的份额，写入矿池找到的每个区块的 coinbase。见 <a href=\"#payout\">下一次支付</a>。",
@@ -459,7 +452,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
   "hardware": {
     "eyebrow": "买一台矿机",
     "title": "能挖这条链的 BLAKE2b 矿机。",
-    "lede": "能挖 Siacoin 的 ASIC 都能挖比特币（XBT）：同一套 BLAKE2b 硬件。矿机与价格来自 BT-Miners 的 <a href=\"https://bt-miners.com/collections/btcb2-miners/\" target=\"_blank\" rel=\"noreferrer\">BTCB2 矿机页</a>。收益按走你自己的 DATUM 网关（含奖励）估算，不含电费。",
+    "lede": "能挖 Siacoin 的 ASIC 都能挖比特币（XBT）：同一套 BLAKE2b 硬件。矿机与价格来自 BT-Miners 的 <a href=\"https://bt-miners.com/collections/btcb2-miners/\" target=\"_blank\" rel=\"noreferrer\">BTCB2 矿机页</a>。收益按走你自己的 DATUM 网关（0% 手续费）估算，不含电费。",
     "shopAll": "在 BT-Miners 查看全部 BTCB2 矿机",
     "price": "价格",
     "xbtDay": "预计 XBT / 天",
@@ -507,7 +500,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "label": "你的算力",
     "perDay": "每天",
     "perMonth": "每 30 天",
-    "note": "按实时难度与价格、基础奖励（不含交易费）、走你自己的 DATUM 网关并计入补贴计算。电费不在其中。"
+    "note": "按实时难度与价格、基础奖励（不含交易费）、走你自己的 DATUM 网关（0% 手续费）计算。电费不在其中。"
   },
   "dash": {
     "mcp": "想直接问？把任意 AI 助手接入<a href=\"https://mcp.lazarus-xbt.xyz\" target=\"_blank\" rel=\"noreferrer\">我们的 MCP 服务器</a>。只读，无需登录。",
@@ -776,7 +769,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "learn": "了解",
     "bip110": "什么是 BIP-110？",
     "tides": "TIDES 如何支付",
-    "subsidy": "DATUM 补贴",
+    "subsidy": "DATUM 奖励（已结束）",
     "calc": "收益计算器",
     "asics": "Siacoin BLAKE2b 矿机",
     "compare": "XBT 矿池对比",
@@ -807,9 +800,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "claudeTitle": "向 Claude 询问 Lazarus Pool：新对话中已填好问题",
     "grokAria": "向 Grok 询问 Lazarus Pool",
     "grokTitle": "向 Grok 询问 Lazarus Pool：新对话中已填好问题",
-    "prompt": "我在了解 Lazarus Pool（https://pool.lazarus-xbt.xyz/zh/）：一个非托管矿池，挖的是采用 BLAKE2b 工作量证明的比特币（Bitcoin）。Sia 系列 ASIC 矿机（金贝 SC 系列、iBeLink BM-S3、蚂蚁 A3）都能挖，每笔收益直接写进区块的 coinbase，付到矿工自己的地址，矿池里没有余额需要提现。自己运行 Bitcoin Knots 节点和 DATUM 网关的矿工自建区块模板、不付矿池手续费，还能拿到 DATUM 奖励：矿池每出一个块，都会把公共 stratum 手续费的一部分记给他们。{bonusLine}请阅读这个网站，用通俗的话讲清楚这个矿池、TIDES 支付和 DATUM 奖励是怎么运作的。然后帮我入门，先问我：我是否有兴趣在这里挖矿？我有（或打算买）哪种矿机、几台？我打算接公共 stratum 还是自己运行 DATUM 网关？需不需要帮忙搭建节点和网关？之后一步一步带我完成设置。",
-    "bonusLive": "网站目前显示的 DATUM 奖励比按算力比例应得的份额高 {bonus}。",
-    "bonusUnknown": "网站上实时显示当前的 DATUM 奖励。"
+    "prompt": "我在了解 Lazarus Pool（https://pool.lazarus-xbt.xyz/zh/）：一个非托管矿池，挖的是采用 BLAKE2b 工作量证明的比特币（Bitcoin）。Sia 系列 ASIC 矿机（金贝 SC 系列、iBeLink BM-S3、蚂蚁 A3）都能挖，每笔收益直接写进区块的 coinbase，付到矿工自己的地址，矿池里没有余额需要提现。自己运行 Bitcoin Knots 节点和 DATUM 网关的矿工自建区块模板、不付矿池手续费。请阅读这个网站，用通俗的话讲清楚这个矿池、TIDES 支付和 DATUM 网关是怎么运作的。然后帮我入门，先问我：我是否有兴趣在这里挖矿？我有（或打算买）哪种矿机、几台？我打算接公共 stratum 还是自己运行 DATUM 网关？需不需要帮忙搭建节点和网关？之后一步一步带我完成设置。"
   },
   "path": {
     "stratumGw": "stratum + {gw}",
@@ -961,7 +952,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "bonusUplift": " · 比按比例份额高 {pct}",
     "estBonus": "按当前难度、{fee} 手续费并计入 {uplift} DATUM 奖励 · 待窗口与此算力对齐",
     "estPlain": "按当前难度、扣除 {fee} 手续费 · 待窗口与此算力对齐",
-    "pitch": "<strong>你正在付 {fee}，并给 DATUM 奖励出资。</strong>这笔手续费里，你工作价值的 {rebate} 矿池完全不留——记给自己组块的矿工。把这份算力改走自建 DATUM 网关，你就不再付手续费，<em>并且</em>开始领取那笔信用：按此算力大约每天 <b>{datum}</b>{datumUsd}，而不是 {now}{nowUsd}，其中 {uplift} 是奖励本身（每天 {bonus}{bonusUsd}）。已接受的工作跟着走。<a href=\"/#connect\">配置网关</a>。",
+    "pitch": "<strong>你在公共 stratum 上正在付 {fee}，这笔手续费归矿池。</strong>把这份算力改走自建 DATUM 网关，手续费就是 0%：按此算力大约每天 <b>{datum}</b>{datumUsd}，而不是 {now}{nowUsd}。已接受的工作跟着走。<a href=\"/#connect\">配置网关</a>。",
     "pendingTab": "{n} 笔待付",
     "maturingTab": "{n} 笔成熟中",
     "payoutTabBoth": "{maturing} 笔成熟中 · {pending} 笔待付",
@@ -1179,8 +1170,8 @@ window.LZ_I18N_DICTS["zh-CN"].app = {
     },
     "c3": {
       "t": "DATUM 改变了什么",
-      "b": "在普通矿池里，区块里放什么由矿池决定。用自己的 DATUM 网关和 Knots 节点，由你构建模板，矿池只分配奖励。在这里费率 0%，还有奖励。",
-      "a": "DATUM 补贴"
+      "b": "在普通矿池里，区块里放什么由矿池决定。用自己的 DATUM 网关和 Knots 节点，由你构建模板，矿池只分配奖励。在这里费率 0%。",
+      "a": "搭建 DATUM 网关"
     },
     "c4": {
       "t": "TIDES 如何支付",
@@ -1244,6 +1235,6 @@ window.LZ_I18N_DICTS["zh-CN"].app.sub.live = "实时数据";
 window.LZ_I18N_DICTS["zh-CN"].app.chart.rangeSoon = "更长的时间范围将随下一次节点更新提供";
 window.LZ_I18N_DICTS["zh-CN"].app.scroll = {"prev": "向左滚动", "next": "向右滚动"};
 window.LZ_I18N_DICTS["zh-CN"].app.article = {"more": "展开全文", "less": "收起"};
-Object.assign(window.LZ_I18N_DICTS["zh-CN"].app.learn, {"pathTitle": "从零到开挖：DATUM 方式", "p1": "<b>准备一个收款地址。</b>任何能提供本链 bc1… 地址的钱包都可以。这个地址就是你的用户名，无需注册。", "p2": "<b>运行你自己的节点。</b>使用本链的 Bitcoin Knots，开启 <code>server=1</code>，并提供网关可读取的 cookie 或 RPC 用户。你区块里的交易由你的节点来选择。", "p3": "<b>启动 DATUM 网关。</b>构建一个网关（推荐 CONVOY），填入“连接”页面上的 Lazarus 主机、端口和公钥，并把 <code>mining.pool_address</code> 设为你的地址。", "p4": "<b>把矿机指向你的网关。</b>任何 Siacoin BLAKE2b 矿机都可以，连接你自己网关的 stratum 端口，用户名为 <code>地址.矿工名</code>。", "p5": "<b>看它工作。</b>你的网关会出现在“网关”列表中，你的地址会出现在“矿工”列表中。费率为 0%，区块由你自己构建，矿池每挖出一个区块你还能额外获得 DATUM 奖励。", "pathCta": "搭建 DATUM", "pathCalc": "我能赚多少？"});
+Object.assign(window.LZ_I18N_DICTS["zh-CN"].app.learn, {"pathTitle": "从零到开挖：DATUM 方式", "p1": "<b>准备一个收款地址。</b>任何能提供本链 bc1… 地址的钱包都可以。这个地址就是你的用户名，无需注册。", "p2": "<b>运行你自己的节点。</b>使用本链的 Bitcoin Knots，开启 <code>server=1</code>，并提供网关可读取的 cookie 或 RPC 用户。你区块里的交易由你的节点来选择。", "p3": "<b>启动 DATUM 网关。</b>构建一个网关（推荐 CONVOY），填入“连接”页面上的 Lazarus 主机、端口和公钥，并把 <code>mining.pool_address</code> 设为你的地址。", "p4": "<b>把矿机指向你的网关。</b>任何 Siacoin BLAKE2b 矿机都可以，连接你自己网关的 stratum 端口，用户名为 <code>地址.矿工名</code>。", "p5": "<b>看它工作。</b>你的网关会出现在“网关”列表中，你的地址会出现在“矿工”列表中。费率为 0%，区块由你自己构建。", "pathCta": "搭建 DATUM", "pathCalc": "我能赚多少？"});
 window.LZ_I18N_DICTS["zh-CN"].app.chart.m = {"title": "你的算力与支付给你的区块", "blocks": "支付给你的区块", "reward": "区间内支付给你", "rewardOne": "支付给你", "toYou": "支付给你 {amt}", "immature": "成熟中", "spendable": "可花费", "hint": "悬停查看读数 · 菱形是支付给该地址的区块，点击查看支付明细 · 聚焦图表后可用 ← →", "aria": "该地址的算力，{range}。当前 {now}，平均 {avg}，峰值 {peak}。共有 {blocks} 个区块向它支付。", "clickSplit": "点击查看支付明细", "empty": "该时间范围内没有这个地址的样本。"};
 window.LZ_I18N_DICTS["zh-CN"].app.chart.n = {"title": "该地址的算力与向它支付的区块", "blocks": "向它支付的区块", "reward": "区间内支付给它", "rewardOne": "支付给该地址", "toYou": "支付给该地址 {amt}"};

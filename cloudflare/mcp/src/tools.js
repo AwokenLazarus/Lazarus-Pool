@@ -59,7 +59,7 @@ export const TOOLS = [
     name: "miner_overview",
     title: "One payout address at a glance: hashrate, path and fee, window share, earnings, what is paid and pending",
     description:
-      "Summary for one payout address on Lazarus Pool: whether it is online, hashrate, whether it mines through its own DATUM gateway (0% fee + bonus) or the public stratum (a donation, validation and fallback endpoint at 100%, with a 24 h / 96 h grace at 25%, then 100%), " +
+      "Summary for one payout address on Lazarus Pool: whether it is online, hashrate, whether it mines through its own DATUM gateway (0% fee) or the public stratum (a donation, validation and fallback endpoint at 100%, with a 24 h / 96 h grace at 25%, then 100%), " +
       "its share of the TIDES window, what the next block would pay it, estimated XBT per day, totals paid / maturing / carried, and what it would gain by moving to DATUM. Start here for any question about 'my mining'.",
     heavy: true,
     inputSchema: { type: "object", properties: { address: addressArg }, required: ["address"], additionalProperties: false },
@@ -166,7 +166,7 @@ export const TOOLS = [
           (old ? `update to ${firstBuild(builds)}` : "it clears once its next block splits correctly; if it keeps happening, ask in the pool's Discord with this gateway id"));
         if (old) flags.push(`out-of-date build (v0.4.1-beta): update to ${firstBuild(builds)}, the current release. Its blocks come out partial less often; no build is at zero yet (ranked list: connection_info gateway_builds)`);
         const sw = gatewaySoftware(g.user_agent);
-        return { name: label(g.name || g.secondary_tag), gateway_id: g.gateway, payout_identity: g.identity, pays_fee_as: g.fee_path === "datum" ? "own DATUM gateway (0% + bonus)" : "public stratum", connected: !g.offline,
+        return { name: label(g.name || g.secondary_tag), gateway_id: g.gateway, payout_identity: g.identity, pays_fee_as: g.fee_path === "datum" ? "own DATUM gateway (0%)" : "public stratum", connected: !g.offline,
           connected_for_minutes: Math.round((Number(g.connected_s) || 0) / 60), seconds_since_last_share: g.last_share_s, accepted_shares: acc, rejected_shares: rej, last_reject_reason: label(g.last_reject), accepted_work: g.work,
           coinbase_splits_received: g.coinbasers, block_candidates_submitted: g.block_candidates, user_agent: label(g.user_agent), software: sw.name ? `${sw.name} ${sw.version}` : undefined, generation: g.generation, flags };
       });
@@ -178,7 +178,7 @@ export const TOOLS = [
     name: "next_coinbase",
     title: "The coinbase the pool is handing out right now: reward, how it splits, and one address's line in it",
     description:
-      "The exact payout the next found block would make: reward value, number of outputs, how much goes to miners, the pool and the DATUM bonus, and how full the TIDES window is. " +
+      "The exact payout the next found block would make: reward value, number of outputs, how much goes to miners and the pool, and how full the TIDES window is (datum_bonus is 0 since the bonus ended on 2026-10-24). " +
       "With `address`, also that address's output (sats and share), or, if it has no output, why not and how much is being carried for it.",
     inputSchema: { type: "object", properties: { address: { ...addressArg, description: "Optional: show this address's line in the coinbase" }, top: { type: "integer", minimum: 0, maximum: 25, description: "Largest outputs to list (default 5)" } }, additionalProperties: false },
     parse: async (a) => ({ address: a.address ? await payoutAddress(a.address) : null, top: int(a.top, "top", 0, 25, 5) }),
@@ -275,7 +275,7 @@ export const TOOLS = [
     async run(_a, ctx) {
       const [p, builds] = await Promise.all([pool(ctx, "/api/pool?h=0", 8), gatewayBuilds(ctx)]);
       const d = p.datum || {}, f = p.fees || {};
-      return { recommended: "own DATUM gateway", datum_gateway: { pool_host: d.pool_host, pool_port: d.pool_port, pool_pubkey: d.pool_pubkey, fee_percent: 0, bonus: "a share of the public stratum's fee is credited to DATUM miners on every block",
+      return { recommended: "own DATUM gateway", datum_gateway: { pool_host: d.pool_host, pool_port: d.pool_port, pool_pubkey: d.pool_pubkey, fee_percent: 0,
           steps: ["Run Bitcoin Knots for this chain with server=1 and a cookie or RPC user the gateway can read", `Build a DATUM gateway (${firstBuild(builds)} is first in gateway_builds, ranked by what the pool measured) and put pool_host, pool_port and pool_pubkey in its datum section`,
             "Set mining.pool_address to your payout address", "Set stratum.vardiff_min to 4096 (stock default 16384 makes small miners' stats jumpy)", "Point your machines at your gateway's stratum port with username address.worker"] },
         public_stratum: { url: p.stratum, username: "youraddress.workername", password: "x", role: "donation, validation and fallback endpoint", fee_percent: f.stratum_percent ?? 100, grace: stratumGrace(p.prime), algorithm: "BLAKE2b (Siacoin-style header), not SHA-256d" },
@@ -284,8 +284,8 @@ export const TOOLS = [
   },
   {
     name: "pool_docs",
-    title: "The pool's own explanation of fees, TIDES, DATUM, the bonus, non-custodial payouts and the 15% cap",
-    description: "The pool's published plain-text reference (llms.txt): what the chain is, fees on each path, how TIDES and the split coinbase pay, the DATUM bonus, the 15% self-cap, and how it compares with other pools. Use it to answer 'how does X work' questions accurately.",
+    title: "The pool's own explanation of fees, TIDES, DATUM, non-custodial payouts and the 15% cap",
+    description: "The pool's published plain-text reference (llms.txt): what the chain is, fees on each path, how TIDES and the split coinbase pay, DATUM gateways, the 15% self-cap, and how it compares with other pools. Use it to answer 'how does X work' questions accurately.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     parse: () => ({}),
     async run(_a, ctx) { return (await pool(ctx, "/llms.txt", 3600, { text: true })).slice(0, 24000); },

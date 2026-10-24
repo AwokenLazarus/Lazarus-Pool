@@ -61,7 +61,6 @@ async function stats() {
   set("s-miners", num(p.miners), "miners on Lazarus");
   // fee figures quoted in prose
   $$("[data-fee-stratum]").forEach((el) => { if (Number.isFinite(p.stratumFeePercent)) el.textContent = `${p.stratumFeePercent}%`; });
-  $$("[data-fee-rebate]").forEach((el) => { if (Number.isFinite(p.datumRebatePercent)) el.textContent = `${p.datumRebatePercent}%`; });
   $$(".live").forEach((el) => { el.textContent = `live · ${ago(d.asOf)}`; el.classList.remove("stale"); });
 }
 

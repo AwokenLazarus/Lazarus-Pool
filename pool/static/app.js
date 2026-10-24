@@ -429,9 +429,8 @@
   // ------------------------------------------------------------ ask AI (under the hero buttons)
   // Each assistant opens a new chat with a question about the pool already typed in. The question
   // is askai.prompt in the dictionary, so /zh/ asks in Chinese and points at the Chinese page. It
-  // carries the live DATUM bonus the hero chip shows (#live-bonus, filled by pool.js), and is
-  // rebuilt whenever that number or the language changes. The hrefs in the HTML are the English
-  // fallback for a browser without JS.
+  // is rebuilt whenever the language changes. The hrefs in the HTML are the English fallback for a
+  // browser without JS.
   const ASK_AI = {
     chatgpt: "https://chatgpt.com/?prompt=",
     claude: "https://claude.ai/new?q=",
@@ -440,10 +439,7 @@
   function askLinks() {
     const I = window.LZ_I18N;
     if (!I) return;
-    const bonus = ($("live-bonus")?.textContent || "").trim();
-    const live = /^\+\d/.test(bonus);
-    const bonusLine = live ? I.t("askai.bonusLive", { bonus }) : I.t("askai.bonusUnknown");
-    const prompt = I.t("askai.prompt", { bonusLine });
+    const prompt = I.t("askai.prompt");
     if (!prompt || prompt === "askai.prompt") return;
     for (const a of document.querySelectorAll("a[data-ask-ai]")) {
       const base = ASK_AI[a.dataset.askAi];
@@ -451,7 +447,6 @@
     }
   }
   document.addEventListener("lz:i18n", askLinks);
-  if ($("live-bonus")) new MutationObserver(askLinks).observe($("live-bonus"), { childList: true, characterData: true, subtree: true });
 
   // ------------------------------------------------------------ boot
   root.classList.add("app");
