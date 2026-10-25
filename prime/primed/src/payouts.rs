@@ -172,7 +172,8 @@ async fn handle(shared: &Shared, id: &str, req: Request) -> Value {
                 entries.into_iter().partition(|e| address::to_script(&e.0, shared.network).is_some());
             let ready = tip.height + READY_AFTER_BLOCKS;
             let mut ledger = shared.ledger.lock().unwrap();
-            let res = ledger.hold_carry(id, &payable, ts as u32, after, shared.cfg.stale_min_payout, tip.height, ready);
+            let res =
+                ledger.hold_carry(id, &payable, ts as u32, after, shared.cfg.stale_min_payout, tip.height, ready);
             let answer = match res {
                 Ok((held, skipped)) => {
                     let mut skipped: Vec<Value> =
@@ -205,8 +206,7 @@ async fn handle(shared: &Shared, id: &str, req: Request) -> Value {
             for (identity, delta) in &entries {
                 let before = ledger.window.carry_of(identity);
                 let debt = ledger.window.debt_of(identity);
-                let after = ledger
-                    .settle_carry(std::slice::from_ref(&(identity.clone(), *delta)))
+                let after = ledger.settle_carry(std::slice::from_ref(&(identity.clone(), *delta)))
                     .first()
                     .map(|c| c.1)
                     .unwrap_or(before);
@@ -290,7 +290,11 @@ async fn handle(shared: &Shared, id: &str, req: Request) -> Value {
 }
 
 /// Whether a verbose `getrawtransaction` result pays every entry's script at least its sats.
-fn pays_all(tx: &Value, entries: &[(String, u64)], script_for: impl Fn(&str) -> Option<Vec<u8>>) -> Result<(), String> {
+fn pays_all(
+    tx: &Value,
+    entries: &[(String, u64)],
+    script_for: impl Fn(&str) -> Option<Vec<u8>>,
+) -> Result<(), String> {
     let mut paid: HashMap<String, u64> = HashMap::new();
     for out in tx.get("vout").and_then(Value::as_array).ok_or("no outputs")? {
         let script = out.pointer("/scriptPubKey/hex").and_then(Value::as_str).unwrap_or("").to_ascii_lowercase();
@@ -346,10 +350,7 @@ mod tests {
 
     #[test]
     fn a_credit_request_parses_and_a_hold_with_no_entries_does_not() {
-        let r: Request = serde_json::from_str(
-            r#"{"action":"credit","entries":[["bc1qa",1000],["bc1qb",-5]],"note":"block 973233"}"#,
-        )
-        .unwrap();
+        let r: Request = serde_json::from_str(r#"{"action":"credit","entries":[["bc1qa",1000],["bc1qb",-5]],"note":"block 973233"}"#).unwrap();
         match r {
             Request::Credit { entries, note } => {
                 assert_eq!(entries, vec![("bc1qa".to_string(), 1000), ("bc1qb".to_string(), -5)]);
@@ -359,10 +360,7 @@ mod tests {
         }
         let r: Request = serde_json::from_str(r#"{"action":"credit","entries":[["bc1qa",1]]}"#).unwrap();
         assert!(matches!(r, Request::Credit { note, .. } if note.is_empty()), "note is optional");
-        assert!(
-            serde_json::from_str::<Request>(r#"{"action":"credit","entries":[["bc1qa",1.5]]}"#).is_err(),
-            "whole sats only"
-        );
+        assert!(serde_json::from_str::<Request>(r#"{"action":"credit","entries":[["bc1qa",1.5]]}"#).is_err(), "whole sats only");
     }
 
     #[test]

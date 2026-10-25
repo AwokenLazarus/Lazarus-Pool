@@ -218,7 +218,11 @@ pub struct Faults {
 
 impl Default for Faults {
     fn default() -> Self {
-        Self { by_key: Mutex::new(HashMap::new()), pending: Mutex::new(HashMap::new()), ttl_secs: AtomicU64::new(0) }
+        Self {
+            by_key: Mutex::new(HashMap::new()),
+            pending: Mutex::new(HashMap::new()),
+            ttl_secs: AtomicU64::new(0),
+        }
     }
 }
 
