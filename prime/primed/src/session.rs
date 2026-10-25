@@ -585,15 +585,33 @@ fn settle(
         .filter(|p| p.carry > 0 && placed(p))
         .map(|p| (p.identity.clone(), p.carry.min(paid(p))))
         .collect();
+    // A full split paid short of this is a split scaled down whole: a gateway's DRS scaled reuse
+    // stretching its last list over a smaller value, lazarus-gateway rescaling to its template,
+    // or a list asked about at far more than the block was worth. Every payee is paid, so no
+    // make-good is owed; what it did not pay of each one's carry (the fixed part, which should
+    // not have scaled) stays their carry for a later coinbase. Recorded as owed on a split it
+    // would be swept as fee, since the fee wallet makes good partial and pool-only blocks only,
+    // and a few sats a payee is dust no make-good could pay anyway.
+    let short_carry: Vec<(String, i64)> = if full_split {
+        cb.payees
+            .iter()
+            .map(|p| (p.identity.clone(), entitled(p) - paid(p)))
+            .filter(|(_, s)| *s > 0)
+            .map(|(i, s)| (i, s.min(i64::MAX as u64) as i64))
+            .collect()
+    } else {
+        vec![]
+    };
     Settlement {
         kind: name,
-        owed: cb.payees.iter().map(|p| entitled(p) - paid(p)).sum(),
+        owed: if full_split { 0 } else { cb.payees.iter().map(|p| entitled(p) - paid(p)).sum() },
         split: cb.payees.iter().map(|p| (p.identity.clone(), entitled(p))).collect(),
         carry_paid: carry_placed.iter().map(|c| c.1).sum(),
         carry_placed,
         carry_delta: carry_delta
             .into_iter()
             .map(|(i, d)| if d > 0 { (i, rescale(d as u64).min(i64::MAX as u64) as i64) } else { (i, d) })
+            .chain(short_carry)
             .collect(),
         rebate_credits: cb.rebate_credits.iter().map(|(i, s)| (i.clone(), rescale(*s))).collect(),
         rebate_credited: cb.rebate_credits.iter().map(|r| rescale(r.1)).sum(),
@@ -2908,8 +2926,13 @@ mod tests {
         }
     }
 
+    /// Net carry change per identity (an identity can have a debit and a credit).
     fn cleared(s: &Settlement) -> std::collections::HashMap<&str, i64> {
-        s.carry_delta.iter().map(|(i, d)| (i.as_str(), *d)).collect()
+        let mut m = std::collections::HashMap::new();
+        for (i, d) in &s.carry_delta {
+            *m.entry(i.as_str()).or_insert(0) += *d;
+        }
+        m
     }
 
     /// A coinbaser is priced for the value the gateway asked about, which is the gateway's
@@ -2927,7 +2950,9 @@ mod tests {
         assert_eq!(s.split, vec![("A".to_string(), 1_650_000), ("B".to_string(), 625_000)]);
 
         // Asked about at a hundredth of the reward: each miner gets its dust, the pool the rest,
-        // and that classifies as the split in full. The window is owed the difference.
+        // and that classifies as the split in full. Each miner is still due the difference, which
+        // stays their carry (a make-good is for partial and pool-only blocks; on a split it would
+        // be swept as fee).
         let tiny = split_at(real / 100);
         let paid_dust = |script: &[u8]| tiny.iter().find(|p| p.script == script).map_or(0, |p| p.sats);
         let s = settle(&CoinbaseKind::Split, Some(coinbaser(real / 100, &tiny)), real, paid_dust);
@@ -2936,8 +2961,14 @@ mod tests {
             vec![("A".to_string(), 1_650_000), ("B".to_string(), 625_000)],
             "what they earned of the real block"
         );
-        assert_eq!(s.owed, (1_650_000 - 412_500) + (625_000 - 6_250), "less the dust they were paid");
-        assert_eq!(cleared(&s).get("A"), Some(&-400_000), "A's carry is discharged: paid in part, owed the rest");
+        assert_eq!(s.owed, 0);
+        let c = cleared(&s);
+        assert_eq!(
+            c.get("A"),
+            Some(&(-400_000 + (1_650_000 - 412_500))),
+            "A's carry is discharged and the rest carried"
+        );
+        assert_eq!(c.get("B"), Some(&(625_000 - 6_250)), "less the dust they were paid");
 
         // Asked about at a hundred times the reward and scaled down to fit: A is paid a
         // hundredth of an output that was mostly carry. What is left of it is still owed.
@@ -2946,7 +2977,13 @@ mod tests {
         let s = settle(&CoinbaseKind::Split, Some(coinbaser(real * 100, &huge)), real, scaled);
         assert_eq!(s.split, vec![("A".to_string(), 1_650_000), ("B".to_string(), 625_000)]);
         let a_paid = (real * 100 / 250 + 400_000) / 100;
-        assert_eq!(s.owed, 1_650_000 - a_paid, "B was paid in full; A's carry was not");
+        assert_eq!(s.owed, 0, "a split owes no make-good");
+        assert_eq!(
+            cleared(&s).get("A"),
+            Some(&(-400_000 + (1_650_000 - a_paid) as i64)),
+            "B was paid in full; A carries the rest"
+        );
+        assert!(!cleared(&s).contains_key("B"));
         assert_eq!(s.carry_paid, 400_000.min(a_paid));
 
         // earnings the split deferred, and rebate it credited, move with the reward as well
@@ -3363,21 +3400,7 @@ mod tests {
                 class_capped: false,
             };
             let s = settle(&CoinbaseKind::Split, Some(cbr), new_value, |script| cb.paid_to(script));
-            assert_eq!(s.kind, "split");
-            if new_value >= VALUE {
-                assert_eq!(s.owed, 0, "stretched up: the split's own figures stand");
-            } else {
-                // Stretched down, the block is repriced: earnings move with the reward but carry
-                // is a fixed debt, and the stretch scaled it too. What it short-paid is the carry
-                // times the shrink, owed on a block recorded as a split.
-                let carry: u64 = full.payees.iter().map(|p| p.carry).sum();
-                let shrink = carry as u128 * u128::from(VALUE - new_value) / u128::from(VALUE);
-                assert!(
-                    (s.owed as u128) <= shrink + full.payees.len() as u128 * 2,
-                    "owed {} vs carry shrink {shrink}",
-                    s.owed
-                );
-            }
+            assert_eq!((s.kind, s.owed), ("split", 0), "a stretch is a full split at {new_value}");
         }
         // a list with no pool output: the remainder goes to the last miner, within the slack
         for new_value in [VALUE - 999_999, VALUE - 1, VALUE + 1, VALUE + 999_999] {
