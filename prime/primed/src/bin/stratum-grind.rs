@@ -104,7 +104,11 @@ fn main() {
         if last.elapsed().as_secs() >= 10 {
             let h = hashes.load(Ordering::Relaxed);
             let s = t0.elapsed().as_secs_f64().max(0.001);
-            println!("{:.2} MH/s hashes={h} job={}", h as f64 / s / 1e6, current.as_ref().map(|j| j.id.as_str()).unwrap_or("-"));
+            println!(
+                "{:.2} MH/s hashes={h} job={}",
+                h as f64 / s / 1e6,
+                current.as_ref().map(|j| j.id.as_str()).unwrap_or("-")
+            );
             let _ = std::io::stdout().flush();
             last = Instant::now();
         }

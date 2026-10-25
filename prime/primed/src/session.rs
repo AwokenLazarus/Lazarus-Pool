@@ -837,7 +837,8 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
     let (send_nonce, recv_nonce) = crypto::session_nonces(hello.seed, &hello.session_sign_pk);
     let channel = Channel::new(session_key.precompute(&hello.session_box_pk), send_nonce, recv_nonce);
 
-    let reply = handshake::build_server_hello(&shared.pool, &session_key, &hello, &shared.cfg.motd);
+    let selection = handshake::drs_selection(&hello, shared.cfg.scaled_reuse_ack);
+    let reply = handshake::build_server_hello(&shared.pool, &session_key, &hello, &shared.cfg.motd, selection);
     let mut h = Header::new(cmd::HELLO_REPLY, reply.len());
     h.sealed = true;
     h.signed = true;
@@ -873,11 +874,16 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
     let front = stratum_front(&shared.cfg, remote, &gateway_key);
     let fee_path = if front || house { "stratum" } else { "datum" };
     log::info!(
-        "[{id}] {remote} hello ua={:?} gateway={gateway_hex} gen={:?} fee={fee_path}{}{}",
+        "[{id}] {remote} hello ua={:?} gateway={gateway_hex} gen={:?} fee={fee_path}{}{}{}",
         hello.user_agent,
         hello.generation,
         if front { " (another pool's stratum front)" } else { "" },
-        if hello.resume_token.is_some() { " (asked to resume; declined)" } else { "" }
+        if hello.resume_token.is_some() { " (asked to resume; declined)" } else { "" },
+        match (hello.drs_flags & handshake::DRS_SCALED_REUSE != 0, selection.is_some()) {
+            (true, true) => " (scaled reuse: acked)",
+            (true, false) => " (scaled reuse: offered, not acked)",
+            _ => "",
+        }
     );
     let pins_script = shared.pins_script(&gateway_key);
     if pins_script {
@@ -3307,6 +3313,86 @@ mod tests {
         }
         let (bytes, _, _) = coinbase::build(966_267, b"Lazarus", &outs, 0);
         coinbase::parse(&bytes).unwrap()
+    }
+
+    /// privkeyio's DRS scaled reuse: the gateway's last split from this session, each output
+    /// floored by new/old value and the rest added to the pool's output (or the last output when
+    /// the list has none), as `datum_protocol_coinbaser_try_reuse` builds it.
+    fn stretch(list: &[Output], new_value: u64, pool: &[u8]) -> coinbase::Coinbase {
+        let total: u64 = list.iter().map(|o| o.sats).sum();
+        let mut outs: Vec<coinbase::TxOut> = list
+            .iter()
+            .map(|o| coinbase::TxOut {
+                value: (u128::from(o.sats) * u128::from(new_value) / u128::from(total)) as u64,
+                script: o.script.clone(),
+            })
+            .collect();
+        let assigned: u64 = outs.iter().map(|o| o.value).sum();
+        let dest = outs.iter().position(|o| o.script == pool).unwrap_or(outs.len() - 1);
+        outs[dest].value += new_value - assigned;
+        let (bytes, _, _) = coinbase::build(966_267, b"Lazarus", &outs, 0);
+        coinbase::parse(&bytes).unwrap()
+    }
+
+    /// The issued list already holds a rescaled coinbase to proportional amounts (lazarus-gateway
+    /// has always rescaled), so a stretch over a new tip's value or a same-tip fee change is a
+    /// full split, and a find on it owes the window nothing. The floor rounding's remainder fits
+    /// the per-output slack even when it lands on the last miner's output.
+    #[test]
+    fn a_scaled_reuse_stretch_is_a_split() {
+        let pool = wpkh(9999);
+        let (miners, scripts) = window();
+        let full = split_of(&miners, &scripts, &pool_params());
+        let miners_only = coinbaser_outputs(&full, &pool);
+        assert!(miners_only.iter().all(|o| o.script != pool), "no fee in this window: no pool output");
+        // the same window with the pool's fee: the list ends on the pool's output
+        let miners_value: u64 = miners_only.iter().map(|o| o.sats).sum();
+        let mut list = miners_only.clone();
+        list.push(Output { sats: VALUE - miners_value, script: pool.clone() });
+        for new_value in [VALUE - 7_777_777, VALUE - 1, VALUE + 1, VALUE + 3_456_789, VALUE + VALUE / 10] {
+            let cb = stretch(&list, new_value, &pool);
+            assert_eq!(cb.outputs.iter().map(|o| o.value).sum::<u64>(), new_value);
+            assert_eq!(classify(&cb, &pool, &list), CoinbaseKind::Split, "stretch to {new_value}");
+            let cbr = Coinbaser {
+                value: VALUE,
+                payees: &full.payees,
+                unpaid: &full.unpaid,
+                rebate_credits: &full.rebate_credits,
+                rebate_owed_credited: 0,
+                rebate_deferred: 0,
+                class_capped: false,
+            };
+            let s = settle(&CoinbaseKind::Split, Some(cbr), new_value, |script| cb.paid_to(script));
+            assert_eq!(s.kind, "split");
+            if new_value >= VALUE {
+                assert_eq!(s.owed, 0, "stretched up: the split's own figures stand");
+            } else {
+                // Stretched down, the block is repriced: earnings move with the reward but carry
+                // is a fixed debt, and the stretch scaled it too. What it short-paid is the carry
+                // times the shrink, owed on a block recorded as a split.
+                let carry: u64 = full.payees.iter().map(|p| p.carry).sum();
+                let shrink = carry as u128 * u128::from(VALUE - new_value) / u128::from(VALUE);
+                assert!(
+                    (s.owed as u128) <= shrink + full.payees.len() as u128 * 2,
+                    "owed {} vs carry shrink {shrink}",
+                    s.owed
+                );
+            }
+        }
+        // a list with no pool output: the remainder goes to the last miner, within the slack
+        for new_value in [VALUE - 999_999, VALUE - 1, VALUE + 1, VALUE + 999_999] {
+            let cb = stretch(&miners_only, new_value, &pool);
+            assert_eq!(classify(&cb, &pool, &miners_only), CoinbaseKind::Split, "no pool output, {new_value}");
+        }
+        // what it must not be: one miner's output raised past its stretched share
+        let mut fee_list = miners_only.clone();
+        fee_list.push(Output { sats: 5_000_000, script: pool.clone() });
+        let mut skim = stretch(&fee_list, VALUE + 3_456_789, &pool);
+        let i = skim.outputs.iter().position(|o| o.script != pool).unwrap();
+        skim.outputs[i].value += 50_000;
+        let p = skim.outputs.iter().position(|o| o.script == pool).unwrap();
+        skim.outputs[p].value -= 50_000;
+        assert_eq!(classify(&skim, &pool, &fee_list), CoinbaseKind::Foreign);
     }
 
     /// What the journal is told of a coinbase refused as bad-coinbase-outputs: where its reward
