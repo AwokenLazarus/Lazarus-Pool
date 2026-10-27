@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lightning Stream: Changelog</title>
+<meta name="description" content="Every version of the Lightning Stream app for Umbrel, StartOS and Linux, newest first: what changed and what was fixed.">
+<link rel="canonical" href="https://lazarus-xbt.xyz/stream/changelog/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Lazarus · Bitcoin BLAKE2b">
+<meta property="og:title" content="Lightning Stream changelog">
+<meta property="og:description" content="Every version of the Lightning Stream app for Umbrel, StartOS and Linux, newest first: what changed and what was fixed.">
+<meta property="og:url" content="https://lazarus-xbt.xyz/stream/changelog/">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lazarus XBT, lazarus-xbt.xyz">
+<meta name="twitter:site" content="@LazarusPoolXBT">
+<meta name="twitter:title" content="Lightning Stream changelog">
+<meta name="twitter:description" content="Every version of the Lightning Stream app for Umbrel, StartOS and Linux, newest first: what changed and what was fixed.">
+<meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta name="theme-color" content="#1a1712">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="stylesheet" href="/assets/hub.css?v=7">
+<link rel="stylesheet" href="/stream/stream.css?v=1">
+<script src="/assets/js.js"></script>
+<script src="/assets/analytics.js?v=1" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="topbar wrap">
+    <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <a href="/learn/">The chain</a><a href="/ecosystem/">Ecosystem</a><a href="/map/">Galaxy map</a><a href="/naughtylist/">Naughty list</a><a href="/key/">Lazarus Key</a><a href="/faq/">FAQ</a>
+      <a class="btn small" href="https://pool.lazarus-xbt.xyz" rel="noopener">Lazarus Pool</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero wrap">
+  <h1><span class="kicker">Lightning Stream · Changelog</span>Versions and <em>fixes</em></h1>
+  <p class="lede">Every version of the Lightning Stream app, newest first: what changed and what was fixed. One version number covers the Umbrel app, the StartOS package (from 0.1.14) and the Linux package (from 0.1.12). Lightning Stream is early software: it runs on mainnet, so use small amounts.</p>
+  <p class="note">The same log is <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/CHANGELOG.md" rel="noopener">CHANGELOG.md</a> in the code. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <nav class="toc" aria-label="On this page">
+    <p class="category">Versions</p>
+    <a href="#v0115">0.1.15</a><a href="#v0114">0.1.14</a><a href="#v0113">0.1.13</a><a href="#v0112">0.1.12</a><a href="#v0111">0.1.11</a><a href="#v0110">0.1.10</a><a href="#v019">0.1.9</a><a href="#v018">0.1.8</a><a href="#v017">0.1.7</a><a href="#v016">0.1.6</a><a href="#v015">0.1.5</a><a href="#v014">0.1.4</a><a href="#v013">0.1.3</a><a href="#v012">0.1.2</a><a href="#v011">0.1.1</a><a href="#v010">0.1.0</a><a href="#thanks">Thanks</a>
+  </nav>
+  <nav class="toc" aria-label="More pages">
+    <p class="category">The whitepaper and its pages</p>
+    <a href="/stream/">The whitepaper</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+  </nav>
+</section>
+
+<section class="section wrap">
+  <div class="prose paper" data-reveal>
+    <h2 id="v0115">0.1.15 (in progress)</h2>
+    <p>Not released yet: the code is on <code>main</code>, and the images, the Umbrel store and the StartOS registry follow.</p>
+    <p><strong>Paying on a new wallet</strong></p>
+    <ul>
+      <li>A new wallet on mainnet can pay right after setup. It asks a seller for a ticket small enough not to need your approval, and refuses only when even the seller's smallest ticket is too large, giving the numbers.</li>
+      <li>Setup asks you to confirm paying with real money straight after the spending rules. Home no longer says the app is ready before you do.</li>
+      <li>If your node holds more than your rules allow, the Lightning page says how much, and raises the limit in one click for you to sign.</li>
+      <li>Credit left with a seller is used first, after a restart and under any of the shop's addresses, instead of buying a new ticket.</li>
+      <li>A stream you stop early costs no more than the limit you set for it.</li>
+      <li>Agents can buy part of a file or film (a byte range).</li>
+      <li>A program using the wallet can give up a session's leftover credit, to start clean.</li>
+    </ul>
+    <p><strong>Security</strong></p>
+    <ul>
+      <li><strong>Another page could make the wallet pay a seller you had allowed.</strong> A page served by another app on the same box (for example another Umbrel app), or on Linux any web page open in a browser on the same machine, could start a stream through the wallet. It stayed within your signed spending rules and only reached sellers you had allowed, but you hadn't asked for it. The wallet now answers such requests only by opening its home page, the player's stream links carry a token no other page can read, and the Linux connector refuses requests that come from a web page.</li>
+    </ul>
+    <p><strong>Fixes from reviews of the payment code</strong></p>
+    <ul>
+      <li>Two parts of the wallet could wait on each other forever when a refill overlapped a status check.</li>
+      <li>A shop that changed its ticket size could resize tickets still open after a restart, and drop prepaid ones with no credit.</li>
+      <li>A buyer coming back to a shop after a few quiet minutes could have their new tickets cancelled. No money was lost (the payment went back), but the buy failed.</li>
+      <li>A payment note chosen by a program using the wallet could escape the per-session speed limit.</li>
+      <li>An error in cleaning up the wallet's records after a payment had gone through could be reported as a failed payment. For an on-chain send, a retry could then pay twice.</li>
+      <li>Tidying the wallet's ticket book could forget finished payments that weekly limits still count.</li>
+      <li>After a restart, a stuck payment or a restore, the wallet could undercount what it had spent, or send a ticket it had already marked failed.</li>
+      <li>A seller that never revealed its lottery draws could keep a buy open forever.</li>
+      <li>If the wallet's Lightning payment record could not be read, it was treated as empty and later overwritten. The wallet now stops paying instead.</li>
+      <li>The plain-words summary of a spending-rules change could hide a change inside a section, such as a seller's Lightning node being swapped. Every changed setting is now listed, and nothing is cut short.</li>
+      <li>Hot wallet: a coin already spent could be counted, a sweep the node had sent could be reported as failed, and a slow scan could hold up the wallet's status.</li>
+    </ul>
+    <p><strong>Other</strong></p>
+    <ul>
+      <li>The real-money confirmation no longer says the software has only run on test chains.</li>
+      <li>StartOS: 0.1.15 alongside the Umbrel app.</li>
+    </ul>
+    <h2 id="v0114">0.1.14 (2026-10-27)</h2>
+    <ul>
+      <li>Your shop is published on Nostr as soon as it has an https address, with nothing to set by hand.</li>
+      <li>Four default relays: relay.lazarus-xbt.xyz, which takes only Lightning Stream listings, then relay.kilombino.com, relay.damus.io and nos.lol.</li>
+      <li>The suggested seller is at its new address, <a href="https://stream.lazarus-xbt.xyz" rel="noopener">https://stream.lazarus-xbt.xyz</a>. When you change your shop's address, the old one keeps working for buyers who saved it, hashrate included.</li>
+      <li>A new shop sells 900-sat tickets, so a buyer on the safe starter rules can pay it right away.</li>
+      <li><strong>StartOS:</strong> the first public package, one <code>lightning-stream</code> package with everything in it, in our registry at <a href="https://registry.lazarus-xbt.xyz" rel="noopener">https://registry.lazarus-xbt.xyz</a>. It asks Lightning Fork for its own narrow node key through Lightning Fork's app-access grant (thanks to Paul for building the grant), so there is no key to copy by hand. Lightning Fork comes from Paul's StartOS registry; see <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/docs/STARTOS.md" rel="noopener">docs/STARTOS.md</a>.</li>
+      <li><strong>Linux guide:</strong> a "Before you buy: get a channel" section.</li>
+    </ul>
+    <h2 id="v0113">0.1.13 (2026-10-27)</h2>
+    <ul>
+      <li>Signing the safe starter rules on mainnet now lets the app pay. They set how much your Lightning node may hold (twice what it holds now, at least 100,000 sats), which the wallet needs before it pays through a mainnet node. If paying is on but that limit is missing, Spending rules fills it in for you to sign.</li>
+      <li>With paying off, Spending rules opens on the starter rules. On mainnet the form never offers the large built-in limits meant for test chains.</li>
+      <li>Your node page says why it can't pay yet, in plain words.</li>
+      <li>The key backup file says it is not your passphrase. A wrong passphrase leads to restoring the key from that file with a new one.</li>
+      <li>Hashrate offers are read and published on a third relay, relay.kilombino.com (thanks to Kilombino).</li>
+    </ul>
+    <h2 id="v0112">0.1.12 (2026-10-27)</h2>
+    <ul>
+      <li>The two sides of hashrate renting have names: the <strong>hashmaker</strong> brings the miners and lists them, the <strong>hashtaker</strong> rents them into its own DATUM Gateway (names from Kilombino). Your settings and rentals carry over.</li>
+      <li><strong>Linux package:</strong> Lightning Stream beside your own nodes, with Docker Compose, from the published images. See <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/docs/LINUX.md" rel="noopener">docs/LINUX.md</a>.</li>
+    </ul>
+    <h2 id="v0111">0.1.11 (2026-10-26)</h2>
+    <ul>
+      <li>Signing the safe starter rules now turns paying on. Before, a new install could not pay.</li>
+      <li>The first run speaks plainly: the rules review lists each change in a sentence with its unit, Home and Your node agree on whether the node is connected, the approval key's backup step says up front what it needs, and an app with nothing to sell yet shows as healthy.</li>
+      <li>Your node lists the keys to revoke on the node before an uninstall.</li>
+      <li>The app's images are published, so a fresh install can pull them.</li>
+    </ul>
+    <h2 id="v0110">0.1.10 (2026-10-26)</h2>
+    <ul>
+      <li>A spending limit is now a hard cap, routing fees included: when the next ticket would go over it, nothing more is paid.</li>
+      <li>Buyers can ask for smaller tickets (down to 546 sats) to fit their limit, and your shop sells them.</li>
+      <li>Listings keep working when sellers add new kinds of service: an app shows the services it knows and leaves out the rest.</li>
+    </ul>
+    <h2 id="v019">0.1.9 (2026-10-26)</h2>
+    <ul>
+      <li>Changes an update makes to what your shop lists take effect when the app starts, without pressing Save on Sell.</li>
+    </ul>
+    <h2 id="v018">0.1.8 (2026-10-26)</h2>
+    <ul>
+      <li>Hashrate is listed beside your other services when you rent out your miners. Browse has a Hashrate category that leads to Rent hashrate.</li>
+      <li>Sell, Hashrate explains how to give renters an address (forward TCP port 23341 to the box). A new address is published within a minute.</li>
+    </ul>
+    <h2 id="v017">0.1.7 (2026-10-26)</h2>
+    <ul>
+      <li>Your hashrate offer goes on public listings only once you give the address renters use to reach your miners, and is published again only when what you offer changes, not with every wobble of the measured hashrate.</li>
+    </ul>
+    <h2 id="v016">0.1.6 (2026-10-26)</h2>
+    <ul>
+      <li>Rent out this box's miners and rent other people's (Sell and Services, Hashrate). Idle miners hash for your own pool; each rental takes whole miners and pays per piece of work, after the work is delivered.</li>
+    </ul>
+    <h2 id="v015">0.1.5 (2026-10-26)</h2>
+    <ul>
+      <li><strong>Security:</strong> the app skipped its password for a peer named like the box's login proxy. umbrelOS 2.0 runs no such container, so another app on the box could have taken the name and opened the app without the password. Log in with the app password Umbrel shows for this app.</li>
+    </ul>
+    <h2 id="v014">0.1.4 (2026-10-26)</h2>
+    <ul>
+      <li>No setup to connect your Lightning node: the app makes its own narrow keys through the node.</li>
+      <li>The app password is shown on the app's page in the Umbrel dashboard, with no codes to read from logs.</li>
+      <li>An approval key backup you can download.</li>
+      <li>"Allow this seller" in one signature.</li>
+      <li>Services on this box are offered on the Sell page, with help getting an https address.</li>
+      <li>A player that says why something doesn't play.</li>
+      <li>A free preview of your own shop (a box can't buy from itself).</li>
+    </ul>
+    <h2 id="v013">0.1.3 (2026-10-26)</h2>
+    <ul>
+      <li>A calmer background, no flash between pages, and a top bar the page scrolls under.</li>
+      <li>Adding a seller that prices each item separately works.</li>
+    </ul>
+    <h2 id="v012">0.1.2 (2026-10-26)</h2>
+    <ul>
+      <li>The Services page can read sellers' signed listings from two public Nostr relays (opt-in).</li>
+    </ul>
+    <h2 id="v011">0.1.1 (2026-10-26)</h2>
+    <ul>
+      <li>Laid out for any service (media, AI models, other web services), in plain words, with five places: Services, Sell, Wallet, Apps &amp; agents and Settings. Selling is part of the main page.</li>
+    </ul>
+    <h2 id="v010">0.1.0 (2026-10-26)</h2>
+    <ul>
+      <li>The wallet, the connector and the gateway in one Umbrel app.</li>
+    </ul>
+    <h2 id="thanks">Thanks</h2>
+    <p>To Chris Guida and Kyle Santiago for reviewing the design, to Paul for Lightning Fork, Knots-BLAKE2b and the StartOS app-access grant, and to Kilombino for the hashmaker and hashtaker names and a relay.</p>
+
+    <p class="note"><a href="/stream/">Back to the whitepaper</a>.</p>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+      <p class="note" style="margin-top:.8rem;max-width:22rem">A hub for Bitcoin on BLAKE2b proof of work: the chain, the pools, the software and the people building on it.</p>
+      <p class="note faint"><i>Proverbs 11:1</i> — a just weight is his delight.</p>
+    </div>
+    <div class="footer-col">
+      <p class="category">Network</p>
+      <a href="/learn/">What XBT is</a>
+      <a href="/blake2b/">BLAKE2b vs SHA-256</a>
+      <a href="/learn/#softfork">Soft fork status</a>
+      <a href="https://mempool.lazarus-xbt.xyz" rel="noopener">Block explorer</a>
+      <a href="/map/">Galaxy map</a>
+      <a href="/ecosystem/#pools">Pool directory</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Mine</p>
+      <a href="https://pool.lazarus-xbt.xyz" rel="noopener">XBT mining pool</a>
+      <a href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Connect a Siacoin ASIC</a>
+      <a href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">ASICs that mine XBT</a>
+      <a href="https://pool.lazarus-xbt.xyz/how" rel="noopener">How the pool pays</a>
+      <a href="/ecosystem/#pools">Other pools</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Build</p>
+      <a href="https://github.com/AwokenLazarus/Bitcoin" rel="noopener">Source on GitHub</a>
+      <a href="https://github.com/AwokenLazarus/lazarus-key" rel="noopener">Lazarus Key source</a>
+      <a href="/ecosystem/#software">Software</a>
+      <a href="/stream/">Stream whitepaper</a>
+      <a href="https://mcp.lazarus-xbt.xyz" rel="noopener">MCP server</a>
+      <a href="https://mempool.lazarus-xbt.xyz/api" rel="noopener">Explorer API</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Community</p>
+      <a href="https://discord.gg/fD33dJXnzz" rel="noopener">Discord</a>
+      <a href="https://x.com/Awoken_Lazarus" rel="noopener">X</a>
+      <a href="/faq/">FAQ</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>Lazarus · Bitcoin BLAKE2b (XBT). Public data, no accounts, no custody.</span>
+    <span class="live">live</span>
+  </div>
+</footer>
+<script src="/assets/hub.js?v=2" defer></script>
+</body>
+</html>
