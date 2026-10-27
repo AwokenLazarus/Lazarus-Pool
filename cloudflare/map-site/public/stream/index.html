@@ -237,7 +237,7 @@
 
     <h2 id="sells"><span class="n">6</span>What it sells</h2>
     <dl>
-      <dt>Films and files</dt><dd>Priced per MiB and played as they arrive; a buyer pays for the bytes it receives, and a stream it stops costs no more than the limit it set.</dd>
+      <dt>Films and files</dt><dd>Priced per MiB and played as they arrive; a buyer pays for the bytes it receives, and a stream it stops costs no more than the limit it set, with a seller on the current release; an older seller can overdraw at most the credit already paid, one ticket.</dd>
       <dt>An AI model</dt><dd>Priced per 1,000 tokens of its answer, counted token by token.</dd>
       <dt>Hashrate</dt><dd>A <em>hashmaker</em> lists its miners and a <em>hashtaker</em> rents them into its own DATUM Gateway <a href="#ref-66">[66]</a>, paying for each slice of work <em>after</em> it is delivered: only shares the hashtaker's own gateway accepted are counted. (Names from Kilombino.)</dd>
       <dt>Any web service</dt><dd>The gateway meters an answer per request, per byte, per token or per second, so nothing in it is specific to these three.</dd>
@@ -261,7 +261,7 @@
     <h2 id="status"><span class="n">9</span>Status</h2>
     <p><strong>Released.</strong> Lightning Stream is one app for buying and selling: in a community store for Umbrel, in our registry for StartOS, and as a Linux package. <a href="/stream/start/">Try it</a> has the setup, and the <a href="/stream/changelog/">changelog</a> every version.</p>
     <p><strong>On XBT mainnet, between our own nodes.</strong> Since 26 October 2026 a fresh install from the published packages has bought films and AI answers from our shop, a node box of ours has bought from a second shop of ours, and a rental of hashrate has been paid. Every charge matched the meter to the millisatoshi; <a href="/stream/tests/#mainnet">Tests and numbers</a> has the figures. On StartOS, the app's access to the node through Lightning Fork's grant was tested on mainnet; a paid buy on StartOS has not run yet. Nobody outside the project has used it yet. An invited test is next.</p>
-    <p><strong>Reviewed, not audited.</strong> Chris Guida reviewed the design and the code twice, and Kyle Santiago read the design. In October 2026, machine-assisted reviews of the payment code found further faults; all are fixed in version 0.1.15. There has been no independent audit. Treat it as unaudited software and use amounts you can afford to lose.</p>
+    <p><strong>Reviewed, not audited.</strong> Chris Guida reviewed the design and the published code twice in October 2026: first the earlier design and its code, then the ticket design, the lottery and the tree (<a href="/stream/progress/#status">Progress and status</a>). Kyle Santiago read the design. In October 2026, machine-assisted reviews of the payment code found further faults; all are fixed in version 0.1.15. There has been no independent audit. Treat it as unaudited software and use amounts you can afford to lose.</p>
     <p><strong>Not built.</strong> The win that pays itself, fair exchange on held tickets, and a seller on Core Lightning. What is planned is on <a href="/stream/progress/">Progress and status</a>.</p>
 
     <h2 id="references"><span class="n">10</span>References</h2>
