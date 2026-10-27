@@ -124,7 +124,7 @@
     <p>The app pays through your own node, so your node needs a funded channel with a route to the shop. Without one, the first buy fails with "no route".</p>
     <ul>
       <li><strong>Size.</strong> 20,000 to 50,000 sat is plenty for trying things out: a ticket is about 900 sat. lnd refuses channels under 20,000 by default.</li>
-      <li><strong>Who to.</strong> Any well-connected node on XBT Lightning, or our test shop's node directly. Some nodes take only larger channels and refuse a small one before anything is paid, so a refusal costs nothing. The Linux guide's section <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/docs/LINUX.md#before-you-buy-get-a-channel" rel="noopener">Before you buy</a> has our shop node's key and address.</li>
+      <li><strong>Who to.</strong> A well-connected public node, such as <em>lazarus-xbt</em>, which takes channels from 20,000&nbsp;sat. Over Tor, with key <code>033665f1accdf08dd2d2f22f62f8dd70ccd238381402b10c12c0be3e7fd493b8d5</code> at <code>6y4rkcimjbzfhj2j4oidbg4br4xgdfvpbsx7x3ifedv6jgfxg55wtiqd.onion:9735</code>. Some nodes take only larger channels and refuse a small one before anything is paid, so a refusal costs nothing. A channel straight to our shop's node pays it only from version 0.1.17 of the app. The Linux guide's section <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/docs/LINUX.md#before-you-buy-get-a-channel" rel="noopener">Before you buy</a> has the details.</li>
       <li>Wait until the channel is active before your first buy.</li>
     </ul>
 
@@ -133,7 +133,7 @@
       <li><strong>Make your approval key</strong> and keep its backup file. The backup file is not your passphrase: keep both.</li>
       <li><strong>Settings → Spending rules →</strong> start from the safe starter rules, review, and sign. They allow 2,000&nbsp;sat a payment, 10,000 a day and 30,000 a week, and ask you above 1,000.</li>
       <li><strong>Settings → Your node →</strong> tick <em>Pay with real money</em> and press <em>Start paying</em>.</li>
-      <li><strong>Services →</strong> add a seller, for example our test shop <code>https://stream.lazarus-xbt.xyz</code>, press <em>Allow this seller to be paid</em>, and sign.</li>
+      <li><strong>Services →</strong> add a seller, for example our test shop <code>https://stream.lazarus-xbt.xyz</code>, press <em>Allow this seller to be paid</em>, and sign. If you added our shop before version 0.1.16, press <em>Check for updates</em> on it under <em>Services → Sellers</em> first.</li>
       <li>Play a film, ask the AI, or rent hashrate.</li>
     </ol>
 
