@@ -81,15 +81,15 @@
 
 <section class="hero wrap">
   <h1><span class="kicker">Lightning Stream · Tests</span>Tests and <em>numbers</em></h1>
-  <p class="lede">What was run, on what, and what each run does not show. Every figure on this page was measured on a regtest, a private test network, between our own nodes, unless it says it was computed or simulated, or is in <a href="#mainnet">On mainnet</a>, the one rehearsal on XBT mainnet between two of our own nodes.</p>
-  <p class="note">This page accompanies Draft 10 of the Lightning Stream whitepaper, 22 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <p class="lede">What was run, on what, and what each run does not show. Every figure on this page was measured on a regtest, a private test network, between our own nodes, unless it says it was computed or simulated, or is in the two sections on XBT mainnet: <a href="#rehearsal">the first rehearsal</a>, and <a href="#mainnet">the released app between our own nodes</a>.</p>
+  <p class="note">This page accompanies Draft 11 of the Lightning Stream whitepaper, 27 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
-    <a href="#evidence">Evidence anyone can check</a><a href="#numbers">Tickets in the lab</a><a href="#lottery-built">The lottery as built</a><a href="#design-runs">The design's measurements</a><a href="#demo">The film demo</a><a href="#mainnet">On mainnet</a>
+    <a href="#evidence">Evidence anyone can check</a><a href="#numbers">Tickets in the lab</a><a href="#lottery-built">The lottery as built</a><a href="#design-runs">The design's measurements</a><a href="#demo">The film demo</a><a href="#rehearsal">The first rehearsal</a><a href="#mainnet">On mainnet</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
-    <a href="/stream/">The whitepaper</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+    <a href="/stream/">The whitepaper</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
   </nav>
 </section>
 
@@ -240,7 +240,7 @@
     </dl>
     <p>For a seller: what a buyer can reach is decided by the gateway's routes, one film each, so the service's own port must never be published, only the gateway's. In the demo a second film on the same server, and the server's own pages, answered 404 through the gateway.</p>
 
-    <h2 id="mainnet"><span class="n">6</span>On mainnet: a rehearsal between our own nodes</h2>
+    <h2 id="rehearsal"><span class="n">6</span>On mainnet: the first rehearsal</h2>
     <p><strong>The conditions.</strong> Two runs on XBT mainnet, on 23 and 24 October 2026, with real coins in amounts we could lose. The buyer and the seller were our own Lightning Fork nodes, version 0.21.4-beta-blake2b.21 (the version Umbrel ships), on one machine, with one direct private channel of the anchor type between them: 100,000&nbsp;sat, opened for 329&nbsp;sat at 2&nbsp;sat/vB. The seller's gateway stood in front of a test file server, and the agent wallet paid through its own pay tool; everything listened on loopback only. The wallet's policy named this one seller, with a task budget of 10,000&nbsp;sat and at most 3,000&nbsp;sat a payment. Tickets were 1,000&nbsp;sat, with 2 held at a time.</p>
     <div class="table-wrap prose-table">
       <table>
@@ -265,7 +265,31 @@
       <dt>Load</dt><dd>One buyer, one session at a time, a few calls.</dd>
     </dl>
 
-    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 10, 22 October 2026, updated 24 October 2026.</p>
+    <h2 id="mainnet"><span class="n">7</span>On mainnet: the released app between our own nodes</h2>
+    <p><strong>The conditions.</strong> From 26 to 27 October 2026, on XBT mainnet, with real coins in small amounts. The app was installed from the published packages, ran the safe starter rules (approval above 1,000&nbsp;sat), and paid through Lightning Fork nodes of our own. The seller was our test shop, now at <code>https://stream.lazarus-xbt.xyz</code>, and in one run a second shop of ours. Each charge below was checked against the seller's meter and its signed receipt.</p>
+    <div class="table-wrap prose-table">
+      <table>
+        <thead><tr><th>What</th><th>What was paid and checked</th></tr></thead>
+        <tbody>
+          <tr><td>A fresh Linux install buys from our shop</td><td>One 900&nbsp;sat prepaid ticket, 904&nbsp;sat with its routing fee. A film range came back as exactly 2,097,152 bytes, and the credit went down by exactly 40,000&nbsp;msat (2&nbsp;MiB at 20&nbsp;sat per MiB), plus 40&nbsp;msat for an AI answer of 4 tokens.</td></tr>
+          <tr><td>Our wallet buys films and AI answers from our shop</td><td>1,003&nbsp;sat in all, with the AI model billed exactly 10&nbsp;msat per token.</td></tr>
+          <tr><td>A node box of ours buys from a second shop of ours</td><td>A 5&nbsp;MiB file charged exactly 100&nbsp;sat, and an AI answer of 8 tokens exactly 80&nbsp;msat, from one 900&nbsp;sat ticket.</td></tr>
+          <tr><td>Our shop at its new address</td><td>A 2&nbsp;MiB range, exactly 2,097,152 bytes, charged exactly 40,000&nbsp;msat. The seller's signed receipt matched the request.</td></tr>
+          <tr><td>Hashrate</td><td>A wallet of ours rented a miner from our shop: 691&nbsp;sat, paid for slices already delivered.</td></tr>
+          <tr><td>StartOS: the node key</td><td>With Lightning Fork's <em>Grant app access</em>, the app took its key within 60&nbsp;s and could read and pay but not make addresses. After a revoke the app said so plainly; a new grant was taken within 5&nbsp;s.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Faults these runs found, all fixed.</strong> Credit left with a seller was not used after a restart, or under the shop's new address, and a new ticket was bought instead (fixed in 0.1.15). A film stream stopped early could be charged past the limit set for it (0.1.15). The real-money step was easy to miss, because Home said ready before it (0.1.15). And a fresh install could not allow our shop after it moved address, because its listing still named the old one (0.1.16). The <a href="/stream/changelog/">changelog</a> has each.</p>
+    <h3>What these runs do not show</h3>
+    <dl>
+      <dt>Anyone outside the project</dt><dd>Every buyer and seller was ours. No outside tester has used the app yet.</dd>
+      <dt>A paid buy on StartOS</dt><dd>On StartOS the node key was tested on mainnet; a paid buy there has not run yet.</dd>
+      <dt>Strangers' routing nodes</dt><dd>Payments went over channels between our own nodes.</dd>
+      <dt>Load</dt><dd>One buyer at a time, a few calls each.</dd>
+    </dl>
+
+    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 11, 27 October 2026.</p>
   </div>
 </section>
 

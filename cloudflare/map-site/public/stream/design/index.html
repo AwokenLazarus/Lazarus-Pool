@@ -82,14 +82,14 @@
 <section class="hero wrap">
   <h1><span class="kicker">Lightning Stream · Design</span>Design <em>details</em></h1>
   <p class="lede">For readers who want the depth: how a ticket behaves in each case, why the defaults are what they are, what it costs at real fee rates, the lottery's two forms, how a session comes together, prior art, and the full list of references.</p>
-  <p class="note">This page accompanies Draft 10 of the Lightning Stream whitepaper, 22 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <p class="note">This page accompanies Draft 11 of the Lightning Stream whitepaper, 27 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
     <a href="#ticket-detail">Tickets in detail</a><a href="#cost">What it gives and what it costs</a><a href="#lottery-detail">The lottery in detail</a><a href="#session">How it comes together</a><a href="#many">Many sellers at once</a><a href="#costs">The costs, stated plainly</a><a href="#prior">Prior art</a><a href="#references">References</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
-    <a href="/stream/">The whitepaper</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+    <a href="/stream/">The whitepaper</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
   </nav>
 </section>
 
@@ -128,7 +128,7 @@
     <h3>What it gives</h3>
     <dl>
       <dt>No request waits for a Lightning payment</dt><dd>Tickets are locked ahead, and a released ticket's balance pays for the requests after it. The seller's check of a secret took 0.93&nbsp;ms (median) and collecting the ticket 3.5&nbsp;ms (measured on a three-node regtest lab, one hop). It is not free of round trips: the wallet sends every call once without payment, reads the seller's 402, and sends it again with its payment, and a release is one more request. On loopback paying added 0.3 to 0.4&nbsp;ms to a call; over a real network every call is one more round trip to the seller, and none of that was measured.</dd>
-      <dt>Pieces metered to the millisatoshi</dt><dd>Pieces are counted in millisatoshis, while money moves a ticket at a time: 1,000&nbsp;sat by default, and never less than 546&nbsp;sat for a ticket that is held. The part of the last ticket that was not used is trusted to the seller. For pieces worth less than a ticket there is a second way to pay: <a href="/stream/#lottery">the lottery</a>.</dd>
+      <dt>Pieces metered to the millisatoshi</dt><dd>Pieces are counted in millisatoshis, while money moves a ticket at a time: about 900&nbsp;sat at today's shops, small enough that a ticket and its routing fee stay under the starter rules' approval line of 1,000&nbsp;sat, and never less than 546&nbsp;sat for a ticket that is held. The part of the last ticket that was not used stays with the seller as credit, and the wallet spends it first when the buyer comes back. For pieces worth less than a ticket there is a second way to pay: <a href="/stream/#lottery">the lottery</a>.</dd>
       <dt>A bounded loss</dt><dd>The buyer can lose at most one ticket, and its routing fee. A ticket that was not released is never paid. A prepaid ticket, the first one with a seller the owner has not named, is spent when it is paid, used or not, and it too is one ticket.</dd>
       <dt>Lightning's reach</dt><dd>A buyer can pay any seller a Lightning route reaches. The routing, the liquidity and the nodes are Lightning's own. Lightning Stream runs no network and no hub.</dd>
       <dt>The owner's policy</dt><dd>The agent still pays under the owner's signed policy and still holds no key. In the lab the node permissions the wallet's Lightning payer already uses were enough to pay tickets. The seller's software needed only the permissions to read and write invoices, and its node refused it when it tried to send coins.</dd>
@@ -361,7 +361,7 @@
       <li id="ref-69">daywalker90. "holdinvoice", a hold invoice plugin for Core Lightning. MIT. Read at v4.0.0. <a href="https://github.com/daywalker90/holdinvoice" rel="noopener">daywalker90/holdinvoice</a>. <i>Not run by us. By its README it settles an invoice by its hash, so the secret is the seller's; the repository is archived and points to the plugin above.</i></li>
     </ol>
 
-    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 10, 22 October 2026.</p>
+    <p class="note"><a href="/stream/">Back to the whitepaper</a> · Draft 11, 27 October 2026.</p>
   </div>
 </section>
 
