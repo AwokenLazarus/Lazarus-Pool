@@ -62,8 +62,7 @@
 
 <section class="section wrap">
   <div class="prose paper" data-reveal>
-    <h2 id="v0115">0.1.15 (in progress)</h2>
-    <p>Not released yet: the code is on <code>main</code>, and the images, the Umbrel store and the StartOS registry follow.</p>
+    <h2 id="v0115">0.1.15 (2026-10-27)</h2>
     <p><strong>Paying on a new wallet</strong></p>
     <ul>
       <li>A new wallet on mainnet can pay right after setup. It asks a seller for a ticket small enough not to need your approval, and refuses only when even the seller's smallest ticket is too large, giving the numbers.</li>
@@ -95,6 +94,8 @@
     <p><strong>Other</strong></p>
     <ul>
       <li>The real-money confirmation no longer says the software has only run on test chains.</li>
+      <li>After a change that waits for a restart, the app says how to restart it on your platform (on Linux, <code>docker compose restart</code> in the install folder).</li>
+      <li><strong>Linux guide:</strong> the first run includes the "Pay with real money" step, and a node that has only its cookie file gets an <code>rpcauth</code> line for the app.</li>
       <li>StartOS: 0.1.15 alongside the Umbrel app.</li>
     </ul>
     <h2 id="v0114">0.1.14 (2026-10-27)</h2>
