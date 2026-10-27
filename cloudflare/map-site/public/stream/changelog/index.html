@@ -52,16 +52,41 @@
   <p class="note">The same log is <a href="https://github.com/AwokenLazarus/Lightning-Stream/blob/main/CHANGELOG.md" rel="noopener">CHANGELOG.md</a> in the code. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">Versions</p>
-    <a href="#v0115">0.1.15</a><a href="#v0114">0.1.14</a><a href="#v0113">0.1.13</a><a href="#v0112">0.1.12</a><a href="#v0111">0.1.11</a><a href="#v0110">0.1.10</a><a href="#v019">0.1.9</a><a href="#v018">0.1.8</a><a href="#v017">0.1.7</a><a href="#v016">0.1.6</a><a href="#v015">0.1.5</a><a href="#v014">0.1.4</a><a href="#v013">0.1.3</a><a href="#v012">0.1.2</a><a href="#v011">0.1.1</a><a href="#v010">0.1.0</a><a href="#thanks">Thanks</a>
+    <a href="#v0116">0.1.16</a><a href="#v0115">0.1.15</a><a href="#v0114">0.1.14</a><a href="#v0113">0.1.13</a><a href="#v0112">0.1.12</a><a href="#v0111">0.1.11</a><a href="#v0110">0.1.10</a><a href="#v019">0.1.9</a><a href="#v018">0.1.8</a><a href="#v017">0.1.7</a><a href="#v016">0.1.6</a><a href="#v015">0.1.5</a><a href="#v014">0.1.4</a><a href="#v013">0.1.3</a><a href="#v012">0.1.2</a><a href="#v011">0.1.1</a><a href="#v010">0.1.0</a><a href="#thanks">Thanks</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
-    <a href="/stream/">The whitepaper</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+    <a href="/stream/">The whitepaper</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
   </nav>
 </section>
 
 <section class="section wrap">
   <div class="prose paper" data-reveal>
+    <h2 id="v0116">0.1.16 (2026-10-27)</h2>
+    <p><strong>Selling</strong></p>
+    <ul>
+      <li>A shop that moved to a new address is listed there whole: items saved at its old address move with it, each time the shop is saved or the app starts.</li>
+      <li>A wallet can allow a moved shop to be paid. It reads the seller's Lightning node from each service's address and an item of each, at the seller's address, and asks the front page last (a shop need not price it). Before, it said "the seller asked for no payment at its address".</li>
+    </ul>
+    <p><strong>Paying</strong></p>
+    <ul>
+      <li>A seller that charges a call more than its limit is stopped. The wallet sends the call's limit with each paid request; a seller that ignores it (one of before 0.1.15) and charges past it gets nothing more in that session, the wallet page says what happened with the numbers, and the seller's signed receipt is kept in the wallet's records. Such a seller can take at most the credit it already held.</li>
+    </ul>
+    <p><strong>Linux package</strong></p>
+    <ul>
+      <li>The signer starts while your XBT node is stopped or not set up yet, instead of restarting in a loop. <code>LS_CHAIN</code> in <code>.env</code> says the chain (<code>main</code> unless set), and the wallet page says when the node does not answer.</li>
+      <li>The signer waits a moment for the anchor witness at start, so a first start is clean.</li>
+      <li><code>install.sh</code>: an empty answer to the admin macaroon question skips that step, as it says; a path with no file is said to be missing, not blamed on the Lightning node.</li>
+      <li><code>.env</code> holds a plain value as it is, so the random password is what you see; the install's last lines say exactly what to type.</li>
+      <li>The guide: how a node that uses only its cookie gives the app a login (<code>rpcauth</code>, with a check), and that some nodes take only channels of 100,000 sats or more.</li>
+    </ul>
+    <p><strong>Wording</strong></p>
+    <ul>
+      <li>The Your node page says the app is tested on mainnet with small amounts only.</li>
+      <li>Start paying while the wallet restarts says it is starting, not "Nothing to confirm on a test network".</li>
+      <li>A signed rules change that waits for a restart says how to restart on your platform (Umbrel, StartOS or Linux), and names no test-chain setting on mainnet.</li>
+      <li>The signer's log sends you to the setup page for the enrolment code, not to a file inside its container.</li>
+    </ul>
     <h2 id="v0115">0.1.15 (2026-10-27)</h2>
     <p><strong>Paying on a new wallet</strong></p>
     <ul>
