@@ -80,6 +80,30 @@
     const el = $("gatewaynotice"); if (el) el.hidden = true;
   });
 
+  // Knots 29.4.3 (knots#468): 180-day rolling coinbase maturity from this height. The notice counts
+  // down in blocks from the tip /api/pool reports (stats below), at about 10 minutes a block.
+  const FORK_HEIGHT = 979919;
+  const FORK_DISMISS_KEY = "lazarus.knots2943.v1.dismissed";
+  try { if (localStorage.getItem(FORK_DISMISS_KEY) === "1") { const el = $("forknotice"); if (el) el.hidden = true; } } catch (e) { /* private mode */ }
+  $("forknotice-dismiss")?.addEventListener("click", () => {
+    try { localStorage.setItem(FORK_DISMISS_KEY, "1"); } catch (e) { /* private mode */ }
+    const el = $("forknotice"); if (el) el.hidden = true;
+  });
+  let forkTip = 0;
+  function paintForkNotice(height) {
+    if (Number(height) > 0) forkTip = Number(height);
+    const el = $("forknotice-countdown");
+    if (!el || !forkTip) return;
+    const left = FORK_HEIGHT - forkTip;
+    if (left <= 0) {
+      el.textContent = t("forknotice.countdownDone");
+      return;
+    }
+    const hours = left / 6;
+    el.textContent = t("forknotice.countdown", { n: num(left), h: String(Math.round(hours)), d: (hours / 24).toFixed(1) });
+  }
+  document.addEventListener("lz:i18n", () => { paintForkNotice(); });
+
   // ------------------------------------------------------------ formatting
   // Formatters and the trend chart live in shared.js (window.LZ), shared with /miner/<addr>.
   const { blockMarks, esc, fmtHr, num, bigNum, short, shortHash, pct, pctSmart, ago, agoS, dur, when, clock, sig4, amt, amtSats, amtExact, kindPill, statusPill, chartLegend, draw, pathLabel, isPrimePath, sessCell, winShareCell, feePct, poolLink, payStatus, minerCard, showMinerTab, MINER_TABS, t: _t } = window.LZ;
@@ -717,6 +741,7 @@
     calcRate = thsBonus;
     renderCalc();
     if ($("live-tip")) $("live-tip").textContent = p.height || "\u2014";
+    paintForkNotice(p.height);
     if ($("live-window")) $("live-window").textContent = fillTxt;
     if ($("live-gateways")) $("live-gateways").textContent = String(gws);
     const off = $("prime-offline");

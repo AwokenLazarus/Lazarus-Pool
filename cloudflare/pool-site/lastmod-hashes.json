@@ -1,7 +1,7 @@
 {
  "/": {
-  "lastmod": "2026-10-24",
-  "sha256": "05600b05f69abb124a16b9cd0a196e4435d69a7c0d891764f10191134ca781f2"
+  "lastmod": "2026-10-29",
+  "sha256": "45f02bd2a00feebea3f98d5d22db8d4c09b0146abe07201fc38ce6e9fd33baa6"
  },
  "/api": {
   "lastmod": "2026-10-24",
@@ -20,16 +20,16 @@
   "sha256": "13fff689e3b5233cb132c3b88ad0ffa9899af2562318efa09fed5c4781fbb13e"
  },
  "/connect": {
-  "lastmod": "2026-10-24",
-  "sha256": "5086227e4babe0dae0f21f4547b9c08209364608667ad131bb823e8dda8fdd23"
+  "lastmod": "2026-10-29",
+  "sha256": "096685d01e087696875839a9e57a149585d6c124458faefdac350c189ec89e53"
  },
  "/datum-subsidy": {
-  "lastmod": "2026-10-24",
-  "sha256": "3f31ed93ba2f340b98a0447b15f3e9e6c93d9f788319f106e239e18b2227c2a4"
+  "lastmod": "2026-10-29",
+  "sha256": "280b91b8e82c04495ca78ee8b932d8047262db7e7165547a1950ba5583a42e65"
  },
  "/flytheelephant": {
-  "lastmod": "2026-10-24",
-  "sha256": "56e3701006f68ca6e89f3a127211382fe00564d27cc222928cd3356d2b80b104"
+  "lastmod": "2026-10-29",
+  "sha256": "3604b61a5974249dd77957e87ec04494d5af763605a0366f7ab422191628f2cf"
  },
  "/hardware": {
   "lastmod": "2026-10-24",
@@ -48,8 +48,8 @@
   "sha256": "0a0a7bb66e1b8032dc06d3d6aea8e35703ec64e3b8ef425b5d2c6b75f52a440b"
  },
  "/ratum": {
-  "lastmod": "2026-10-24",
-  "sha256": "6586d34eb51f62ac09cc33de46f48027b7beb3e3e74d637c225d4e91e8b4da49"
+  "lastmod": "2026-10-29",
+  "sha256": "86e3be4224d28e866403fee1c1b826107376cabfbe6890b01f53bb91eba3dc21"
  },
  "/rentals": {
   "lastmod": "2026-10-24",
@@ -60,8 +60,8 @@
   "sha256": "850df6b37db98e36c14ac1fe8b4ed26b88df1bbc96b499ac9613eb19d22e6f32"
  },
  "/zh/": {
-  "lastmod": "2026-10-24",
-  "sha256": "34b07bbd5c15f2899a932902874b0846158dd7bc39aa981ca1b09dc2639c5009"
+  "lastmod": "2026-10-29",
+  "sha256": "632a4e84ef97ef409efd5a33ed0c6b55c33c73b43499e4f2c8c7eba12dda5c5f"
  },
  "/zh/api": {
   "lastmod": "2026-10-24",
@@ -80,16 +80,16 @@
   "sha256": "a666136399fa3afaf9abfabddbbd929d87f5c11ae5832b602800fcbb2a0c0ca7"
  },
  "/zh/connect": {
-  "lastmod": "2026-10-24",
-  "sha256": "b6bb5b67d61b82f9840faa50c0a037e9ab47f200b592798cb09e1207b3f5d9f9"
+  "lastmod": "2026-10-29",
+  "sha256": "80a1247f2ce15287eb14fe70a2f6ba4db9fcc5484703c12aaf8fd88e11e91b6f"
  },
  "/zh/datum-subsidy": {
-  "lastmod": "2026-10-24",
-  "sha256": "079e287cbd41f1c4332ad64447858150b779c36fda4fe3203aa433917492a635"
+  "lastmod": "2026-10-29",
+  "sha256": "370b8e79854a085321008ce79d955e6792264003013feefa1603bc113155fd2d"
  },
  "/zh/flytheelephant": {
-  "lastmod": "2026-10-24",
-  "sha256": "ccc7678774f9ff62c5e525b1202cd28d0e7324bdb0f98a929ed91a79486ac69e"
+  "lastmod": "2026-10-29",
+  "sha256": "e33783ab830ea99731c24632379b0103aa3b320bcefeff787c58fcf19fbc884f"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-24",
@@ -108,8 +108,8 @@
   "sha256": "dc299d39367ed31a3b159ec7d84bd6e306a300c42ca0d24ecc640d9fede061e0"
  },
  "/zh/ratum": {
-  "lastmod": "2026-10-24",
-  "sha256": "350cd7a940954fe2ece8d4677da4add8c679cc97774113a913ef781fc53a8444"
+  "lastmod": "2026-10-29",
+  "sha256": "030ea680857ba51692870ac162982d1650d5d4ed9e391555c1d2005664453d46"
  },
  "/zh/rentals": {
   "lastmod": "2026-10-24",
