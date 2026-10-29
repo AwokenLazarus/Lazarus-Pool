@@ -68,24 +68,15 @@
   <h1><span class="kicker">Whitepaper · XBT</span>Lightning Stream: pay as it <em>arrives</em></h1>
   <p class="lede">Anyone who runs a Lightning node should be able to sell a service to the network (a film, an AI model, hashrate, an API, software of their own) and be paid for it piece by piece as it is delivered, by people and by AI agents alike.</p>
   <p class="lede">Lightning Stream does that on ordinary XBT Lightning. The buyer pays a small ticket ahead, the seller counts what it delivers to the millisatoshi and signs a receipt for every answer, and the buyer can lose no more than one ticket. For pieces too small to pay one by one, a fair roll decides which pieces are paid.</p>
-  <a class="hiw-thumb" href="/stream/how-it-works/" aria-label="See how Stream works: the full map">
-  <figure class="fig">
-<svg viewBox="0 0 640 170" role="img" aria-label="Thumbnail of how Stream works: your Stream app and the seller's are joined by an encrypted link; money moves between your nodes over XBT Lightning; shops are found on Nostr.">
-<rect class="box-brass" x="10" y="10" width="620" height="30" rx="8"/>
-<text class="t-s" x="320" y="30" text-anchor="middle">Nostr: signed listings, found in Browse</text>
-<rect class="box" x="20" y="58" width="170" height="54" rx="8"/>
-<text class="t" x="105" y="82" text-anchor="middle">Your Stream app</text>
-<text class="t-s" x="105" y="100" text-anchor="middle">rules you sign</text>
-<rect class="box" x="450" y="58" width="170" height="54" rx="8"/>
-<text class="t" x="535" y="82" text-anchor="middle">Seller's Stream app</text>
-<text class="t-s" x="535" y="100" text-anchor="middle">web apps, AI, hashrate</text>
-<polyline class="ln-link" points="190,85 450,85"/>
-<text class="t-s" x="320" y="77" text-anchor="middle">encrypted link to the seller</text>
-<rect class="box-brass" x="10" y="128" width="620" height="30" rx="8"/>
-<text class="t-m" x="320" y="148" text-anchor="middle">XBT Lightning: small tickets, paid as you use it</text>
+  <a class="hiw-thumb hiw" href="/stream/how-it-works/" aria-label="See how Stream works">
+<svg viewBox="0 0 640 150" role="img" aria-label="Your app and their app, joined by an encrypted link; money moves over Lightning.">
+<rect class="appbox" x="40" y="20" width="120" height="70" rx="18"/><path class="ic-brass" d="M103 33L92 50h8l-3 13L109 46h-8z"/><text class="i-lab" x="100" y="82" text-anchor="middle">Your app</text>
+<rect class="appbox" x="480" y="20" width="120" height="70" rx="18"/><path class="ic-brass" d="M543 33L532 50h8l-3 13L549 46h-8z"/><text class="i-lab" x="540" y="82" text-anchor="middle">Their app</text>
+<polyline class="fl-data" points="160,55 480,55"/>
+<rect class="lockpad" x="298" y="35" width="44" height="40" rx="10"/><rect class="lock" x="311" y="54" width="18" height="13" rx="2"/><path class="ic" d="M315 54v-4a5 5 0 0 1 10 0v4"/>
+<rect class="band band-brass" x="140" y="108" width="360" height="30" rx="15"/><path class="ic-brass" d="M233 113L224 125h6l-2 9L240 121h-6z"/><text class="i-lab" x="250" y="128">Lightning: sats, as you use it</text>
 </svg>
-    <figcaption><b>See how Stream works:</b> the full map of buyers, sellers, relays, miners, exits, Nostr and Lightning.</figcaption>
-  </figure>
+    <span><b>See how Stream works</b>, at a glance.</span>
   </a>
   <p class="note">Draft 11 · 27 October 2026 · Lightning Stream (<a href="https://github.com/AwokenLazarus/Lightning-Stream" rel="noopener">source</a>). The app is released for Umbrel, StartOS and Linux and runs on XBT mainnet: <a href="/stream/start/">Try it</a> says how. It has been tested on mainnet between our own nodes, with small amounts, and is not audited; see <a href="#status">Status</a>.</p>
   <nav class="toc" aria-label="On this page">
