@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
 <link rel="stylesheet" href="/assets/hub.css?v=7">
-<link rel="stylesheet" href="/stream/stream.css?v=3">
+<link rel="stylesheet" href="/stream/stream.css?v=4">
 <script src="/assets/js.js"></script>
 <script src="/assets/analytics.js?v=1" defer></script>
 <script type="application/ld+json">
@@ -85,7 +85,7 @@
   <p class="note">Updated 29 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
-    <a href="#map">The map</a>
+    <a href="#map">The map</a><a href="#money">How the money works</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
@@ -295,6 +295,192 @@
   <span class="ghost"><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="tile" x="1" y="1" width="12" height="12" rx="3"/></svg>designed, not yet built</span>
 </div>
   </figure>
+
+
+  <section class="hiw" id="money" aria-labelledby="money-h">
+    <h2 id="money-h">How the money works</h2>
+    <p class="note">Not one Lightning payment per thing bought: small tickets, used up as you go.</p>
+    <div class="hiw-money">
+      <figure><h3>1 · Tickets, paid as you use</h3><svg viewBox="0 0 480 300" role="img" aria-label="Tickets, paid as you use: a small ticket paid over Lightning becomes credit at the seller, drawn down as you use the service; the next ticket is paid just before it runs out; every answer gets a signed receipt; at most one ticket is at risk.">
+<circle class="tile" cx="50" cy="70" r="26"/>
+<circle class="ic" cx="50" cy="70" r="15"/>
+<path class="ic-brass" transform="translate(50 70) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="116" text-anchor="middle">You</text>
+<polyline class="fl-money" points="78,70 150,70"/>
+<polygon class="ah-money" points="156,70 144,64 144,76"/>
+<circle class="coin" cx="118" cy="48" r="13"/>
+<path class="coin-mark" transform="translate(118 48) scale(0.8125)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-sub" x="118" y="30" text-anchor="middle">900 sats</text>
+<rect class="bar-track2" x="170" y="52" width="250" height="36" rx="8"/>
+<rect class="bar-fill" x="170" y="52" width="160" height="36" rx="8"/>
+<text class="p-sub" x="295" y="44" text-anchor="middle">credit at the seller</text>
+<polyline class="fl-data2" points="420,104 330,104"/>
+<polygon class="ah-data" points="324,104 334,99 334,109"/>
+<text class="p-sub" x="375" y="124" text-anchor="middle">drawn down as you use</text>
+<rect class="refill" x="205" y="48" width="3" height="44" rx="1"/>
+<text class="p-sub" x="206" y="140" text-anchor="middle">next ticket paid here,</text>
+<text class="p-sub" x="206" y="158" text-anchor="middle">before it runs out</text>
+<polyline class="fl-local2" points="206,92 206,126"/>
+<rect class="chip" x="273" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="300" y="194" text-anchor="middle">bytes</text>
+<rect class="chip" x="335" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="362" y="194" text-anchor="middle">tokens</text>
+<rect class="chip" x="397" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="424" y="194" text-anchor="middle">slices</text>
+<path class="ic" d="M61 188h18v24l-3-2-3 2-3-2-3 2-3-2-3 2z"/><path class="ic" d="M65 195h10M65 200h10M65 205h6"/>
+<text class="p-sub" x="70" y="236" text-anchor="middle">signed receipt</text>
+<text class="p-sub" x="70" y="254" text-anchor="middle">for every answer</text>
+<rect class="riskpill" x="150" y="248" width="300" height="34" rx="17"/>
+<text class="p-lab" x="300" y="270" text-anchor="middle">at most one ticket at risk</text>
+</svg></figure>
+      <figure><h3>2 · Held tickets</h3><svg viewBox="0 0 480 260" role="img" aria-label="Held tickets: the payment is locked along the route as a hold invoice; the seller cannot take it until your app releases the secret when you use it; an unused ticket comes back.">
+<circle class="tile" cx="50" cy="80" r="26"/>
+<circle class="ic" cx="50" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(50 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="126" text-anchor="middle">You</text>
+<circle class="tile" cx="180" cy="80" r="16"/>
+<circle class="ic-dot" cx="180" cy="80" r="4"/>
+<circle class="tile" cx="300" cy="80" r="16"/>
+<circle class="ic-dot" cx="300" cy="80" r="4"/>
+<circle class="tile" cx="430" cy="80" r="26"/>
+<circle class="ic" cx="430" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(430 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="430" y="126" text-anchor="middle">Seller</text>
+<polyline class="fl-money" points="76,80 164,80"/>
+<polyline class="fl-money" points="196,80 284,80"/>
+<polyline class="fl-money" points="316,80 404,80"/>
+<circle class="coin" cx="120" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(120 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="112" y="58" width="16" height="12" rx="2"/><path class="ic" d="M115.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<circle class="coin" cx="240" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(240 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="232" y="58" width="16" height="12" rx="2"/><path class="ic" d="M235.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<circle class="coin" cx="360" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(360 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="352" y="58" width="16" height="12" rx="2"/><path class="ic" d="M355.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<text class="p-lab" x="240" y="30" text-anchor="middle">locked along the route</text>
+<circle class="ic" cx="44" cy="170" r="5.5"/><path class="ic" d="M49 170h13M58 170v5M62 170v4"/>
+<text class="p-sub" x="50" y="200" text-anchor="middle">you keep</text>
+<text class="p-sub" x="50" y="218" text-anchor="middle">the secret</text>
+<polyline class="fl-data2" points="80,170 400,170"/>
+<polygon class="ah-data" points="406,170 396,165 396,175"/>
+<text class="p-sub" x="240" y="160" text-anchor="middle">released when you use it: seller collects</text>
+<polyline class="fl-ret" points="400,230 80,230"/>
+<polygon class="ah-ret" points="74,230 84,225 84,235"/>
+<text class="p-sub" x="240" y="222" text-anchor="middle">not used: it comes back to you</text>
+</svg></figure>
+      <figure><h3>3 · Channels</h3><svg viewBox="0 0 480 220" role="img" aria-label="Channels: ordinary Lightning channels from your node through the network to the seller's node; Stream adds no new channel type.">
+<circle class="tile" cx="50" cy="80" r="26"/>
+<circle class="ic" cx="50" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(50 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="126" text-anchor="middle">Your node</text>
+<circle class="tile" cx="160" cy="80" r="16"/>
+<circle class="ic-dot" cx="160" cy="80" r="4"/>
+<circle class="tile" cx="240" cy="50" r="16"/>
+<circle class="ic-dot" cx="240" cy="50" r="4"/>
+<circle class="tile" cx="240" cy="110" r="16"/>
+<circle class="ic-dot" cx="240" cy="110" r="4"/>
+<circle class="tile" cx="320" cy="80" r="16"/>
+<circle class="ic-dot" cx="320" cy="80" r="4"/>
+<circle class="tile" cx="430" cy="80" r="26"/>
+<circle class="ic" cx="430" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(430 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="430" y="126" text-anchor="middle">Seller's node</text>
+<polyline class="ch" points="76,80 144,80"/>
+<polyline class="ch" points="174,72 225,55"/>
+<polyline class="ch" points="174,88 225,105"/>
+<polyline class="ch" points="255,55 306,72"/>
+<polyline class="ch" points="255,105 306,88"/>
+<polyline class="ch" points="336,80 404,80"/>
+<text class="p-lab" x="240" y="160" text-anchor="middle">ordinary Lightning channels</text>
+<text class="p-sub" x="240" y="182" text-anchor="middle">Stream adds no new kind of channel</text>
+<text class="p-sub" x="240" y="200" text-anchor="middle">routing, fees and nodes are Lightning's own</text>
+</svg></figure>
+      <figure><h3>4 · The lottery, for tiny pieces</h3><svg viewBox="0 0 480 300" role="img" aria-label="The lottery: for pieces too small to pay one by one, each piece gets a fair roll; the seller's half is fixed before the session and yours after each piece; most rolls pay nothing, a win pays a normal-sized amount; fair on average. A win that pays itself is designed, not yet built.">
+<rect class="chip" x="30" y="20" width="200" height="34" rx="17"/>
+<rect class="lock" x="44" y="32" width="16" height="12" rx="2"/><path class="ic" d="M47.5 32v-4a4.5 4.5 0 0 1 9 0v4"/>
+<text class="p-sub" x="140" y="42" text-anchor="middle">seller's half: sealed first</text>
+<rect class="chip" x="250" y="20" width="200" height="34" rx="17"/>
+<text class="p-sub" x="350" y="42" text-anchor="middle">your half: after each piece</text>
+<rect class="piece" x="27" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="38" cy="91" r="2.4"/>
+<circle class="pip" cx="52" cy="105" r="2.4"/>
+<circle class="pip" cx="45" cy="98" r="2.4"/>
+<text class="p-sub" x="45" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="77" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="88" cy="91" r="2.4"/>
+<circle class="pip" cx="102" cy="105" r="2.4"/>
+<circle class="pip" cx="95" cy="98" r="2.4"/>
+<text class="p-sub" x="95" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="127" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="138" cy="91" r="2.4"/>
+<circle class="pip" cx="152" cy="105" r="2.4"/>
+<circle class="pip" cx="145" cy="98" r="2.4"/>
+<text class="p-sub" x="145" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="177" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="188" cy="91" r="2.4"/>
+<circle class="pip" cx="202" cy="105" r="2.4"/>
+<circle class="pip" cx="195" cy="98" r="2.4"/>
+<text class="p-sub" x="195" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="227" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="238" cy="91" r="2.4"/>
+<circle class="pip" cx="252" cy="105" r="2.4"/>
+<circle class="pip" cx="245" cy="98" r="2.4"/>
+<text class="p-sub" x="245" y="136" text-anchor="middle">0</text>
+<rect class="piece-win" x="277" y="80" width="36" height="36" rx="7"/>
+<circle class="coin" cx="295" cy="98" r="11"/>
+<path class="coin-mark" transform="translate(295 98) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-win" x="295" y="136" text-anchor="middle">win</text>
+<rect class="piece" x="327" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="338" cy="91" r="2.4"/>
+<circle class="pip" cx="352" cy="105" r="2.4"/>
+<circle class="pip" cx="345" cy="98" r="2.4"/>
+<text class="p-sub" x="345" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="377" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="388" cy="91" r="2.4"/>
+<circle class="pip" cx="402" cy="105" r="2.4"/>
+<circle class="pip" cx="395" cy="98" r="2.4"/>
+<text class="p-sub" x="395" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="427" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="438" cy="91" r="2.4"/>
+<circle class="pip" cx="452" cy="105" r="2.4"/>
+<circle class="pip" cx="445" cy="98" r="2.4"/>
+<text class="p-sub" x="445" y="136" text-anchor="middle">0</text>
+<text class="p-lab" x="240" y="170" text-anchor="middle">most rolls pay nothing; a win pays a normal amount</text>
+<text class="p-sub" x="240" y="192" text-anchor="middle">e.g. 0.1 sat a piece: 1 piece in 640 wins 64 sats</text>
+<text class="p-sub" x="240" y="214" text-anchor="middle">fair on average; neither side can steer a roll</text>
+<g class="st-d">
+<rect class="chip" x="110" y="244" width="260" height="34" rx="17"/>
+<text class="p-sub" x="240" y="266" text-anchor="middle">a win that pays itself</text>
+</g>
+<text class="p-plan" x="240" y="294" text-anchor="middle">(designed, not yet built)</text>
+</svg></figure>
+      <figure><h3>5 · What Stream adds</h3><svg viewBox="0 0 480 300" role="img" aria-label="What Stream adds on top of Lightning: plain Lightning is one payment per invoice; Stream adds metering, signed receipts, spending rules you sign, automatic refills and a cap per seller.">
+<text class="p-head" x="110" y="30" text-anchor="middle">Lightning alone</text>
+<text class="p-head" x="350" y="30" text-anchor="middle">Stream on Lightning</text>
+<rect class="chip" x="40" y="50" width="140" height="44" rx="10"/>
+<text class="p-lab" x="110" y="77" text-anchor="middle">one invoice</text>
+<polyline class="fl-money" points="110,94 110,124"/>
+<polygon class="ah-money" points="110,130 105,120 115,120"/>
+<circle class="coin" cx="110" cy="148" r="13"/>
+<path class="coin-mark" transform="translate(110 148) scale(0.8125)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="110" y="184" text-anchor="middle">one payment</text>
+<text class="p-sub" x="110" y="212" text-anchor="middle">for one thing,</text>
+<text class="p-sub" x="110" y="230" text-anchor="middle">paid in full</text>
+<path class="divider" d="M230 20v260"/>
+<circle class="okdot" cx="262" cy="59" r="9"/><path class="okmark" d="M257 59l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="64" text-anchor="start">pay per byte, token, slice</text>
+<circle class="okdot" cx="262" cy="103" r="9"/><path class="okmark" d="M257 103l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="108" text-anchor="start">signed receipts</text>
+<circle class="okdot" cx="262" cy="147" r="9"/><path class="okmark" d="M257 147l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="152" text-anchor="start">rules you sign</text>
+<circle class="okdot" cx="262" cy="191" r="9"/><path class="okmark" d="M257 191l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="196" text-anchor="start">refills in time</text>
+<circle class="okdot" cx="262" cy="235" r="9"/><path class="okmark" d="M257 235l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="240" text-anchor="start">a cap per seller</text>
+</svg></figure>
+    </div>
+  </section>
 
   <div class="prose paper hiw-more" data-reveal>
     <details open><summary>What happens when you buy</summary>

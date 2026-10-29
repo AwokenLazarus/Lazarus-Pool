@@ -84,3 +84,32 @@
 .hiw-thumb:hover svg, .hiw-thumb:focus-visible svg { border-color: var(--brass-dim); }
 .hiw-thumb span { display: block; margin-top: 0.5rem; color: var(--muted); font-size: 0.92rem; }
 .hiw-thumb b { color: var(--ink); }
+/* how-it-works: how the money works, five small panels. */
+.hiw-money { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; margin: 1.2rem 0 1rem; }
+@media (max-width: 760px) { .hiw-money { grid-template-columns: 1fr; } }
+.hiw-money figure { margin: 0; }
+.hiw-money h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+.hiw-money svg { display: block; width: 100%; height: auto; background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--r); }
+.hiw-money figure.wide { grid-column: 1 / -1; }
+.hiw .p-lab { font: 500 15px var(--sans); fill: var(--ink); }
+.hiw .p-sub { font: 400 13px var(--sans); fill: var(--muted); }
+.hiw .p-sub2 { font: 400 14px var(--sans); fill: var(--ink); }
+.hiw .p-head { font: 600 12px var(--sans); letter-spacing: 0.14em; text-transform: uppercase; fill: var(--faint); }
+.hiw .p-win { font: 600 13px var(--mono); fill: var(--brass); }
+.hiw .p-plan { font: 500 11.5px var(--mono); fill: var(--faint); }
+.hiw .bar-track2 { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.hiw .bar-fill { fill: oklch(80% 0.11 84 / 0.45); }
+.hiw .refill { fill: var(--warn); }
+.hiw .fl-data2 { stroke: var(--ink); stroke-width: 2.5; fill: none; }
+.hiw .fl-local2 { stroke: var(--line-strong); stroke-width: 1.5; fill: none; stroke-dasharray: 3 3; }
+.hiw .fl-ret { stroke: var(--good); stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; }
+.hiw .ah-ret { fill: var(--good); }
+.hiw .chip { fill: var(--bg-card); stroke: var(--line-strong); stroke-width: 1; }
+.hiw .riskpill { fill: oklch(80% 0.11 84 / 0.1); stroke: var(--brass-dim); stroke-width: 1.2; }
+.hiw .ch { stroke: var(--brass-dim); stroke-width: 3; fill: none; }
+.hiw .piece { fill: var(--bg-card); stroke: var(--line-strong); stroke-width: 1.2; }
+.hiw .piece-win { fill: oklch(80% 0.11 84 / 0.16); stroke: var(--brass); stroke-width: 1.6; }
+.hiw .pip { fill: var(--faint); }
+.hiw .divider { stroke: var(--line); stroke-width: 1; fill: none; }
+.hiw .okdot { fill: oklch(76% 0.13 155 / 0.18); stroke: var(--good); stroke-width: 1.2; }
+.hiw .okmark { stroke: var(--good); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
