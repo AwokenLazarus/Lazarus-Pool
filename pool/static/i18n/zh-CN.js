@@ -890,7 +890,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
       "one": "{n} 个区块漏掉了你的输出 · coinbase 已成熟，几分钟内广播付款",
       "other": "{n} 个区块漏掉了你的输出 · coinbase 已成熟，几分钟内广播付款"
     },
-    "mgLongMaturity": "区块 {start} 至 {release} 受网络临时的 45 天 coinbase 成熟期约束（Knots 软分叉 #419）：在区块 {release} 之前任何人都无法花费这些 coinbase，因此这笔补付将在那时支付。它已登记、已签名、正在等待；没有任何东西被拿走。",
+    "mgLongMaturity": "从区块 {start} 开始，网络对 coinbase 有更长的成熟期，按每个区块自己的高度计算：区块 {start} 至 {windowEnd} 的 coinbase 要在其区块之后 6,480 个区块（约 45 天，Knots #419）才能花费；从区块 {rolling} 开始的要在其区块之后 25,920 个区块（约 180 天，Knots 29.4.3）。这笔补付会在其区块的 coinbase 可以花费时支付。它已登记、已签名、正在等待；没有任何东西被拿走。",
     "mgCellBroadcast": "补付已广播 · 正在确认",
     "mgCellAllPaid": "无待付 · 累计通过补付支付 {amt}",
     "mgCellFailed": "一笔补付发送失败 · 已通知运营者",

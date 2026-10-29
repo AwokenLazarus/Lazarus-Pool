@@ -262,9 +262,9 @@
           <p>Bitcoin Knots 29.4.2 holds newly mined coins for 6,480 blocks instead of 100, until block 979,920. It makes hit-and-run mining unprofitable. <a href="/learn/#softfork">What it means for payouts</a>.</p>
         </li>
         <li>
-          <span class="when">Block 979,920 · about 5 Nov 2026</span>
-          <h3>The rule lapses</h3>
-          <p>Coinbase maturity returns to 100 blocks. Coins mined during the window unlock as they reach 6,481 confirmations.</p>
+          <span class="when">Block 979,919 · about 1 Nov 2026</span>
+          <h3>180-day rolling maturity</h3>
+          <p>Bitcoin Knots 29.4.3 holds coins mined from block 979,919 for 25,920 blocks (about 180 days), each counted from its own block, until the RDTS expiry in September 2027. Coins mined during the first window still unlock 6,480 blocks after their own block. <a href="/learn/#softfork">What it means for payouts</a>.</p>
         </li>
       </ol>
       <div data-reveal>
@@ -311,7 +311,7 @@
       <details class="faq"><summary>Is this a new coin?</summary><div class="answer"><p>No. It is Bitcoin's ledger, continued under a different proof of work from block 961,640. If you held bitcoin before that block, the same balance exists on this chain at the same address. It trades as XBT to tell the two chains apart.</p></div></details>
       <details class="faq"><summary>What can I mine it with?</summary><div class="answer"><p>Anything that can hash BLAKE2b: purpose-built ASICs, GPUs, even a CPU for testing. SHA-256 bitcoin miners cannot.</p></div></details>
       <details class="faq"><summary>How do payouts work on this chain?</summary><div class="answer"><p>Pools running DATUM pay miners inside the coinbase of the block that earned it, so a payout and a block are the same event and no pool holds a balance for you. Each pool sets its own split: the <a href="https://pool.lazarus-xbt.xyz" rel="noopener">Lazarus Pool site</a> documents its scheme, fees and window.</p></div></details>
-      <details class="faq"><summary>Why does my payout take so long to spend?</summary><div class="answer"><p>Coinbase outputs always mature before they can be spent. Until block 979,920 that wait is 6,481 confirmations rather than 101, because of the long coinbase maturity soft fork. The coins are yours the moment the block confirms; they are only locked from spending.</p></div></details>
+      <details class="faq"><summary>Why does my payout take so long to spend?</summary><div class="answer"><p>Coinbase outputs always mature before they can be spent. Under the long coinbase maturity soft forks a coin mined from block 973,440 to 979,918 waits 6,480 blocks (about 45 days) and one mined from block 979,919 on waits 25,920 blocks (about 180 days, Knots 29.4.3), each counted from its own block. The coins are yours the moment the block confirms; they are only locked from spending.</p></div></details>
       <details class="faq"><summary>I am on a pool's stratum today. What should I do?</summary><div class="answer"><p>Move to your own node and DATUM gateway. Your accepted work is tied to your address rather than to how you connect, so your place in a pool's payout window carries over. The pool site has the <a href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">DATUM setup steps</a>.</p></div></details>
       <details class="faq"><summary>Where do I ask for help?</summary><div class="answer"><p>The <a href="https://discord.gg/fD33dJXnzz" rel="noopener">Discord</a> is the fastest way to reach miners and the people running the pool. Announcements go out on <a href="https://x.com/Awoken_Lazarus" rel="noopener">X</a>.</p></div></details>
     </div>

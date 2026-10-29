@@ -25,7 +25,7 @@
  },
  "/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "defc672b38b459c55364ae6763590a3f782de0c218e6fa6bb957ec6b3e47fbab"
+  "sha256": "f0d4a97580316aedaa9291a65f8c1804e60cff91fe01fbf6444b88091a6f3d54"
  },
  "/hardware": {
   "lastmod": "2026-10-29",
@@ -45,7 +45,7 @@
  },
  "/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "6f625b0497c1e99ce60175ef613229e57d4e70df20aec3813683e0866a26f86a"
+  "sha256": "272af12f6454b2f749c845266df345be596a36bbbb6464f2d1751bf95759fa8c"
  },
  "/rentals": {
   "lastmod": "2026-10-29",
@@ -81,7 +81,7 @@
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "41fd2581216cf6d37dfe38ba63fc51d2c201d3ceddee41b3e40fa559d1c33720"
+  "sha256": "e8f259f5a28c1da3813053f0decf84a3e1eba2f05e2a05c8feeabfb7adb63de8"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-29",
@@ -101,7 +101,7 @@
  },
  "/zh/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "0de212b6e1919c64d9a3f5c1e8a75c98d6010c82ee86d8462d1a3d383a6666dd"
+  "sha256": "4d99e2338b168a43bb80b734fad0de629c5f02c27ecf95e6806c74b19b285e1c"
  },
  "/zh/rentals": {
   "lastmod": "2026-10-29",

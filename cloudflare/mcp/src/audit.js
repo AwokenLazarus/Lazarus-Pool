@@ -9,15 +9,17 @@ import { payoutAddress } from "./address.js";
 import { FAQ, FAQ_VERSION, searchFaq } from "./faq.js";
 import { PublicError, pool, chain, xbt, sats, pct, iso, label, NOTE_LABELS, POOL_SITE, EXPLORER, HEX64, int, addressArg } from "./upstream.js";
 
-// Knots #419 (in 29.4.2). Consensus: coinbases mined 973,440..979,919 need 6,480 confirmations
-// until the rule releases at 979,920. Relay policy: 29.4.2 applies 6,480 to every coinbase spend.
-const LONG_START = 973440, LONG_DEPTH = 6480;
+// Knots #419 (in 29.4.2). Consensus: coinbases mined 973,440..979,918 need 6,480 confirmations
+// until the rule releases at 979,920. Relay policy: 29.4.2 and 29.4.3 apply 6,480 to every coinbase
+// below 979,919. Knots 29.4.3 (#468): coinbases from 979,919 need 25,920 (180 days) under consensus
+// and relay, each from its own block, until RDTS expires (2027-09-01; not modelled here).
+const LONG_START = 973440, LONG_DEPTH = 6480, ROLLING_START = 979919, ROLLING_DEPTH = 25920;
 const FIRST_BLAKE2B = 961640; // no Lazarus block can be older than the PoW change
 const MG_STATUSES = new Set(["queued", "paid", "failed"]);
 
 const MATURITY_WHY =
-  "Coinbase outputs normally spend after 100 confirmations. Bitcoin Knots #419 (in 29.4.2) makes coinbases mined from block 973,440 need 6,480 confirmations under consensus until the rule releases at block 979,920, " +
-  "and 29.4.2's relay policy applies the same 6,480 to every coinbase spend, older coinbases included, so nodes will not relay a spend before then. The pool uses the later of the two, so its unlock heights are the conservative ones.";
+  "Coinbase outputs normally spend after 100 confirmations. Bitcoin Knots #419 (in 29.4.2) makes coinbases mined from block 973,440 to 979,918 need 6,480 confirmations, and Knots relay policy applies the same 6,480 to every coinbase below block 979,919, older coinbases included, so each of those unlocks about 45 days after its own block. " +
+  "Knots 29.4.3 (#468) makes coinbases mined from block 979,919 on need 25,920 confirmations (about 180 days) under consensus and relay, each counted from its own block. The pool uses the later of consensus and relay, so its unlock heights are the conservative ones.";
 const ESTIMATE_NOTE = "Dates are estimates (recent average block interval); heights are exact.";
 
 /** The miner record, or a clear 'unknown' answer. */
@@ -40,9 +42,10 @@ const estDate = (blocks, interval) => iso(Math.round(Date.now() / 1000 + Math.ma
 const tipOf = (m) => Number(m.tip_height) || 0;
 const hex = (t) => (typeof t === "string" && HEX64.test(t) ? t.toLowerCase() : null);
 
-/** The height from which a coinbase mined at `h` can be spent and relayed. Consensus never asks for more than
- *  6,480 and the 29.4.2 relay policy always asks for 6,480, so the later of the two is always h + 6,480. */
-const unlockHeight = (h) => h + LONG_DEPTH;
+/** The height from which a coinbase mined at `h` can be spent and relayed. Below 979,919 consensus never asks
+ *  for more than 6,480 and relay always asks for 6,480, so it is h + 6,480; from 979,919 both ask 25,920. */
+const depthAt = (h) => (h >= ROLLING_START ? ROLLING_DEPTH : LONG_DEPTH);
+const unlockHeight = (h) => h + depthAt(h);
 
 /** One of the address's coinbase payouts, with its unlock height from both the pool's figure and the rule. */
 function coinbaseRow(b, tip, interval) {
@@ -53,7 +56,7 @@ function coinbaseRow(b, tip, interval) {
   return {
     height: h, block_hash: hex(b.hash), paid_xbt: xbt(b.miner_btc), confirmations: confs, status: label(b.status),
     unlock_height: unlock, blocks_remaining: left, estimated_unlock: left ? estDate(left, interval) : "now",
-    rule: h >= LONG_START ? "Knots #419 consensus, 6,480 confirmations" : consensusMature && left ? "consensus-mature (100 confirmations), but Knots 29.4.2 nodes will not relay a spend until 6,480" : "100 confirmations",
+    rule: h >= ROLLING_START ? "Knots 29.4.3 (#468) consensus, 25,920 confirmations (about 180 days)" : h >= LONG_START ? "Knots #419 consensus, 6,480 confirmations" : consensusMature && left ? "consensus-mature (100 confirmations), but Knots nodes will not relay a spend until 6,480" : "100 confirmations",
   };
 }
 
@@ -72,9 +75,9 @@ function makegoodRow(g, tip, interval) {
   }
   if (status === "queued") {
     const at = Number(g.payable_at) || unlockHeight(Number(g.height)), left = Math.max(0, at - tip);
-    const relay = Number(g.height) < LONG_START ? " Consensus would allow this pre-973,440 coinbase after 100 confirmations, but Knots 29.4.2 nodes will not relay the spend until 6,480." : "";
+    const relay = Number(g.height) < LONG_START ? " Consensus would allow this pre-973,440 coinbase after 100 confirmations, but Knots nodes will not relay the spend until 6,480." : "";
     return { ...row, payable_at_height: at, blocks_remaining: left, estimated_payable: left ? estDate(left, interval) : "due now", why,
-      reason_waiting: `It spends the pool's output in block ${g.height}'s own coinbase, which the chain accepts from height ${at} (the block height + 6,480).${relay} It is already signed (the txid is fixed) and is broadcast automatically at that height.` };
+      reason_waiting: `It spends the pool's output in block ${g.height}'s own coinbase, which the chain accepts from height ${at} (the block height + ${depthAt(Number(g.height)).toLocaleString("en-US")}).${relay} It is already signed (the txid is fixed) and is broadcast automatically at that height.` };
   }
   if (status === "failed") return { ...row, why, note: "The broadcast failed. The pool records it for follow-up; ask in the pool's Discord with this block height." };
   return { ...row, why };
@@ -86,7 +89,7 @@ export const AUDIT_TOOLS = [
     title: "Full payout audit for one address: paid, maturing, carried, owed make-goods, and why each delay exists",
     description:
       "One structured audit of a payout address on Lazarus Pool: total paid, coinbase payouts still maturing (with the next unlock heights and estimated dates), carry and why it is carried, make-goods queued / paid / failed with totals and the next payable height, " +
-      "fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window and 29.4.2's relay policy on every coinbase spend). " +
+      "fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window, Knots 29.4.3's 180-day maturity from block 979,919 and the relay policy on every coinbase spend). " +
       "Start here for 'audit my payouts' or 'where is my money'. Estimates are labelled as estimates. Counts as 2 per-address lookups.",
     heavy: true, cost: 2, fanout: 3,
     inputSchema: { type: "object", properties: { address: addressArg }, required: ["address"], additionalProperties: false },
@@ -110,8 +113,8 @@ export const AUDIT_TOOLS = [
 
       const delays = [];
       if (locked.length) delays.push(`${locked.length} recent coinbase payout(s) are on chain but locked until the maturity height (the next at ${locked[0].unlock_height}). ${MATURITY_WHY}`);
-      if (relayOnly.length) delays.push(`${relayOnly.length} of those are mature under consensus (pre-973,440, 100 confirmations) but still under 6,480 confirmations, so Knots 29.4.2 nodes will not relay a spend yet; a 100-confirmation wallet may show them as spendable.`);
-      if (queued.length) delays.push(`${queued.length} make-good(s) (${sum(queued)} XBT) are queued: each spends the pool's output of its own block's coinbase, so it waits for that coinbase to mature (block height + 6,480) and is then broadcast automatically; the next is payable at ${queued[0].payable_at_height}.`);
+      if (relayOnly.length) delays.push(`${relayOnly.length} of those are mature under consensus (pre-973,440, 100 confirmations) but still under 6,480 confirmations, so Knots nodes will not relay a spend yet; a 100-confirmation wallet may show them as spendable.`);
+      if (queued.length) delays.push(`${queued.length} make-good(s) (${sum(queued)} XBT) are queued: each spends the pool's output of its own block's coinbase, so it waits for that coinbase to mature (block height + 6,480, or + 25,920 for blocks from 979,919) and is then broadcast automatically; the next is payable at ${queued[0].payable_at_height}.`);
       if (carry > 0) delays.push(`${carry} XBT is carried: earned, but not yet large enough for its own coinbase output (minimum ${minOut} XBT) or not placed in the last coinbase; it is paid on top of a later output once share plus carry clears the minimum. DATUM bonus credited before it ended on 2026-10-24 is held as carry too.`);
       if (m.gateway_outdated) delays.push(`This address's own DATUM gateway is producing improperly split coinbases (${label(m.gateway_outdated_reason) || "pool-only or partial"}). Update it to a current build (connection_info gateway_builds)${Number(m.custody_fee_percent) ? `: until then, make-goods to this address pay ${Number(m.custody_fee_percent)}% less (the custody fee)` : ""}.`);
       if (failed.length) delays.push(`${failed.length} make-good(s) failed to broadcast; ask in the pool's Discord with the block heights.`);
@@ -148,8 +151,8 @@ export const AUDIT_TOOLS = [
     name: "miner_immature",
     title: "Coinbase payouts still locked for an address: height, amount, confirmations, unlock height and estimated date",
     description:
-      "Each recent coinbase payout to the address that cannot be spent yet: block height, amount, confirmations, the unlock height (the later of the Knots #419 consensus rule and 29.4.2's relay policy) and an estimated unlock date. " +
-      "Soonest first. Includes pre-973,440 payouts that are mature under consensus but that 29.4.2 nodes will not relay yet.",
+      "Each recent coinbase payout to the address that cannot be spent yet: block height, amount, confirmations, the unlock height (the later of the Knots consensus rule, 6,480 confirmations for blocks 973,440 to 979,918 and 25,920 from 979,919, and the relay policy) and an estimated unlock date. " +
+      "Soonest first. Includes pre-973,440 payouts that are mature under consensus but that Knots nodes will not relay yet.",
     heavy: true, fanout: 2,
     inputSchema: { type: "object", properties: { address: addressArg, limit: { type: "integer", minimum: 1, maximum: 50, description: "Most payouts to list, soonest unlock first (default 20)" } }, required: ["address"], additionalProperties: false },
     parse: async (a) => ({ address: await payoutAddress(a.address), limit: int(a.limit, "limit", 1, 50, 20) }),

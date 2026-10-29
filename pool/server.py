@@ -974,7 +974,8 @@ def makegood_status(height, blockhash, tip, jobs=None, settlements=None):
     owed      primed has booked the debt; the fee wallet has not signed a payment yet
               (it normally does within a minute of the block).
     queued    signed and waiting: a coinbase output cannot be spent before it matures, and the
-              network will not relay the spend before payable_height() (100 confirmations; blocks 973440..979919 wait for height 979920, Knots #419).
+              network will not relay the spend before payable_height() (6,480 blocks after the block for
+              blocks before 979919, Knots #419; 25,920 from block 979919 on, Knots 29.4.3 #468).
     broadcast sent to the network, not yet in a block.
     paid      confirmed on chain.
     failed    the node refused the transaction; needs an operator."""
@@ -3093,30 +3094,53 @@ MATURITY_CONFS = 100
 # needs 6,480 blocks on top before it can be spent, and a 29.4.2 node will not relay or mine a
 # spend of any younger coinbase. Shown as confirmations counting the coinbase's own block, so
 # 6,481: spendable once the chain reaches height + 6,480. Coinbases from before the window keep
-# 100, and so do those from LONG_MATURITY_RELEASE on, when the rule lapses.
+# 100 under consensus. Consensus releases the window at LONG_MATURITY_RELEASE, but 29.4.3's relay
+# policy still asks every coinbase below ROLLING_MATURITY_START for 6,480, so in practice each
+# window coin unlocks 6,480 blocks after its own block, not all at the release height.
 LONG_MATURITY_START = int(CONF.get("long_maturity_start", 973440))
 LONG_MATURITY_RELEASE = int(CONF.get("long_maturity_release", 979920))
 LONG_MATURITY_CONFS = int(CONF.get("long_maturity_confs", 6481))
+# Knots 29.4.3 (#468): a coinbase created from ROLLING_MATURITY_START needs 25,920 blocks (180
+# days) on top, under consensus and relay alike, each counted from its own block. 25,921 in the
+# same own-block convention as LONG_MATURITY_CONFS.
+# TODO: the rule covers coinbases until RDTS expires (parent median time past 2027-09-01 00:00
+# UTC); coinbases after that go back to 100. Not modelled by time here; set
+# rolling_maturity_end in the config once the expiry height is known.
+ROLLING_MATURITY_START = int(CONF.get("rolling_maturity_start", 979919))
+ROLLING_MATURITY_CONFS = int(CONF.get("rolling_maturity_confs", 25921))
+ROLLING_MATURITY_END = int(CONF.get("rolling_maturity_end", 0)) or None
+
+
+def rolling_maturity(height):
+    height = int(height)
+    return height >= ROLLING_MATURITY_START and (ROLLING_MATURITY_END is None or height < ROLLING_MATURITY_END)
 
 
 def long_maturity(height):
-    return LONG_MATURITY_START <= int(height) < LONG_MATURITY_RELEASE
+    return LONG_MATURITY_START <= int(height) < min(LONG_MATURITY_RELEASE, ROLLING_MATURITY_START)
 
 
 def maturity_confs(height):
     """Confirmations the coinbase of the block at `height` needs before it can be spent."""
+    if rolling_maturity(height):
+        return ROLLING_MATURITY_CONFS
     return LONG_MATURITY_CONFS if long_maturity(height) else MATURITY_CONFS
 
 
 def current_maturity_confs(tip):
-    """What a coinbase maturing now needs: the long figure until the last window block matures."""
+    """What a coinbase earned now needs: the 180-day figure once blocks are mined under it, and
+    before that the long figure until the last window block matures."""
     tip = int(tip or 0)
+    if rolling_maturity(tip + 1):
+        return ROLLING_MATURITY_CONFS
     return LONG_MATURITY_CONFS if LONG_MATURITY_START <= tip < LONG_MATURITY_RELEASE + LONG_MATURITY_CONFS else MATURITY_CONFS
 
 
 def mature_height(height):
     """Height at which consensus allows this block's coinbase to be spent."""
     height = int(height)
+    if rolling_maturity(height):
+        return height + ROLLING_MATURITY_CONFS - 1
     if long_maturity(height):
         return height + LONG_MATURITY_CONFS - 1
     return height + MATURITY_CONFS
@@ -3127,8 +3151,15 @@ def mature_height(height):
 # LONG_MATURITY_CONFS - 1 confirmations to be accepted or relayed, whatever height it was mined
 # at, and that call is not gated on the deployment being active. Observed on the hub: make-goods
 # for blocks 973362-973407, well past 100 confirmations and below the window's start height, come
-# back bad-txns-premature-spend-of-coinbase on every retry.
+# back bad-txns-premature-spend-of-coinbase on every retry. 29.4.3 keeps that 6,480 for every
+# coinbase below ROLLING_MATURITY_START (validation.cpp passes CoinbaseMaturityBeforeRolling()),
+# and asks the 180-day figure from there on.
 RELAY_MATURITY_CONFS = LONG_MATURITY_CONFS
+
+
+def relay_maturity_confs(height):
+    """Confirmations a Knots 29.4.3 mempool asks before it relays a spend of this coinbase."""
+    return ROLLING_MATURITY_CONFS if rolling_maturity(height) else RELAY_MATURITY_CONFS
 
 
 def payable_height(height):
@@ -3138,7 +3169,7 @@ def payable_height(height):
     own spend can go at mature_height; anything that has to travel the network waits for this.
     """
     height = int(height)
-    return max(mature_height(height), height + RELAY_MATURITY_CONFS - 1)
+    return max(mature_height(height), height + relay_maturity_confs(height) - 1)
 
 
 def payout_status_for_height(height, tip):
@@ -5356,11 +5387,13 @@ def miner_payload(address, payouts_offset=0, payouts_limit=PAYOUTS_PAGE):
         "makegood_pending_btc": sum(r["net_sats"] for r in mg_pending) / 1e8,
         "makegood_pending_blocks": len(mg_pending),
         "makegood_next_payable_at": min((r["payable_at"] for r in mg_pending), default=0),
-        # Knots #419: a pending make-good on a block in the long-maturity window pays at the
-        # release height, not 100 blocks on; the page explains that next to the number.
-        "makegood_long_maturity": any(int(r.get("height") or 0) >= LONG_MATURITY_START and int(r.get("payable_at") or 0) >= LONG_MATURITY_RELEASE for r in mg_pending),
+        # Knots #419 / 29.4.3: a pending make-good on a block from the long-maturity window on
+        # pays 6,480 or 25,920 blocks after its block, not 100; the page explains that next to it.
+        "makegood_long_maturity": any(int(r.get("height") or 0) >= LONG_MATURITY_START for r in mg_pending),
         "long_maturity_start": LONG_MATURITY_START,
         "long_maturity_release": LONG_MATURITY_RELEASE,
+        "rolling_maturity_start": ROLLING_MATURITY_START,
+        "rolling_maturity_confs": ROLLING_MATURITY_CONFS,
         "makegood_paid_btc": sum(r["net_sats"] for r in makegoods if r["status"] == "paid") / 1e8,
         "makegood_failed_blocks": sum(1 for r in makegoods if r["status"] == "failed"),
         # Custody fee on this address's pending and paid make-goods, and the fee's settings
@@ -5656,12 +5689,12 @@ _SEO_PAGES = {
     "/ratum": {
         "en": {
             "title": "Mine at Lazarus with a Ratum Gateway (ratum-gateway) | Lazarus Pool",
-            "description": "Run iohzrd's Rust DATUM gateway against Lazarus: install, a full config for datum.lazarus-xbt.xyz:28915, Knots 29.4.2, pointing ASICs, checking it is connected, and fixes. Tested per release.",
+            "description": "Run iohzrd's Rust DATUM gateway against Lazarus: install, a full config for datum.lazarus-xbt.xyz:28915, Knots 29.4.3, pointing ASICs, checking it is connected, and fixes. Tested per release.",
             "scroll": "connect",
         },
         "zh": {
             "title": "用 Ratum 网关（ratum-gateway）在 Lazarus 挖矿 — Lazarus Pool",
-            "description": "把 iohzrd 用 Rust 写的 DATUM 网关接入 Lazarus：安装、指向 datum.lazarus-xbt.xyz:28915 的完整配置、Knots 29.4.2、矿机设置、确认连接与故障排查。每个版本都实测。",
+            "description": "把 iohzrd 用 Rust 写的 DATUM 网关接入 Lazarus：安装、指向 datum.lazarus-xbt.xyz:28915 的完整配置、Knots 29.4.3、矿机设置、确认连接与故障排查。每个版本都实测。",
             "scroll": "connect",
         },
     },
@@ -6331,7 +6364,7 @@ _SEO_INTRO = {
     "/flytheelephant": {
         "en": ('Mine at Lazarus with the FlyTheElephant gateway', [
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> is a DATUM gateway for this chain: CONVOY\'s BLAKE2b code plus FlyTheElephant\'s own work. Its <code>master</code> gives every miner the pool\'s whole payout split (the 16&nbsp;KB coinbase) and fits that coinbase to the block\'s weight and sigop limits, so a full split can never make your block invalid. It connects to Lazarus with no patch. FlyTheElephant also helps miners set up in our Discord <code>#support</code>. Thank you.</p>',
-            '<p><b>1. Your node.</b> Bitcoin Knots <b>29.4.2</b> (older builds reject the long coinbase maturity rule and their blocks are invalid), fully synced on this chain. In <code>bitcoin.conf</code>:</p>',
+            '<p><b>1. Your node.</b> Bitcoin Knots <b>29.4.3</b> (older builds do not know the 180-day coinbase maturity rule from block 979,919 and can build blocks the network rejects), fully synced on this chain. In <code>bitcoin.conf</code>:</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
             '<p><code>blockmaxweight</code> leaves room for the split coinbase. <code>maxscriptsize=589</code> keeps the large fake-multisig data transactions out of your blocks; stock Knots mines them by default. It is your node and your choice: the setting also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. Knots\' default DNS seeds point at SHA-256 peers, so add a few <code>addnode=</code> lines from a current list for this chain (<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>, or <a href="https://convoy.xyz/getstarted" target="_blank" rel="noreferrer">CONVOY\'s guide</a>); a list pasted weeks ago rots. <code>maxtipage</code> only mattered during the slow weeks after the fork and you can leave it out once you are synced.</p>',
             "<p><b>2. Build the gateway.</b> On Debian or Ubuntu (other systems: the repo's README):</p>",
@@ -6347,7 +6380,7 @@ _SEO_INTRO = {
         ]),
         "zh": ('用 FlyTheElephant 网关在 Lazarus 挖矿', [
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> 是这条链上的一个 DATUM 网关：基于 CONVOY 的 BLAKE2b 代码，加上 FlyTheElephant 自己的改进。它的 <code>master</code> 让每台矿机都拿到矿池完整的分账（16&nbsp;KB coinbase），并按区块的 weight 和 sigop 上限裁剪这个 coinbase，所以完整分账永远不会让你的区块无效。无需任何补丁即可连接 Lazarus。FlyTheElephant 也在我们 Discord 的 <code>#support</code> 频道帮矿工配置，谢谢他。</p>',
-            '<p><b>1. 节点。</b>Bitcoin Knots <b>29.4.2</b>（旧版本不认长 coinbase 成熟期规则，它们出的块无效），在这条链上完全同步。<code>bitcoin.conf</code> 中：</p>',
+            '<p><b>1. 节点。</b>Bitcoin Knots <b>29.4.3</b>（旧版本不认从区块 979,919 开始的 180 天 coinbase 成熟期规则，可能出网络拒绝的块），在这条链上完全同步。<code>bitcoin.conf</code> 中：</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
             '<p><code>blockmaxweight</code> 为分账 coinbase 留出空间。<code>maxscriptsize=589</code> 把大型伪多签数据交易挡在你的区块之外；原版 Knots 默认会打包它们。节点是你的，由你决定：这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。Knots 默认的 DNS 种子指向 SHA-256 节点，所以请从这条链的最新列表加几行 <code>addnode=</code>（<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>，或 <a href="https://convoy.xyz/getstarted?lang=zh" target="_blank" rel="noreferrer">CONVOY 的指南</a>）；几周前复制的列表会失效。<code>maxtipage</code> 只在分叉后同步缓慢的那几周有用，同步完成后可以不设。</p>',
             '<p><b>2. 编译网关。</b>Debian 或 Ubuntu 下（其他系统见仓库 README）：</p>',
@@ -6574,7 +6607,7 @@ _LLMS_TXT = """# Lazarus Pool
 - Public API reference: {site}/api
 - Explorer: https://mempool.lazarus-xbt.xyz
 - Public stratum: a donation, validation and fallback endpoint at 100%, all kept by the pool, with a 24 h grace at 25%, or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. Point a miner at stratum+tcp://stratum.lazarus-xbt.xyz:23334 to confirm it connects and submits shares while your own node and DATUM gateway are still coming online, or as a fallback if your own gateway goes down. Bitcoin Knots has announced a rule to invalidate coinbase payouts to addresses that hash through any pool's stratum (SV1); moving to another pool does not avoid it. Run your own DATUM gateway.
-- Coinbase maturity: Knots 29.4.2 (#419) holds coinbases mined from block 973,440 until block 979,920 (about 5 Nov 2026) for 6,480 blocks instead of 100, so a payout from block N is spendable at about block N + 6,480. DATUM gateway nodes must run Knots 29.4.2 or later.
+- Coinbase maturity: Knots 29.4.2 (#419) holds coinbases mined from block 973,440 to 979,918 for 6,480 blocks instead of 100, so a payout from block N in that range is spendable at about block N + 6,480 (about 45 days). Knots 29.4.3 (#468) holds coinbases mined from block 979,919 on for 25,920 blocks (about 180 days), each counted from its own block, so a payout from block N is spendable at about block N + 25,920. DATUM gateway nodes must run Knots 29.4.3 or later.
 - MCP server for AI assistants (read-only, no login, Streamable HTTP): https://mcp.lazarus-xbt.xyz/mcp (guide: https://mcp.lazarus-xbt.xyz)
 - GitHub: https://github.com/AwokenLazarus/Lazarus-Pool
 - Discord: https://discord.gg/fD33dJXnzz

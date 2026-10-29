@@ -18,6 +18,11 @@
   };
 
   const num = (n) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toLocaleString(loc()));
+  // Heights for miner.mgLongMaturity: the #419 window and Knots 29.4.3's 180-day rule after it.
+  const lmVars = (m) => {
+    const rolling = Number(m.rolling_maturity_start) || 979919;
+    return { start: num(m.long_maturity_start), windowEnd: num(rolling - 1), rolling: num(rolling) };
+  };
   const bigNum = (n) => {
     const x = Number(n);
     if (!Number.isFinite(x)) return "\u2014";
@@ -521,7 +526,7 @@
     return `
         <div${panelAttr("makegoodTable")}>
           <p class="kicker table-label">${pend.length ? t("miner.mgLabelPending", { n: pend.length, amt: satsExact(pendSats) }) : t("miner.mgLabel")}</p>
-          <p class="note">${t("miner.mgHelp", { need: num(m.maturity_confs || 100) })}${m.makegood_long_maturity ? " " + t("miner.mgLongMaturity", { start: num(m.long_maturity_start), release: num(m.long_maturity_release) }) : ""}</p>
+          <p class="note">${t("miner.mgHelp", { need: num(m.maturity_confs || 100) })}${m.makegood_long_maturity ? " " + t("miner.mgLongMaturity", lmVars(m)) : ""}</p>
           <div class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th>${t("miner.thKind")}</th><th class="num">${t("miner.thPayableAt")}</th><th>${t("miner.thLands")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thTx")}</th></tr></thead><tbody>${body}</tbody></table></div>
         </div>`;
   }
@@ -847,7 +852,7 @@
       else if (mgPend.length) sub = mgLeft ? t("miner.mgCellSub", { n: mgPend.length, height: num(mgNextAt), left: num(mgLeft) }) : t("miner.mgCellNow", { n: mgPend.length });
       else if (Number(m.makegood_failed_blocks) > 0) sub = t("miner.mgCellFailed");
       else sub = t("miner.mgCellAllPaid", { amt: satsExact(Math.round(mgPaidBtc * 1e8)) });
-      const lm = m.makegood_long_maturity ? `<br>${t("miner.mgLongMaturity", { start: num(m.long_maturity_start), release: num(m.long_maturity_release) })}` : "";
+      const lm = m.makegood_long_maturity ? `<br>${t("miner.mgLongMaturity", lmVars(m))}` : "";
       if (Number(m.makegood_custody_fee_sats) > 0) sub += t("miner.mgCustodyTotal", { amt: satsExact(m.makegood_custody_fee_sats) });
       return panelBox("makegood", `<dt>${t("miner.makegood")}</dt><dd title="${amtExact(mgPendBtc)}">${amt(mgPendBtc)}${money(mgPendBtc)}<small>${sub}${lm}</small></dd>`);
     };

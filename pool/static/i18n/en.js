@@ -890,7 +890,7 @@ window.LZ_I18N_DICTS["en"] = {
       "one": "{n} block dropped your output · coinbase mature, payment broadcasts within minutes",
       "other": "{n} blocks dropped your output · coinbase mature, payments broadcast within minutes"
     },
-    "mgLongMaturity": "Blocks {start} to {release} fall under the network's temporary 45-day coinbase maturity (Knots soft fork #419): their coinbase cannot be spent by anyone before block {release}, so this make-good pays then. It is booked, signed and waiting; nothing was taken away.",
+    "mgLongMaturity": "Blocks from {start} fall under the network's long coinbase maturity, counted from each block's own height: a coinbase from blocks {start} to {windowEnd} cannot be spent until 6,480 blocks after its block (about 45 days, Knots #419), and one from block {rolling} on until 25,920 blocks after its block (about 180 days, Knots 29.4.3). This make-good pays when its block's coinbase can be spent. It is booked, signed and waiting; nothing was taken away.",
     "mgCellBroadcast": "make-good broadcast · confirming now",
     "mgCellAllPaid": "nothing pending · {amt} paid by make-good, lifetime",
     "mgCellFailed": "a make-good failed to send · the operator has been notified",
