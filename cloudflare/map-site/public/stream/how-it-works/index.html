@@ -81,11 +81,11 @@
 
 <section class="hero wrap">
   <h1><span class="kicker">Lightning Stream · How it works</span>How Stream <em>connects</em> everything</h1>
-  <p class="lede">One picture of Lightning Stream: who talks to whom, how the bytes travel, how the money moves, and where shops are found. Parts marked <em>in progress</em> are built and in testing but not yet released; parts marked <em>designed, not yet built</em> are planned. Everything else is in the app today.</p>
+  <p class="lede">Lightning Stream at a glance: your app, their app, an encrypted link between them, money over Lightning, and shops found on Nostr.</p>
   <p class="note">Updated 29 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
-    <a href="#map">The map</a><a href="#buy">When you buy</a><a href="#sell">When you sell</a><a href="#hash">When you rent hashrate</a><a href="#money">How the money moves</a><a href="#labels">What the labels mean</a>
+    <a href="#map">The map</a>
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">The whitepaper and its pages</p>
@@ -94,182 +94,219 @@
 </section>
 
 <section class="section wrap">
-  <figure class="fig fig-wide" id="map">
-<svg viewBox="0 0 1200 970" role="img" aria-label="How Lightning Stream connects buyers and sellers: devices on the buyer's network talk to the buyer's Stream app, which reaches the seller's Stream app over an encrypted iroh link, directly or through a relay; payments travel separately over XBT Lightning between the two people's own nodes, and shops are found through signed listings on Nostr.">
-<rect class="box-brass" x="20" y="20" width="1160" height="96" rx="12"/>
-<text class="t-h" x="40" y="48">NOSTR RELAYS</text>
-<text class="t" x="40" y="72">Signed shop listings · link address records · relay announcements · hashrate delivery records and ratings</text>
-<text class="t-s" x="40" y="96">Where buyers find shops and relays: no directory of ours, anyone can run a relay</text>
-<rect class="box-plan" x="870" y="34" width="290" height="68" rx="8"/>
-<text class="t" x="886" y="58">Nostr DVMs as AI sellers</text>
-<text class="t-plan" x="886" y="80">(designed, not yet built)</text>
-<rect class="zone" x="20" y="140" width="360" height="660" rx="14"/>
-<text class="t-h" x="40" y="166">BUYER (YOUR BOX)</text>
-<rect class="zone" x="820" y="140" width="360" height="660" rx="14"/>
-<text class="t-h" x="840" y="166">SELLER (THEIR BOX)</text>
-<text class="t-h" x="600" y="166" text-anchor="middle">BETWEEN THEM</text>
-<rect class="box" x="40" y="180" width="320" height="96" rx="10"/>
-<text class="t" x="56" y="204">Browser, TV and phone apps</text>
-<text class="t" x="56" y="228">AI apps and agents (OpenAI-compatible)</text>
-<text class="t" x="56" y="252">Router or devices on WireGuard</text>
-<text class="t-prog" x="56" y="268">(in progress)</text>
-<polyline class="ln" points="200,276 200,300"/>
-<polygon class="arrow" points="200,306 194,294 206,294"/>
-<text class="t-s" x="212" y="294">plain HTTP on your own network</text>
-<rect class="box" x="40" y="308" width="320" height="336" rx="10"/>
-<text class="t-h" x="56" y="332">YOUR STREAM APP</text>
-<text class="t" x="56" y="358">Browse: shops found on Nostr</text>
-<text class="t" x="56" y="382">Seller web apps, each in its own sealed visit</text>
-<text class="t-prog" x="56" y="397">(in progress)</text>
-<text class="t" x="56" y="420">Local AI address, routed to the best seller</text>
-<text class="t" x="56" y="444">Hashtaker: rented work to your DATUM Gateway</text>
-<text class="t" x="56" y="468">Local links for TVs and native apps</text>
-<text class="t-plan" x="56" y="483">(designed, not yet built)</text>
-<text class="t" x="56" y="506">WireGuard endpoint for VPN exits</text>
-<text class="t-prog" x="56" y="521">(in progress)</text>
-<text class="t" x="56" y="544">Built-in relay, off unless you switch it on</text>
-<text class="t-prog" x="56" y="559">(in progress)</text>
-<rect class="box-brass" x="52" y="576" width="296" height="58" rx="8"/>
-<text class="t" x="64" y="598">Signer: holds your keys and pays</text>
-<text class="t" x="64" y="618">only within spending rules you signed</text>
-<rect class="box" x="40" y="664" width="320" height="62" rx="10"/>
-<text class="t" x="56" y="688">Your node: Lightning Fork + Knots-BLAKE2b</text>
-<text class="t-s" x="56" y="710">pays the tickets; nothing held by anyone else</text>
-<rect class="box-plan" x="40" y="734" width="320" height="54" rx="8"/>
-<text class="t" x="56" y="754">Pay from an NWC wallet instead of a node</text>
-<text class="t-plan" x="56" y="772">(designed, not yet built)</text>
-<polyline class="ln" points="200,634 200,658"/>
-<polygon class="arrow" points="200,664 194,652 206,652"/>
-<text class="t-s" x="212" y="656">pays</text>
-<rect class="box" x="840" y="180" width="320" height="96" rx="10"/>
-<text class="t" x="856" y="204">Your local services: Jellyfin and</text>
-<text class="t" x="856" y="224">other web apps, an AI model, miners</text>
-<text class="t" x="856" y="248">Blossom media server</text>
-<text class="t-plan" x="856" y="268">(designed, not yet built)</text>
-<polyline class="ln" points="1000,308 1000,282"/>
-<polygon class="arrow" points="1000,276 994,288 1006,288"/>
-<text class="t-s" x="1012" y="298">local HTTP and Stratum</text>
-<rect class="box" x="840" y="308" width="320" height="336" rx="10"/>
-<text class="t-h" x="856" y="332">THEIR STREAM APP</text>
-<text class="t" x="856" y="358">Gateway: prices, meters to the millisatoshi,</text>
-<text class="t" x="856" y="382">signs a receipt for every answer</text>
-<text class="t" x="856" y="406">Hashmaker: carries miners' work, paid per slice</text>
-<text class="t" x="856" y="430">A Jellyfin account for each buyer, private handle</text>
-<text class="t-prog" x="856" y="445">(in progress)</text>
-<text class="t" x="856" y="468">Busy limits, checked before anyone pays</text>
-<text class="t-prog" x="856" y="483">(in progress)</text>
-<text class="t" x="856" y="506">VPN exit, private or filtered</text>
-<text class="t-prog" x="856" y="521">(in progress)</text>
-<text class="t" x="856" y="544">Built-in relay, optional</text>
-<text class="t-prog" x="856" y="559">(in progress)</text>
-<rect class="box" x="840" y="664" width="320" height="62" rx="10"/>
-<text class="t" x="856" y="688">Their node: Lightning Fork + Knots-BLAKE2b</text>
-<text class="t-s" x="856" y="710">receives the tickets; no custody, ever</text>
-<polyline class="ln" points="1000,644 1000,658"/>
-<polygon class="arrow" points="1000,664 994,652 1006,652"/>
-<text class="t-s" x="1012" y="656">invoices</text>
-<text class="t" x="600" y="200" text-anchor="middle">iroh link: QUIC with TLS 1.3, end to end encrypted</text>
-<text class="t-s" x="600" y="220" text-anchor="middle">The seller's link key is signed by their Lightning node in the</text>
-<text class="t-s" x="600" y="236" text-anchor="middle">listing; your app checks it before sending a byte.</text>
-<text class="t-prog" x="600" y="252" text-anchor="middle">(in progress)</text>
-<polyline class="ln-link" points="360,330 840,330"/>
-<polygon class="arrow-ink" points="840,330 828,324 828,336"/>
-<polygon class="arrow-ink" points="360,330 372,324 372,336"/>
-<text class="t" x="600" y="320" text-anchor="middle">direct, hole-punched through both routers</text>
-<text class="t-m" x="430" y="360">1  price (402)</text>
-<text class="t-m" x="430" y="380">2  small ticket</text>
-<text class="t-m" x="430" y="400">3  request</text>
-<text class="t-m" x="430" y="420">4  metered answer</text>
-<text class="t-m" x="430" y="440">5  signed receipt</text>
-<text class="t-s" x="600" y="360">what travels on the link</text>
-<text class="t-s" x="600" y="378">for every web page, AI answer,</text>
-<text class="t-s" x="600" y="396">stream, share or VPN packet</text>
-<polyline class="ln-link" points="360,520 440,520"/>
-<polyline class="ln-link" points="760,520 840,520"/>
-<polygon class="arrow-ink" points="840,520 828,514 828,526"/>
-<polygon class="arrow-ink" points="360,520 372,514 372,526"/>
-<text class="t-s" x="400" y="510" text-anchor="middle">or</text>
-<text class="t-s" x="800" y="510" text-anchor="middle">or</text>
-<rect class="box" x="440" y="470" width="320" height="150" rx="10"/>
-<text class="t-h" x="456" y="494">STREAM RELAYS</text>
-<text class="t" x="456" y="518">iroh.lazarus-xbt.xyz, ours</text>
-<text class="t" x="456" y="542">Relays run by anyone, built into Stream</text>
-<text class="t-prog" x="456" y="558">(in progress)</text>
-<text class="t" x="456" y="582">Relays paid per GB</text>
-<text class="t-prog" x="588" y="582">(in progress)</text>
-<text class="t-s" x="456" y="604">see only ciphertext, addresses and volume</text>
-<rect class="box-plan" x="440" y="664" width="320" height="72" rx="8"/>
-<text class="t" x="456" y="688">Rented rigs reach a hashtaker's DATUM</text>
-<text class="t" x="456" y="708">Gateway with no port forward</text>
-<text class="t-plan" x="456" y="726">(designed, not yet built)</text>
-<polyline class="ln-dot" points="1170,308 1170,116"/>
-<polygon class="arrow-dot" points="1170,116 1164,128 1176,128"/>
-<text class="t-s" x="1160" y="134" text-anchor="end">publishes listings</text>
-<polyline class="ln-dot" points="30,116 30,302"/>
-<polygon class="arrow-dot" points="30,308 24,296 36,296"/>
-<text class="t-s" x="40" y="134">finds shops and relays</text>
-<text class="t-s" x="58" y="140"></text>
-<rect class="box-brass" x="20" y="820" width="1160" height="70" rx="12"/>
-<text class="t-h" x="600" y="846" text-anchor="middle">XBT LIGHTNING NETWORK</text>
-<text class="t" x="600" y="870" text-anchor="middle">small tickets (about 900 sat), refilled just before they run out: paid as you use it, at most one ticket at risk</text>
-<polyline class="ln-money" points="360,695 395,695 395,814"/>
-<polygon class="arrow-brass" points="395,820 389,808 401,808"/>
-<text class="t-m" x="403" y="770">pays</text>
-<polyline class="ln-money" points="805,820 805,695 834,695"/>
-<polygon class="arrow-brass" points="840,695 828,689 828,701"/>
-<text class="t-m" x="797" y="770" text-anchor="end">paid</text>
-<polyline class="ln-link" points="40,920 74,920"/>
-<text class="t-s" x="84" y="924">data, encrypted</text>
-<polyline class="ln-money" points="210,920 244,920"/>
-<text class="t-s" x="254" y="924">money, over Lightning</text>
-<polyline class="ln-dot" points="410,920 444,920"/>
-<text class="t-s" x="454" y="924">discovery, via Nostr</text>
-<text class="t-prog" x="600" y="924">(in progress)</text>
-<text class="t-s" x="690" y="924">built, in testing, not yet released</text>
-<text class="t-plan" x="600" y="946">(designed, not yet built)</text>
-<text class="t-s" x="760" y="946">planned; not in the app</text>
-<text class="t-s" x="40" y="946">No label: released and in the app today.</text>
+  <figure class="hiw" id="map">
+<svg class="hiw-desk" viewBox="0 0 1200 720" role="img" aria-label="How Lightning Stream works: your devices use your own Stream app; it reaches the seller's Stream app over an encrypted link, directly or through a relay; money moves separately over Lightning from your node to theirs as you use the service; shops are found on Nostr.">
+<rect class="band" x="200" y="24" width="800" height="76" rx="38"/>
+<path class="ic" d="M455 52a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4h-14l-8 6v-6h0a4 4 0 0 1-4-4z"/><circle class="ic-dot" cx="464" cy="59" r="2"/><circle class="ic-dot" cx="470" cy="59" r="2"/><circle class="ic-dot" cx="476" cy="59" r="2"/>
+<text class="i-band" x="520" y="68" text-anchor="start">Nostr</text>
+<text class="i-sub" x="520" y="86" text-anchor="start">shops are found here</text>
+<g class="st-d">
+<rect class="ic" x="750" y="52" width="20" height="20" rx="3"/><path class="ic" d="M755 52v-5M765 52v-5M755 72v5M765 72v5M750 57h-5M750 67h-5M770 57h5M770 67h5"/>
+<text class="i-lab" x="785" y="68" text-anchor="start">AI sellers</text>
+</g>
+<polyline class="fl-disc" points="380,100 380,330 232,330"/>
+<polygon class="ah-disc" points="226,330 240,323 240,337"/>
+<polyline class="fl-disc" points="934,330 820,330 820,106"/>
+<polygon class="ah-disc" points="820,100 813,114 827,114"/>
+<text class="i-sub" x="392" y="170" text-anchor="start">find shops</text>
+<text class="i-sub" x="808" y="170" text-anchor="end">list</text>
+<text class="i-head" x="150" y="150" text-anchor="middle">YOU</text>
+<g class="st-r">
+<rect class="tile" x="42.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="56" y="199" width="28" height="18" rx="2"/><path class="ic" d="M51 221h38"/>
+<text class="i-lab" x="70" y="256.0" text-anchor="middle">Laptop</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="122.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="141" y="195" width="18" height="30" rx="3"/><path class="ic" d="M147 220h6"/>
+<text class="i-lab" x="150" y="256.0" text-anchor="middle">Phone</text>
+</g>
+<g class="st-d">
+<rect class="tile" x="202.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="214" y="198" width="32" height="20" rx="2"/><path class="ic" d="M224 224h12M230 218v6"/>
+<text class="i-lab" x="230" y="256.0" text-anchor="middle">TV</text>
+</g>
+<polyline class="fl-local" points="150,262 150,300"/>
+<polygon class="ah" points="150,306 143,292 157,292"/>
+<rect class="appbox" x="80" y="312" width="140" height="96" rx="22"/>
+<path class="ic-brass" d="M153 335L142 352h8l-3 13L159 347h-8z"/>
+<text class="i-lab" x="150" y="392" text-anchor="middle">Your app</text>
+<text class="i-head" x="1050" y="150" text-anchor="middle">SELLER</text>
+<g class="st-p">
+<rect class="tile tile-p" x="832.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="844" y="198" width="32" height="24" rx="3"/><path class="ic" d="M844 205h32"/><circle class="ic-dot" cx="848" cy="201.5" r="1.3"/><circle class="ic-dot" cx="852" cy="201.5" r="1.3"/>
+<circle class="badge" cx="882.0" cy="188.0" r="5"/>
+<text class="i-lab" x="860" y="256.0" text-anchor="middle">Web apps</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="907.0" y="182.0" width="56" height="56" rx="14"/>
+<path class="ic" d="M935 195C937 206 939 208 950 210C939 212 937 214 935 225C933 214 931 212 920 210C931 208 933 206 935 195z"/>
+<text class="i-lab" x="935" y="256.0" text-anchor="middle">AI</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="982.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="994" y="198" width="32" height="24" rx="3"/><path class="ic-fill" d="M1006 204v12l10-6z"/>
+<text class="i-lab" x="1010" y="256.0" text-anchor="middle">Media</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="1057.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="1069" y="199" width="32" height="22" rx="3"/><circle class="ic" cx="1080" cy="210" r="6"/><path class="ic" d="M1080 204v12M1074 210h12M1091 205h6M1091 210h6M1091 215h6"/>
+<text class="i-lab" x="1085" y="256.0" text-anchor="middle">Hashrate</text>
+</g>
+<g class="st-p">
+<rect class="tile tile-p" x="1132.0" y="182.0" width="56" height="56" rx="14"/>
+<circle class="ic" cx="1160" cy="210" r="15"/><ellipse class="ic" cx="1160" cy="210" rx="6.5" ry="15"/><path class="ic" d="M1145 210h30M1148 202h24M1148 218h24"/>
+<circle class="badge" cx="1182.0" cy="188.0" r="5"/>
+<text class="i-lab" x="1160" y="256.0" text-anchor="middle">VPN exit</text>
+</g>
+<polyline class="fl-local" points="1010,306 1010,262"/>
+<polygon class="ah" points="1010,256 1003,270 1017,270"/>
+<rect class="appbox" x="940" y="312" width="140" height="96" rx="22"/>
+<path class="ic-brass" d="M1013 335L1002 352h8l-3 13L1019 347h-8z"/>
+<text class="i-lab" x="1010" y="392" text-anchor="middle">Their app</text>
+<polyline class="fl-data" points="220,360 940,360"/>
+<polygon class="ah-data" points="940,360 926,353 926,367"/>
+<polygon class="ah-data" points="220,360 234,353 234,367"/>
+<rect class="lockpad" x="572" y="336" width="56" height="48" rx="12"/>
+<rect class="lock" x="591" y="359" width="18" height="14" rx="2"/><path class="ic" d="M595 359v-4a5 5 0 0 1 10 0v4"/>
+<text class="i-lab" x="600" y="320" text-anchor="middle">Encrypted link</text>
+<g class="st-p">
+<polyline class="fl-data-alt" points="400,360 400,470 540,470"/>
+<polyline class="fl-data-alt" points="660,470 800,470 800,360"/>
+<rect class="tile tile-p" x="540" y="436" width="120" height="68" rx="14"/>
+<path class="ic" d="M600 464L592 486M600 464L608 486M595 478h10"/><circle class="ic-fill" cx="600" cy="462" r="2.5"/><path class="ic" d="M592 454a11 11 0 0 0 0 16M608 454a11 11 0 0 1 0 16M587 450a17 17 0 0 0 0 24M613 450a17 17 0 0 1 0 24"/>
+<circle class="badge" cx="654" cy="442" r="5"/>
+<text class="i-lab" x="600" y="524" text-anchor="middle">Relay</text>
+</g>
+<text class="i-sub" x="388" y="420" text-anchor="end">or</text>
+<rect class="tile" x="118" y="452" width="64" height="64" rx="32"/>
+<circle class="ic" cx="150" cy="484" r="15"/>
+<path class="ic-brass" d="M153 469L142 486h8l-3 13L159 481h-8z"/>
+<text class="i-lab" x="150" y="534" text-anchor="middle">Your node</text>
+<g class="st-d">
+<rect class="ic" x="225" y="474" width="30" height="22" rx="3"/><path class="ic" d="M244 483h11v8h-11a4 4 0 0 1 0-8z"/>
+<text class="i-lab" x="240" y="534" text-anchor="middle">or a wallet</text>
+</g>
+<polyline class="fl-local" points="150,408 150,446"/>
+<polygon class="ah" points="150,452 143,438 157,438"/>
+<rect class="tile" x="978" y="452" width="64" height="64" rx="32"/>
+<circle class="ic" cx="1010" cy="484" r="15"/>
+<path class="ic-brass" d="M1013 469L1002 486h8l-3 13L1019 481h-8z"/>
+<text class="i-lab" x="1010" y="534" text-anchor="middle">Their node</text>
+<rect class="band band-brass" x="200" y="600" width="800" height="76" rx="38"/>
+<path class="ic-brass" d="M503 623L492 640h8l-3 13L509 635h-8z"/>
+<text class="i-band" x="525" y="644" text-anchor="start">Lightning</text>
+<text class="i-sub" x="525" y="662" text-anchor="start">sats, as you use it</text>
+<polyline class="fl-money" points="150,546 150,638 200,638"/>
+<polygon class="ah-money" points="206,638 192,631 192,645"/>
+<polyline class="fl-money" points="1000,638 1010,638 1010,552"/>
+<polygon class="ah-money" points="1010,546 1003,560 1017,560"/>
+<circle class="coin" cx="320" cy="638" r="11"/><path class="coin-mark" d="M322 631L315 639h5l-2 7L325 637h-5z"/>
+<circle class="coin" cx="380" cy="638" r="11"/><path class="coin-mark" d="M382 631L375 639h5l-2 7L385 637h-5z"/>
+<circle class="coin" cx="820" cy="638" r="11"/><path class="coin-mark" d="M822 631L815 639h5l-2 7L825 637h-5z"/>
+<circle class="coin" cx="880" cy="638" r="11"/><path class="coin-mark" d="M882 631L875 639h5l-2 7L885 637h-5z"/>
 </svg>
-    <figcaption><b>The map.</b> Your devices talk only to your own Stream app. Your app reaches the seller's over an encrypted iroh link, directly or through a relay. Money never travels on that link: it moves over XBT Lightning, from your node to theirs, in small tickets as you use the service. Shops and relays are found through signed listings on Nostr. On a phone, scroll the picture sideways.</figcaption>
+<svg class="hiw-mob" viewBox="0 0 400 1060" role="img" aria-label="How Lightning Stream works, stacked for phones: Nostr where shops are found; you and your app; an encrypted link, direct or through a relay; the seller's app and services; money over Lightning from your node to theirs.">
+<rect class="band" x="40" y="16" width="320" height="64" rx="32"/>
+<path class="ic" d="M105 38a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4h-14l-8 6v-6h0a4 4 0 0 1-4-4z"/><circle class="ic-dot" cx="114" cy="45" r="2"/><circle class="ic-dot" cx="120" cy="45" r="2"/><circle class="ic-dot" cx="126" cy="45" r="2"/>
+<text class="i-band" x="150" y="54" text-anchor="start">Nostr</text>
+<text class="i-sub" x="150" y="70" text-anchor="start">shops are found here</text>
+<polyline class="fl-disc" points="200,80 200,112"/>
+<polygon class="ah-disc" points="200,118 193,104 207,104"/>
+<text class="i-head" x="200" y="146" text-anchor="middle">YOU</text>
+<g class="st-r">
+<rect class="tile" x="84.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="96" y="185" width="28" height="18" rx="2"/><path class="ic" d="M91 207h38"/>
+<text class="i-lab" x="110" y="240.0" text-anchor="middle">Laptop</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="174.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="191" y="181" width="18" height="30" rx="3"/><path class="ic" d="M197 206h6"/>
+<text class="i-lab" x="200" y="240.0" text-anchor="middle">Phone</text>
+</g>
+<g class="st-d">
+<rect class="tile" x="264.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="274" y="184" width="32" height="20" rx="2"/><path class="ic" d="M284 210h12M290 204v6"/>
+<text class="i-lab" x="290" y="240.0" text-anchor="middle">TV</text>
+</g>
+<polyline class="fl-local" points="200,244 200,266"/>
+<polygon class="ah" points="200,272 193,258 207,258"/>
+<rect class="appbox" x="130" y="278" width="140" height="84" rx="22"/>
+<path class="ic-brass" d="M203 295L192 312h8l-3 13L209 307h-8z"/>
+<text class="i-lab" x="200" y="350" text-anchor="middle">Your app</text>
+<polyline class="fl-data" points="200,362 200,520"/>
+<polygon class="ah-data" points="200,526 193,512 207,512"/>
+<polygon class="ah-data" points="200,362 193,376 207,376"/>
+<rect class="lockpad" x="176" y="414" width="48" height="44" rx="12"/>
+<rect class="lock" x="191" y="435" width="18" height="14" rx="2"/><path class="ic" d="M195 435v-4a5 5 0 0 1 10 0v4"/>
+<text class="i-lab" x="240" y="442" text-anchor="start">Encrypted link</text>
+<g class="st-p">
+<rect class="tile tile-p" x="56" y="406" width="76" height="60" rx="14"/>
+<path class="ic" d="M94 430L86 452M94 430L102 452M89 444h10"/><circle class="ic-fill" cx="94" cy="428" r="2.5"/><path class="ic" d="M86 420a11 11 0 0 0 0 16M102 420a11 11 0 0 1 0 16M81 416a17 17 0 0 0 0 24M107 416a17 17 0 0 1 0 24"/>
+<circle class="badge" cx="126" cy="412" r="5"/>
+<text class="i-lab" x="94" y="486" text-anchor="middle">or a relay</text>
+</g>
+<rect class="appbox" x="130" y="532" width="140" height="84" rx="22"/>
+<path class="ic-brass" d="M203 549L192 566h8l-3 13L209 561h-8z"/>
+<text class="i-lab" x="200" y="604" text-anchor="middle">Their app</text>
+<polyline class="fl-local" points="200,616 200,646"/>
+<polygon class="ah" points="200,652 193,638 207,638"/>
+<text class="i-head" x="200" y="674" text-anchor="middle">SELLER</text>
+<g class="st-p">
+<rect class="tile tile-p" x="54.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="64" y="708" width="32" height="24" rx="3"/><path class="ic" d="M64 715h32"/><circle class="ic-dot" cx="68" cy="711.5" r="1.3"/><circle class="ic-dot" cx="72" cy="711.5" r="1.3"/>
+<circle class="badge" cx="100.0" cy="700.0" r="5"/>
+<text class="i-lab" x="80" y="764.0" text-anchor="middle">Web apps</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="134.0" y="694.0" width="52" height="52" rx="14"/>
+<path class="ic" d="M160 705C162 716 164 718 175 720C164 722 162 724 160 735C158 724 156 722 145 720C156 718 158 716 160 705z"/>
+<text class="i-lab" x="160" y="764.0" text-anchor="middle">AI</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="214.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="224" y="708" width="32" height="24" rx="3"/><path class="ic-fill" d="M236 714v12l10-6z"/>
+<text class="i-lab" x="240" y="764.0" text-anchor="middle">Media</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="294.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="304" y="709" width="32" height="22" rx="3"/><circle class="ic" cx="315" cy="720" r="6"/><path class="ic" d="M315 714v12M309 720h12M326 715h6M326 720h6M326 725h6"/>
+<text class="i-lab" x="320" y="764.0" text-anchor="middle">Hashrate</text>
+</g>
+<g class="st-p">
+<rect class="tile tile-p" x="174.0" y="778.0" width="52" height="52" rx="14"/>
+<circle class="ic" cx="200" cy="804" r="15"/><ellipse class="ic" cx="200" cy="804" rx="6.5" ry="15"/><path class="ic" d="M185 804h30M188 796h24M188 812h24"/>
+<circle class="badge" cx="220.0" cy="784.0" r="5"/>
+<text class="i-lab" x="200" y="848.0" text-anchor="middle">VPN exit</text>
+</g>
+<rect class="band band-brass" x="40" y="880" width="320" height="64" rx="32"/>
+<path class="ic-brass" d="M113 897L102 914h8l-3 13L119 909h-8z"/>
+<text class="i-band" x="135" y="918" text-anchor="start">Lightning</text>
+<text class="i-sub" x="135" y="934" text-anchor="start">sats, as you use it</text>
+<circle class="coin" cx="300" cy="912" r="11"/><path class="coin-mark" d="M302 905L295 913h5l-2 7L305 911h-5z"/>
+<text class="i-lab" x="200" y="984" text-anchor="middle">Your node pays their node</text>
+<text class="i-sub" x="200" y="1004" text-anchor="middle">directly, over Lightning</text>
+</svg>
+<div class="hiw-legend" aria-label="Legend">
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-data" d="M2 5h36"/></svg>data, encrypted</span>
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-money" d="M2 5h36"/></svg>money (sats)</span>
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-disc" d="M2 5h36"/></svg>discovery</span>
+  <span><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="badge" cx="7" cy="7" r="5"/></svg>in progress</span>
+  <span class="ghost"><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="tile" x="1" y="1" width="12" height="12" rx="3"/></svg>designed, not yet built</span>
+</div>
   </figure>
 
-  <div class="prose paper" data-reveal>
-
-    <h2 id="buy"><span class="n">1</span>When you buy</h2>
-    <ol>
-      <li>You find a shop in Browse. Its listing is signed and published on Nostr: what it sells, the prices, and how to reach it.</li>
-      <li>You allow the shop in your spending rules, which you sign with your own key. The signer in your app pays nothing outside them.</li>
-      <li>You open the shop's service: a seller's whole web app (for example Jellyfin) in a sealed visit, your local AI address, or a file. Your browser or AI app talks only to your own Stream app, on your own network.</li>
-      <li>Your app connects to the seller's app. Today that is over the seller's https address; with the iroh link <em>(in progress)</em> it is by the seller's key, end to end encrypted, with no address needed, and your app first checks that the seller's Lightning node vouches for that key.</li>
-      <li>The seller answers with its price. Your app pays a small ticket from your own node, sends the request, and the seller meters what it delivers to the millisatoshi and signs a receipt. The next ticket is paid just before the last runs out.</li>
-    </ol>
-
-    <h2 id="sell"><span class="n">2</span>When you sell</h2>
-    <ol>
-      <li>You point your Stream app at a service on your own network, set a price, and press Sell. Your app signs a listing and publishes it on Nostr.</li>
-      <li>Your gateway sits in front of the service: it states the price, meters every answer, signs receipts, and passes the request on. With buyer accounts <em>(in progress)</em> each buyer gets their own account in your app under a private handle; with busy limits <em>(in progress)</em> new buyers are turned away before they pay when your box is full.</li>
-      <li>You are paid into your own node. Nobody holds the money in between.</li>
-      <li>With the iroh link <em>(in progress)</em> you need no domain, certificate, tunnel or port forward: buyers reach you by your key, directly or through a relay.</li>
-    </ol>
-
-    <h2 id="hash"><span class="n">3</span>When you rent hashrate</h2>
-    <ol>
-      <li>A hashmaker lists its miners; a hashtaker rents them into its own DATUM Gateway, which builds the block template and checks every share.</li>
-      <li>The hashmaker's app carries the miners' work to the hashtaker's app. The link between them is encrypted end to end. Over iroh <em>(in progress)</em> neither side needs a port forward.</li>
-      <li>The hashtaker pays for each slice of work after it is delivered, counting only the shares its own gateway accepted.</li>
-      <li>Rented rigs from rental sites reaching a hashtaker's DATUM Gateway without a port forward is <em>designed, not yet built</em>.</li>
-    </ol>
-
-    <h2 id="money"><span class="n">4</span>How the money moves</h2>
-    <p>Every service pays the same way: small tickets of about 900 sat over XBT Lightning, from the buyer's own node to the seller's own node, drawn down exactly as the service is used and refilled just before they run out. A buyer can lose at most one ticket to a seller that stops serving. Relays and the iroh link never carry money, and Stream never holds anyone's funds. Paying from an NWC wallet instead of your own node is <em>designed, not yet built</em>.</p>
-
-    <h2 id="labels"><span class="n">5</span>What the labels mean</h2>
-    <ul>
-      <li><strong>No label:</strong> released, in the app today.</li>
-      <li><strong>In progress:</strong> built and in testing, not yet released: the iroh link and relays built into Stream, sellers' whole web apps with buyer accounts, busy limits, VPN exits, and relays paid per GB.</li>
-      <li><strong>Designed, not yet built:</strong> planned, with a design, not in the app: local links for TVs and native apps, paying from an NWC wallet, Nostr DVMs as AI sellers, a Blossom media server sold by the MiB, and rented rigs reaching a DATUM Gateway with no port forward.</li>
-    </ul>
-    <p>The <a href="/stream/changelog/">changelog</a> lists what each release added, and <a href="/stream/progress/">progress and status</a> what is built, planned and not built.</p>
+  <div class="prose paper hiw-more" data-reveal>
+    <details open><summary>What happens when you buy</summary>
+      <p>You find a shop on Nostr and allow it in spending rules you sign. Your app connects to the seller's app and pays small tickets from your own node as you use the service. The seller counts every byte or token and signs a receipt.</p></details>
+    <details><summary>What happens when you sell</summary>
+      <p>You point your Stream app at something you already run on your own network: a web app, an AI model, media, miners. Your app lists it on Nostr, meters every answer, and you are paid into your own node. With the encrypted link <em>(in progress)</em> you need no domain, certificate or port forward.</p></details>
+    <details><summary>What happens when you rent hashrate</summary>
+      <p>A seller's miners work for your own DATUM Gateway, over an encrypted link. You pay for each slice of work after it arrives, counting only the shares your gateway accepted.</p></details>
+    <details><summary>How the money moves</summary>
+      <p>Only over Lightning, from your node to theirs, in small tickets of about 900 sat, refilled just before they run out. At most one ticket is ever at risk, and nobody holds anyone's money. The link and the relays never carry money.</p></details>
+    <details><summary>What the marks mean</summary>
+      <p>A plain icon is in the app today. An amber dot and dashed outline mean in progress: built and in testing, not yet released. A faded icon is designed, not yet built. Details are in the <a href="/stream/changelog/">changelog</a> and <a href="/stream/progress/">progress and status</a>.</p></details>
   </div>
 </section>
 

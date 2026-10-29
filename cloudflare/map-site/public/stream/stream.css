@@ -41,19 +41,46 @@
 .status dd { margin: 0; }
 @media (max-width: 34rem) { .status { grid-template-columns: 1fr; } .status dd { margin-bottom: 0.6rem; } }
 
-/* /stream/how-it-works/ — the map of how Stream connects everything. */
-.fig-wide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.fig-wide svg { min-width: 980px; }
-.fig .zone { fill: none; stroke: var(--line); stroke-width: 1; }
-.fig .box-plan { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 5 4; }
-.fig .ln-link { stroke: var(--ink); stroke-width: 2; fill: none; }
-.fig .ln-money { stroke: var(--brass); stroke-width: 3; fill: none; }
-.fig .ln-dot { stroke: var(--muted); stroke-width: 1.6; fill: none; stroke-dasharray: 1 5; stroke-linecap: round; }
-.fig .arrow-ink { fill: var(--ink); }
-.fig .arrow-dot { fill: var(--muted); }
-.fig .t-prog { font: 500 10.5px var(--mono); fill: var(--warn); }
-.fig .t-plan { font: 500 10.5px var(--mono); fill: var(--faint); }
-.hiw-link { display: inline-flex; gap: 0.5rem; align-items: center; }
-.hiw-thumb { display: block; max-width: 44rem; text-decoration: none; color: inherit; }
-.hiw-thumb .fig { margin: 1.4rem 0 1rem; }
+/* /stream/how-it-works/ — the glanceable map: icons, few words, status by style. */
+.hiw { margin: 2rem 0 1rem; }
+.hiw svg.hiw-desk, .hiw svg.hiw-mob { display: block; width: 100%; height: auto; background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--r); }
+.hiw svg.hiw-mob { display: none; max-width: 30rem; margin: 0 auto; }
+@media (max-width: 680px) { .hiw svg.hiw-desk { display: none; } .hiw svg.hiw-mob { display: block; } }
+.hiw .tile { fill: var(--bg-card); stroke: var(--line-strong); stroke-width: 1.2; }
+.hiw .tile-p { stroke: var(--warn); stroke-dasharray: 5 4; }
+.hiw .appbox { fill: oklch(80% 0.11 84 / 0.08); stroke: var(--brass-dim); stroke-width: 1.5; }
+.hiw .band { fill: var(--bg-card); stroke: var(--line-strong); stroke-width: 1; }
+.hiw .band-brass { fill: oklch(80% 0.11 84 / 0.07); stroke: var(--brass-dim); }
+.hiw .lockpad { fill: var(--bg-inset); stroke: var(--ink); stroke-width: 1.5; }
+.hiw .ic { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hiw .ic-fill, .hiw .ic-dot, .hiw .lock { fill: var(--ink); }
+.hiw .ic-brass, .hiw .coin { fill: var(--brass); }
+.hiw .coin-mark { fill: var(--brass-ink); }
+.hiw .badge { fill: var(--warn); }
+.hiw .st-d { opacity: 0.35; }
+.hiw .i-lab { font: 500 13px var(--sans); fill: var(--ink); }
+.hiw .i-sub { font: 400 11.5px var(--sans); fill: var(--muted); }
+.hiw .i-head { font: 600 11px var(--sans); letter-spacing: 0.16em; fill: var(--faint); }
+.hiw .i-band { font: 600 15px var(--sans); fill: var(--ink); }
+.hiw .fl-data { stroke: var(--ink); stroke-width: 4; fill: none; }
+.hiw .fl-data-alt { stroke: var(--ink); stroke-width: 2.5; fill: none; stroke-dasharray: 8 6; }
+.hiw .fl-money { stroke: var(--brass); stroke-width: 4; fill: none; }
+.hiw .fl-disc { stroke: var(--muted); stroke-width: 2.2; fill: none; stroke-dasharray: 1 6; stroke-linecap: round; }
+.hiw .fl-local { stroke: var(--line-strong); stroke-width: 2; fill: none; }
+.hiw .ah { fill: var(--line-strong); }
+.hiw .ah-data { fill: var(--ink); }
+.hiw .ah-money { fill: var(--brass); }
+.hiw .ah-disc { fill: var(--muted); }
+.hiw-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin-top: 0.9rem; color: var(--muted); font-size: 0.86rem; }
+.hiw-legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.hiw-legend svg { width: 34px; height: 12px; }
+.hiw-legend svg[viewBox="0 0 14 14"] { width: 14px; height: 14px; }
+.hiw-legend .ghost svg { opacity: 0.35; }
+.hiw-more details { border-top: 1px solid var(--line); padding: 0.85rem 0; }
+.hiw-more summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.hiw-more details p { margin: 0.6rem 0 0; color: var(--muted); }
+.hiw-thumb { display: block; max-width: 44rem; text-decoration: none; color: inherit; margin: 1.4rem 0 1rem; }
+.hiw-thumb svg { display: block; width: 100%; height: auto; background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--r); }
 .hiw-thumb:hover svg, .hiw-thumb:focus-visible svg { border-color: var(--brass-dim); }
+.hiw-thumb span { display: block; margin-top: 0.5rem; color: var(--muted); font-size: 0.92rem; }
+.hiw-thumb b { color: var(--ink); }
