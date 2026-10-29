@@ -1,122 +1,114 @@
 {
  "/": {
   "lastmod": "2026-10-29",
-  "sha256": "45f02bd2a00feebea3f98d5d22db8d4c09b0146abe07201fc38ce6e9fd33baa6"
+  "sha256": "2360fb3226fcbffcfa8d68bd3030157256f87775ee134508f6912e621281987e"
  },
  "/api": {
-  "lastmod": "2026-10-24",
-  "sha256": "79ab328b434304e390dc1096af0ea749166847c91e816a3d71287a0208104c1f"
+  "lastmod": "2026-10-29",
+  "sha256": "0826860eae5663e3cff60f41589a164894d6bc03cf6fe9b03abbb70252b4329f"
  },
  "/bip110": {
-  "lastmod": "2026-10-24",
-  "sha256": "294d6b4477fd1cdbcffdabc6776ce8f46dbb40ea8541a40aac612bd576845a5a"
+  "lastmod": "2026-10-29",
+  "sha256": "80b5cdcc14a74abaac2f9b0ea7d56d44de837ccd30b916000a7246012c2d4aed"
  },
  "/blocks": {
-  "lastmod": "2026-10-24",
-  "sha256": "fe5eff12886efbf64ec72bd09e72e1a0ea2beb68299198575a2416416380c65b"
+  "lastmod": "2026-10-29",
+  "sha256": "a3531f534888fbdc0e9eff7ff4b9f8df63ee5248e50afb3ad75d01834b717645"
  },
  "/calculator": {
-  "lastmod": "2026-10-24",
-  "sha256": "13fff689e3b5233cb132c3b88ad0ffa9899af2562318efa09fed5c4781fbb13e"
+  "lastmod": "2026-10-29",
+  "sha256": "e656f0ff3c41ac15e7809e8514b85a3220498197b3a131544b9784ea75223c50"
  },
  "/connect": {
   "lastmod": "2026-10-29",
-  "sha256": "096685d01e087696875839a9e57a149585d6c124458faefdac350c189ec89e53"
- },
- "/datum-subsidy": {
-  "lastmod": "2026-10-29",
-  "sha256": "280b91b8e82c04495ca78ee8b932d8047262db7e7165547a1950ba5583a42e65"
+  "sha256": "93643284dee3858651646bb550b0d2a98f1ac14c566931bd893bec35494f658c"
  },
  "/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "3604b61a5974249dd77957e87ec04494d5af763605a0366f7ab422191628f2cf"
+  "sha256": "defc672b38b459c55364ae6763590a3f782de0c218e6fa6bb957ec6b3e47fbab"
  },
  "/hardware": {
-  "lastmod": "2026-10-24",
-  "sha256": "0a6ccb9542bf29d43e862b11410d54129ebb82e53d323cc1122b6baa48f221d5"
+  "lastmod": "2026-10-29",
+  "sha256": "407ab377cf5fd263c9e7d3ba335140b93e83ec78a6f0d927195fcba29880b498"
  },
  "/how": {
-  "lastmod": "2026-10-24",
-  "sha256": "4cb235927517fcc0a5ac1751b3255a54684c144a46b6fc8e6272591636036672"
+  "lastmod": "2026-10-29",
+  "sha256": "0a05b9b5413bbf43875e35f1083ef6b7932abd79d55dbfaf3a388f612de8f7e2"
  },
  "/non-custodial": {
-  "lastmod": "2026-10-24",
-  "sha256": "d843dcccb1ad753dc8d3c0d3f2bc917fd34fb0f37b26c110b98b8d4afb922a3c"
+  "lastmod": "2026-10-29",
+  "sha256": "53436d0cc645a89c630147a95ec4dd1ce38080ca8445e76aa35a76fd69497659"
  },
  "/pools": {
-  "lastmod": "2026-10-24",
-  "sha256": "0a0a7bb66e1b8032dc06d3d6aea8e35703ec64e3b8ef425b5d2c6b75f52a440b"
+  "lastmod": "2026-10-29",
+  "sha256": "af6362bc8275f9676c137ce1cb30ea90f8c7924764a854ccacaaffff508a0c8c"
  },
  "/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "86e3be4224d28e866403fee1c1b826107376cabfbe6890b01f53bb91eba3dc21"
+  "sha256": "6f625b0497c1e99ce60175ef613229e57d4e70df20aec3813683e0866a26f86a"
  },
  "/rentals": {
-  "lastmod": "2026-10-24",
-  "sha256": "2ce984bf7534faa1802d5f16b4c1b7377f3c90547fa9e74b936e3385f5a2d658"
+  "lastmod": "2026-10-29",
+  "sha256": "c21950ffd2a436ceb78f387e9955b30a4a71ad6caa7f292cfe0e0f89bb21179b"
  },
  "/self-cap": {
-  "lastmod": "2026-10-24",
-  "sha256": "850df6b37db98e36c14ac1fe8b4ed26b88df1bbc96b499ac9613eb19d22e6f32"
+  "lastmod": "2026-10-29",
+  "sha256": "35abb17e7dfbd74cf765e63349772b4c482110aaa9623df89f183eef2097f72d"
  },
  "/zh/": {
   "lastmod": "2026-10-29",
-  "sha256": "632a4e84ef97ef409efd5a33ed0c6b55c33c73b43499e4f2c8c7eba12dda5c5f"
+  "sha256": "178b147c2e044a5595a27a315d0f414e33e1f393001a1f479e3d9dbcdf8945b2"
  },
  "/zh/api": {
-  "lastmod": "2026-10-24",
-  "sha256": "a2a571ed0e84f499c11b406a3ce55eaceeb90607dc3997e960d0b177d8b6d8e5"
+  "lastmod": "2026-10-29",
+  "sha256": "9f9cf001e1b0bc4823d73a3db2f3abe516ff742452f2afc888b661be815b6a30"
  },
  "/zh/bip110": {
-  "lastmod": "2026-10-24",
-  "sha256": "2dbfbf13735411c03a851ecabd767ee36b86ac54efb06f326553e49706a33c60"
+  "lastmod": "2026-10-29",
+  "sha256": "fd474254c8a27db6f81853ffb8e9622835fbe83eede890927578e98478a0a2ff"
  },
  "/zh/blocks": {
-  "lastmod": "2026-10-24",
-  "sha256": "363a91bb165fb806aac2c24be4064d44007fd2d0951c95eece5c194396f45cc6"
+  "lastmod": "2026-10-29",
+  "sha256": "aa12e72134125d978677f1d90267a5b40087adb62530dd58012903d101aacc05"
  },
  "/zh/calculator": {
-  "lastmod": "2026-10-24",
-  "sha256": "a666136399fa3afaf9abfabddbbd929d87f5c11ae5832b602800fcbb2a0c0ca7"
+  "lastmod": "2026-10-29",
+  "sha256": "4d366c2278518dc4a36b8419790d84a0d1d03badc7977e6a50503bcc45218391"
  },
  "/zh/connect": {
   "lastmod": "2026-10-29",
-  "sha256": "80a1247f2ce15287eb14fe70a2f6ba4db9fcc5484703c12aaf8fd88e11e91b6f"
- },
- "/zh/datum-subsidy": {
-  "lastmod": "2026-10-29",
-  "sha256": "370b8e79854a085321008ce79d955e6792264003013feefa1603bc113155fd2d"
+  "sha256": "bd11fe1737657d3979aa79457cc604b12a4a8d90faa76544aa1439d07833333d"
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "e33783ab830ea99731c24632379b0103aa3b320bcefeff787c58fcf19fbc884f"
+  "sha256": "41fd2581216cf6d37dfe38ba63fc51d2c201d3ceddee41b3e40fa559d1c33720"
  },
  "/zh/hardware": {
-  "lastmod": "2026-10-24",
-  "sha256": "3662b261e3940f933b59dc7d680a33382bd1f61084e0dc00595633ee352f0930"
+  "lastmod": "2026-10-29",
+  "sha256": "fff8e9b62e0b2fc4a4c897624f6c038e7af3380234f9df3d1fc9f21f67fa2f95"
  },
  "/zh/how": {
-  "lastmod": "2026-10-24",
-  "sha256": "b3547957bc102d822540e03a79e6a62805f93c1313f8a59745790411b794e921"
+  "lastmod": "2026-10-29",
+  "sha256": "0adff499e69cbf6ccb1a2ea6ab70775611a5a698bd15cb630b0f8d50a6c1cd12"
  },
  "/zh/non-custodial": {
-  "lastmod": "2026-10-24",
-  "sha256": "c2077847925d1e52831e7f012c1ebf4ea8959a6baabcec1b8d2a382dd0e29d11"
+  "lastmod": "2026-10-29",
+  "sha256": "a882b9a63726b362ecdd059fb8bf42b2ae009640dccd160cf842b30d0781f321"
  },
  "/zh/pools": {
-  "lastmod": "2026-10-24",
-  "sha256": "dc299d39367ed31a3b159ec7d84bd6e306a300c42ca0d24ecc640d9fede061e0"
+  "lastmod": "2026-10-29",
+  "sha256": "085194aa44716ab36cba52b6f69e2bf83e67497ea756cccc9f65c8f08bcfc3a7"
  },
  "/zh/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "030ea680857ba51692870ac162982d1650d5d4ed9e391555c1d2005664453d46"
+  "sha256": "0de212b6e1919c64d9a3f5c1e8a75c98d6010c82ee86d8462d1a3d383a6666dd"
  },
  "/zh/rentals": {
-  "lastmod": "2026-10-24",
-  "sha256": "329e5f14316a3363c6fc633fc1cdae96cd9ec29fbbd4923bbced8bbfdfb70939"
+  "lastmod": "2026-10-29",
+  "sha256": "c5794c5afd99004d5337f7dc43d5bd1bac84a516a74120faa4e43724702ddfa4"
  },
  "/zh/self-cap": {
-  "lastmod": "2026-10-24",
-  "sha256": "9c911d86fe94d0425dff08c229fe6fa1e8088a112816a5e92f27d4d18da8d71d"
+  "lastmod": "2026-10-29",
+  "sha256": "1ad42cf631630df1853da377afe8dda8f7887f16d9800a1178b0859d0dde445e"
  }
 }

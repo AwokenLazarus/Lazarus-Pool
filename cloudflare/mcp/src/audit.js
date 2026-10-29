@@ -86,7 +86,7 @@ export const AUDIT_TOOLS = [
     title: "Full payout audit for one address: paid, maturing, carried, owed make-goods, and why each delay exists",
     description:
       "One structured audit of a payout address on Lazarus Pool: total paid, coinbase payouts still maturing (with the next unlock heights and estimated dates), carry and why it is carried, make-goods queued / paid / failed with totals and the next payable height, " +
-      "DATUM bonus earned before it ended on 2026-10-24, fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window and 29.4.2's relay policy on every coinbase spend). " +
+      "fee path, TIDES window share, the minimum output, estimated earnings, and a plain-language explanation of every delay (the Knots #419 maturity window and 29.4.2's relay policy on every coinbase spend). " +
       "Start here for 'audit my payouts' or 'where is my money'. Estimates are labelled as estimates. Counts as 2 per-address lookups.",
     heavy: true, cost: 2, fanout: 3,
     inputSchema: { type: "object", properties: { address: addressArg }, required: ["address"], additionalProperties: false },
@@ -121,7 +121,7 @@ export const AUDIT_TOOLS = [
         address, known: true, as_of_height: tip, as_of: iso(m.last_seen) || null,
         summary: {
           paid_xbt: xbt(m.paid_btc), unpaid_xbt: xbt(m.unpaid_btc), maturing_xbt: xbt(m.immature_btc), maturing_blocks: m.immature_blocks, carried_xbt: carry,
-          make_goods_queued_xbt: xbt(m.makegood_pending_btc), make_goods_paid_xbt: xbt(m.makegood_paid_btc), datum_bonus_earned_xbt: xbt(m.rebate_btc),
+          make_goods_queued_xbt: xbt(m.makegood_pending_btc), make_goods_paid_xbt: xbt(m.makegood_paid_btc),
           note: "Pool figures. paid = matured coinbase outputs; maturing = outputs on chain inside the maturity wait; carried = earned, waiting for an output; make-goods = owed from partial / pool-only blocks.",
         },
         immature: { total_xbt: xbt(m.immature_btc), blocks: m.immature_blocks, listed_blocks_still_locked: locked.length, locked_listed_xbt: xbt(locked.reduce((s, b) => s + b.paid_xbt, 0)),
@@ -135,7 +135,7 @@ export const AUDIT_TOOLS = [
           custody_fee_sats: sats(m.makegood_custody_fee_sats ?? 0), custody_fee_percent: Number(m.custody_fee_percent) || 0,
           note: "Amounts are what lands on chain, after any custody fee. The custody fee is charged only to an address whose own gateway produced pool-only or partial coinbases. miner_makegoods lists each one; paid ones show confirmations, never a future payable height.",
         },
-        path: { path, gateway_name: label(m.gateway_name) || null, fee_percent: pct(m.fee_percent_path ?? m.est_fee_percent, 2), datum_bonus_percent_points: m.fee_path === "datum" ? pct(m.datum_rebate_percent, 2) : 0 },
+        path: { path, gateway_name: label(m.gateway_name) || null, fee_percent: pct(m.fee_percent_path ?? m.est_fee_percent, 2) },
         window: { share_percent: pct(m.window_percent, 4), next_block_pays_xbt: xbt(m.block_payout_btc), figure_is_exact: !!m.next_block_exact, window_fill_percent: pct(m.window_fill_percent, 1) },
         estimate: { xbt_per_day: xbt(m.est_btc_day), xbt_per_week: xbt(m.est_btc_week), note: "Estimate at current hashrate, pool luck and network difficulty; actual payouts vary block to block." },
         delays_explained: delays,

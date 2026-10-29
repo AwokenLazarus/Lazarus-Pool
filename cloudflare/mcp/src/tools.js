@@ -34,7 +34,6 @@ function stratumGrace(prime) {
     hours: p.stratum_grace_hours ?? null,
     datum_hours: p.stratum_grace_datum_hours ?? null,
     fee_percent: p.stratum_grace_fee_bps == null ? null : p.stratum_grace_fee_bps / 100,
-    rebate_percent: p.stratum_grace_rebate_bps == null ? null : p.stratum_grace_rebate_bps / 100,
     rearm_hours: p.stratum_grace_rearm_hours ?? null,
     epoch: p.stratum_grace_epoch ?? null,
     note: "An address that starts on the public stratum pays the grace fee until the clock ends, then the full public-stratum fee. A new grace starts after rearm_hours away. A pool that proxies its stratum hashers through its own DATUM gateway gets no grace.",
@@ -76,9 +75,9 @@ export const TOOLS = [
         window: { share_percent: pct(m.window_percent, 4), shares: m.window_shares, next_block_pays_xbt: xbt(m.block_payout_btc), next_block_figure_is_exact: !!m.next_block_exact,
           note: "TIDES pays every address in a rolling window of recent work; a new miner's share grows until the window has turned over once" },
         estimate: { xbt_per_day: xbt(m.est_btc_day), xbt_per_week: xbt(m.est_btc_week) },
-        totals: { paid_xbt: xbt(m.paid_btc), maturing_xbt: xbt(m.immature_btc), maturing_blocks: m.immature_blocks, carried_xbt: xbt(m.carry_btc), datum_bonus_earned_xbt: xbt(m.rebate_btc), min_coinbase_output_xbt: xbt(m.min_payout_btc),
+        totals: { paid_xbt: xbt(m.paid_btc), maturing_xbt: xbt(m.immature_btc), maturing_blocks: m.immature_blocks, carried_xbt: xbt(m.carry_btc), min_coinbase_output_xbt: xbt(m.min_payout_btc),
           note: "Payouts are outputs of the found block's own coinbase. Coinbase outputs normally spend after 100 confirmations, but the temporary Knots #419 rule makes a newly mined coin wait 6,480 confirmations (about 45 days at 10-minute blocks) and nodes will not relay a spend below that. 'carried' is earned value too small for an output yet; it is added to a later coinbase once it passes the pool's minimum output." },
-        if_on_datum: m.fee_path === "datum" ? null : { xbt_per_day: xbt(m.est_datum_btc_day), of_which_bonus_xbt_per_day: xbt(m.est_bonus_btc_day), uplift_percent: pct(m.datum_uplift_percent, 2) },
+        if_on_datum: m.fee_path === "datum" ? null : { xbt_per_day: xbt(m.est_datum_btc_day) },
         stratum_grace: m.stratum_grace_until == null && !m.in_stratum_grace ? null : {
           in_grace: !!m.in_stratum_grace,
           until: m.stratum_grace_until == null ? null : iso(m.stratum_grace_until),
@@ -178,7 +177,7 @@ export const TOOLS = [
     name: "next_coinbase",
     title: "The coinbase the pool is handing out right now: reward, how it splits, and one address's line in it",
     description:
-      "The exact payout the next found block would make: reward value, number of outputs, how much goes to miners and the pool, and how full the TIDES window is (datum_bonus is 0 since the bonus ended on 2026-10-24). " +
+      "The exact payout the next found block would make: reward value, number of outputs, how much goes to miners and the pool, and how full the TIDES window is. " +
       "With `address`, also that address's output (sats and share), or, if it has no output, why not and how much is being carried for it.",
     inputSchema: { type: "object", properties: { address: { ...addressArg, description: "Optional: show this address's line in the coinbase" }, top: { type: "integer", minimum: 0, maximum: 25, description: "Largest outputs to list (default 5)" } }, additionalProperties: false },
     parse: async (a) => ({ address: a.address ? await payoutAddress(a.address) : null, top: int(a.top, "top", 0, 25, 5) }),
@@ -186,7 +185,6 @@ export const TOOLS = [
       const c = await pool(ctx, "/api/coinbaser", 8);
       const out = { scheme: c.scheme, reward_sats: sats(c.value), outputs: c.outputs, miner_outputs: c.miner_outputs, to_miners_sats: sats(c.miner_sats), to_pool_sats: sats(c.pool_sats), fee_sats: sats(c.fee_sats),
         fees: { own_datum_gateway_percent: pct(c.fee_percent, 2), public_stratum_percent: pct(c.stratum_fee_percent, 2), effective_percent_of_this_coinbase: pct(c.effective_fee_percent, 3) },
-        datum_bonus: { sats_this_block: sats(c.rebate_sats), percent_on_top_of_datum_work: pct(c.rebate_percent, 2) },
         window: { multiple_of_network_difficulty: c.window_multiple, fill_percent: pct(c.window_fill_percent, 2) },
         carried: { total_sats: sats(c.carry_total_sats), holders: c.carry_holders, paid_in_this_coinbase_sats: sats(c.carry_paid_sats) },
         largest_outputs: (c.miners || []).slice(0, top).map((m) => ({ address: m.address, sats: sats(m.sats), share_percent: pct(m.share_percent, 4), path: m.fee_path, gateway_name: label(m.gateway_name) })) };
@@ -230,7 +228,7 @@ export const TOOLS = [
         miners_online: p.miners_online, machines_online: p.workers_online, window: { fill_percent: pct(p.window_fill_percent, 1), multiple_of_network_difficulty: p.window_multiple },
         blocks: { found: p.blocks_found, luck_percent: pct(p.luck_percent, 1), expected_minutes_to_next: Math.round((p.ttf_seconds || 0) / 60), reward_xbt: p.subsidy_btc },
         network: { hashrate_phs: pct((p.network_hr_hs || 0) / 1e15, 2), height: p.height, difficulty: p.difficulty, avg_block_interval_s: Math.round(p.block_interval_seconds || 0), pool_share_percent: pct((p.pool_share || 0) * 100, 1) },
-        earnings_per_ths_per_day_xbt: { own_datum_gateway_with_bonus: xbt(p.ths_btc_day_datum_bonus), own_datum_gateway: xbt(p.ths_btc_day_datum), public_stratum: xbt(p.ths_btc_day_stratum) },
+        earnings_per_ths_per_day_xbt: { own_datum_gateway: xbt(p.ths_btc_day_datum), public_stratum: xbt(p.ths_btc_day_stratum) },
         self_cap: { stratum_share_of_network_percent: pct(ov.share_pct, 2), cap_percent: ov.enter_pct, relaying_new_stratum_miners: !!ov.active, note: "Hashrate behind a miner's own DATUM gateway is not counted against the cap." },
         stratum_grace: stratumGrace(p.prime),
         payout_scheme: p.payout_scheme, updated: iso(p.updated), site: POOL_SITE };

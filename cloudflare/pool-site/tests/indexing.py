@@ -52,7 +52,7 @@ for url in urls:
     assert '<script src="/static/analytics.js?v=1" defer></script>' in text, (url, 'no analytics')
     for alt in page.alts.values(): assert alt in urls, (url, alt)
     count += 1
-assert count == 30, count  # 15 documents in two languages
+assert count == 28, count  # 14 documents in two languages
 assert not (out/'static/index.html').exists(), 'raw template is publicly exported'
 robots = (out/'robots.txt').read_text()
 assert 'Disallow: /\n' not in robots

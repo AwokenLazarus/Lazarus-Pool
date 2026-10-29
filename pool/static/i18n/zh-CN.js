@@ -100,21 +100,15 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "priceTitle": "比特币（BTCB2）· 按成交量加权的 Neoxa BTCB2/USDC 与 NonKYC BTCB2/USDT",
     "ths": "1 TH/s 产出",
     "thsTitle": "估算：相对当前全网 1 TH/s、仅基础补贴（不含交易费），走自建 DATUM 网关，手续费 0%。下一区块的运气与手续费会让数字变动。",
-    "bonus": "DATUM 奖励",
-    "bonusTitle": "此刻 DATUM 工作相对其按比例份额多拿的部分：记给 DATUM 矿工的那部分 stratum 手续费，按窗口内 DATUM 工作分摊。",
     "feesTitle": "一条路：DATUM",
-    "feesBody": "自己运行节点和 DATUM 网关：由你组块，手续费 0%，每个区块还能拿到公共 stratum 手续费中的 {pts}。",
-    "feesBodyOff": "自己运行节点和 DATUM 网关：由你组块，手续费 0%。",
+    "feesBody": "自己运行节点和 DATUM 网关：由你组块，手续费 0%。",
     "datumSmall": "你的 DATUM 网关",
-    "datumSubOn": "你保留 100%，自己组块，并领取奖励",
-    "datumSubOff": "你保留 100%，自己组块",
+    "datumSub": "你保留 100%，自己组块",
     "stratumSmall": "捐赠、验证与后备",
     "stratumSub": "用于测试矿机或作后备 · ",
-    "stratumRebate": "前 24 小时（DATUM 矿工 96 小时）为 25%，之后为 {fee}；其中 {pts} 分给 DATUM 矿工",
     "stratumGrace": "前 24 小时（DATUM 矿工 96 小时）为 25%，之后为 {fee}；手续费归矿池",
     "ctaStrong": "配置 DATUM 网关。",
-    "ctaBody": "从<a href=\"#gw-pick\">我们实测的列表</a>中选一个。",
-    "topBonus": "{uplift} DATUM 奖励"
+    "ctaBody": "从<a href=\"#gw-pick\">我们实测的列表</a>中选一个。"
   },
   "status": {
     "eyebrow": "实时",
@@ -150,7 +144,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "p1": "<b>在区块里直接支付。</b>没有矿池余额，不用提现。找到区块时，其 coinbase 直接付给你的地址。<a href=\"#payout\">查看下一次支付</a>。",
     "p2a": "<b>自带网关：手续费 0%。</b>由你的节点组块，矿池只定分配。",
     "p3": "<b>端到端可验证。</b>每一份 share 都会重建并哈希；找到的每个区块都在 <a href=\"https://mempool.lazarus-xbt.xyz/mining/pool/lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus Mempool</a>。源码在 <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>。",
-    "pillarRebate": "，其中 {pts} 会在每个区块记给 DATUM 矿工，并有 24 小时 / 96 小时、费率为 25%、之后为 100% 的宽限期",
     "hashrate": "算力",
     "miners": "矿工",
     "shares": "Shares",
@@ -162,8 +155,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "primeUnreachable": "Prime 不可达",
     "sharesLifetime": "累计 · {rej}",
     "sharesVerified": "Prime 启动以来已验证 · {rej}",
-    "thsSubOn": "自建 DATUM 网关，含奖励 · 基础补贴",
-    "thsSubOff": "自建 DATUM 网关 · 基础补贴",
+    "thsSub": "自建 DATUM 网关 · 基础补贴",
     "hrSub": {
       "one": "{n} 台矿机{extra} 在线",
       "other": "{n} 台矿机{extra} 在线"
@@ -261,31 +253,21 @@ window.LZ_I18N_DICTS["zh-CN"] = {
         "one": "另有 {n} 个地址本块赚到 {deferred}，但低于 {floor} 的最低输出；它留在余额里，随下一笔跨过门槛的输出支付——不会作废。",
         "other": "另有 {n} 个地址本块合计赚到 {deferred}，但各自低于 {floor} 的最低输出；它留在余额里，随下一笔跨过门槛的输出支付——不会作废。"
       },
-      "datumHead": "给 DATUM 网关的补贴",
-      "datum": "stratum 手续费的<b>{pts}</b>——本块为 <b>{amt}</b>——按 DATUM 工作量比例记给窗口内 {n} 名 DATUM 矿工。它不是上面的某一笔输出：它会并入每位矿工的结转余额——与低于门槛的收益共用同一个余额——随其下一笔跨过 {floor} 门槛的输出支付。<a href=\"#connect\" data-tab=\"tab-datum\">运行网关</a>即可加入。{owed}",
-      "datumOwed": "此前记入的 {owed} 仍在等待可以记入的 DATUM 矿工。",
-      "datumOff": "DATUM 奖励已于 2026 年 10 月 24 日结束；stratum 手续费全部留给矿池。已记入矿工余额的奖励，仍会随其下一笔输出支付。",
       "poolHead": "Lazarus 留下什么",
-      "poolFeeDatumFree": "这笔手续费全部来自公共 stratum 的工作量，费率为 <b>{stratum}</b>。Lazarus 对通过你自己 DATUM 网关的工作量收取 <b>0%</b>，所以这笔输出里没有任何一份是从网关的份额里抽的。{giveBack}",
-      "poolFeeGiveBack": "stratum 所付的其中{pts}，又作为第 5 步的补贴直接发还出去。",
+      "poolFeeDatumFree": "这笔手续费全部来自公共 stratum 的工作量，费率为 <b>{stratum}</b>。Lazarus 对通过你自己 DATUM 网关的工作量收取 <b>0%</b>，所以这笔输出里没有任何一份是从网关的份额里抽的。",
       "poolFeeBothPaths": "这笔手续费对自有 DATUM 网关的工作量按 <b>{datum}</b> 收取，对公共 stratum 按 <b>{stratum}</b> 收取。",
-      "pool": "最后一笔输出 <b>{amt}</b>（区块的 {pct}）付给矿池自己的地址。它等于手续费，减去矿池在本 coinbase 里付回的结转，加上本块被门槛留住的部分。{source}它也是支付结转的唯一来源——每个地址一个余额，低于门槛的收益和 DATUM 补贴都汇入其中，当前欠 {holders} 个地址共 <b>{carryTotal}</b>。一次清掉大量积压，这笔输出就会减少同样的数额。",
-      "poolNone": "本 coinbase 里矿池一无所剩：本块付回的结转超过了它收取的手续费。{source}矿池仍为 {holders} 个地址持有 <b>{carryTotal}</b>——每个地址一个余额，低于门槛的收益和 DATUM 补贴都汇入其中。"
+      "pool": "最后一笔输出 <b>{amt}</b>（区块的 {pct}）付给矿池自己的地址。它等于手续费，减去矿池在本 coinbase 里付回的结转，加上本块被门槛留住的部分。{source}它也是支付结转的唯一来源——每个地址一个余额，低于门槛的收益（以及 2026 年 10 月 24 日之前记入的 DATUM 奖励）汇入其中，当前欠 {holders} 个地址共 <b>{carryTotal}</b>。一次清掉大量积压，这笔输出就会减少同样的数额。",
+      "poolNone": "本 coinbase 里矿池一无所剩：本块付回的结转超过了它收取的手续费。{source}矿池仍为 {holders} 个地址持有 <b>{carryTotal}</b>——每个地址一个余额，低于门槛的收益（以及 2026 年 10 月 24 日之前记入的 DATUM 奖励）汇入其中。"
     },
     "reward": "区块奖励",
     "rewardSubWait": "等待 Prime",
     "rewardSub": "高度 {h} 的基础补贴 · 交易费会按比例加到每一笔输出",
     "toMiners": "给所有地址",
     "toPool": "给矿池",
-    "toDatum": "给 DATUM 网关的补贴",
-    "datumSub": "来自本块手续费 · 随下次输出支付",
-    "datumSubNone": "本块无 DATUM 记入",
     "minersSub": {
       "one": "占区块 {pct} · 直接支付 {n} 个地址",
       "other": "占区块 {pct} · 直接支付 {n} 个地址"
     },
-    "poolFeeOnly": "{pct} 手续费 · 本块无 DATUM 奖励",
-    "poolFeeBonus": "扣除 DATUM 奖励后的 {pct} 手续费",
     "meter": "TIDES 窗口填充",
     "windowSize": "窗口大小",
     "filled": "已填充",
@@ -344,27 +326,10 @@ window.LZ_I18N_DICTS["zh-CN"] = {
       "one": "矿池正为 {n} 名矿工持有 {amt} 结转。",
       "other": "矿池正为 {n} 名矿工持有 {amt} 结转。"
     },
-    "plusBonus": "<strong>外加 DATUM 奖励。</strong>本块还会把 {sample} 按 DATUM 工作比例记给窗口内的 DATUM 矿工。它不是上表中的输出——先记入余额，随他们的下一笔输出支付。<a href=\"#connect\" data-tab=\"tab-datum\">运行网关</a>即可加入。",
-    "plusBonusPts": "stratum 手续费的 {pts}",
     "blendedFee": "{pct} 综合费率",
     "feeSplit": "（网关 {datum} · stratum {stratum}）",
-    "rebateCredit": " − {amt} 已记给 DATUM 矿工",
     "carryFwdAmt": " + {amt} 结转至后续",
     "carryBackAmt": " − {amt} 已付回结转"
-  },
-  "pts": {
-    "word": [
-      "零",
-      "一",
-      "两",
-      "三",
-      "四",
-      "五"
-    ],
-    "half": "半个百分点",
-    "sevenHalf": "七个半百分点",
-    "one": "{s}个百分点",
-    "other": "{s}个百分点"
   },
   "connect": {
     "eyebrow": "接入",
@@ -394,18 +359,13 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "stratumFee": "占你窗口份额的 {fee}，在 coinbase 内扣除",
     "stratumFeeTail": " 的窗口份额，在 coinbase 内扣除",
     "stratumGrace": "；前 24 小时（DATUM 矿工 96 小时）按 25% 宽限。手续费归矿池。<a href=\"#pane-datum\" data-tab=\"tab-datum\">运行自己的网关</a>，手续费即为 0%",
-    "stratumRebate": "。其中 {pts} 分给 DATUM 矿工；前 24 小时（DATUM 矿工 96 小时）按 25% 宽限。<a href=\"#pane-datum\" data-tab=\"tab-datum\">运行自己的网关</a>，这笔就归你",
     "algo": "BLAKE2b — Sia 风格区块头，不是 SHA-256d",
     "payout": "你在 TIDES 窗口中的份额，写入矿池找到的每个区块的 coinbase。见 <a href=\"#payout\">下一次支付</a>。",
     "stratumNote": "我们在 <strong>:23334</strong> 上的公共端点本身就是 Prime 上的 DATUM 网关（见 <a href=\"#gateways\">网关</a>），所以这里的工作会记入同一地址的同一窗口。新会话从难度 <strong>4096</strong> 开始；vardiff 约每 20 秒翻倍，向你的算力靠拢。",
     "datumLead": "<strong>你来组块。我们只分配 coinbase。</strong>运行 Bitcoin Knots 和 DATUM 网关，把网关指向 Prime，把矿机指向网关。<a href=\"#gw-pick\">该运行哪个网关</a>。",
-    "bonusTitle": "DATUM 奖励。",
-    "bonusExplain": "每个区块里，公共 stratum {fee} 手续费中的 {Pts} 按 DATUM 工作比例记给窗口内每一位 DATUM 矿工，不论该 coinbase 里是否有你的地址，并随你的下一笔输出支付。{uplift}",
-    "upliftPhrase": "此刻相当于在每位 DATUM 矿工每块份额之上再加 <b>{uplift}</b>",
     "dtHost": "主机",
     "dtPort": "端口",
     "dtPubkey": "公钥",
-    "dtBonus": "奖励",
     "feeLine": "占你窗口份额的 {fee} — 相对公共 stratum {ratio}",
     "feeLineMid": " 的窗口份额 — ",
     "feeLineVs": " 公共 stratum",
@@ -451,14 +411,12 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "soloOddsBody": "按你的算力预计出块时间显示在你的 <a href=\"#dashboard\">数据</a> 页。",
     "soloNote": "独挖工作故意不进入 TIDES 窗口。若你想两者都要，可把一部分矿机指向独挖、其余指向矿池端口；矿池的继续赚窗口份额，独挖的去追整块。你的独挖 shares 不会出现在 <a href=\"#miners\">矿工</a> 或 <a href=\"#payout\">下一次支付</a>——请看 <a href=\"#solo\">独挖</a>。",
     "soloOwnNode": "已经在跑自己的节点？那就直接对着它独挖——那不需要我们，也不该付钱给我们。这些端口是给不想跑节点、又想独挖的矿工。",
-    "bonusDd": "此刻比按比例份额高出 <b>{uplift}</b> — stratum {fee} 中的 {pts}，按工作量分给窗口内 {n} 名 DATUM {who}。每个区块记账，随你的下一笔输出支付。",
     "miner": {
       "one": "矿工",
       "other": "矿工"
     },
     "howFeesSame": "两条路径都收取窗口份额的 {fee}，在 coinbase 内扣除。",
-    "howFeesDiff": "DATUM 工作收取 {datum}；公共 stratum 工作收取 {stratum}。都在 coinbase 内扣除。",
-    "howBonus": "同一区块还会结算奖励：向公共 stratum 工作收取的 {fee} 中，{Pts} 按工作量记给窗口内的 DATUM 矿工，随你的下一笔输出支付。{upliftDot}"
+    "howFeesDiff": "DATUM 工作收取 {datum}；公共 stratum 工作收取 {stratum}。都在 coinbase 内扣除。"
   },
   "hardware": {
     "eyebrow": "买一台矿机",
@@ -761,8 +719,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "s2t": "窗口决定分配",
     "s2": "窗口保存最近 <strong><span id=\"how-window\">8</span> × 全网难度</strong> 的已接受工作——按典型算力是数天的矿池工作，不是上一小时。找到的区块按各地址占该窗口的份额支付，并扣除手续费。新机器从接近 0% 开始，随其工作进入、旧工作滚出而爬升。",
     "s3t": "区块直接付给你",
-    "s3": "Prime 把同一份 coinbase 输出列表交给每一座网关——就是 <a href=\"#payout\">下一次支付</a> 里显示的那份。coinbase 付到别处的 share 会被拒绝，所以无论谁找到区块，都付给窗口。没有需要提取的矿池余额，也没有经手你币的运营方需要信任。",
-    "s4t": "DATUM 工作领取奖励"
+    "s3": "Prime 把同一份 coinbase 输出列表交给每一座网关——就是 <a href=\"#payout\">下一次支付</a> 里显示的那份。coinbase 付到别处的 share 会被拒绝，所以无论谁找到区块，都付给窗口。没有需要提取的矿池余额，也没有经手你币的运营方需要信任。"
   },
   "footer": {
     "mcp": "供 AI 助手使用的 MCP 服务器",
@@ -780,7 +737,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "learn": "了解",
     "bip110": "什么是 BIP-110？",
     "tides": "TIDES 如何支付",
-    "subsidy": "DATUM 奖励（已结束）",
     "calc": "收益计算器",
     "asics": "Siacoin BLAKE2b 矿机",
     "compare": "XBT 矿池对比",
@@ -958,10 +914,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "thPayableAt": "可支付起点",
     "thLands": "到账",
     "thTx": "交易",
-    "bonus": "DATUM 奖励",
-    "bonusSub": "下一块会记入你的余额{uplift} · 你分得的公共 stratum 手续费，随下一笔输出支付",
-    "bonusUplift": " · 比按比例份额高 {pct}",
-    "estBonus": "按当前难度、{fee} 手续费并计入 {uplift} DATUM 奖励 · 待窗口与此算力对齐",
     "estPlain": "按当前难度、扣除 {fee} 手续费 · 待窗口与此算力对齐",
     "pitch": "<strong>你在公共 stratum 上正在付 {fee}，这笔手续费归矿池。</strong>把这份算力改走自建 DATUM 网关，手续费就是 0%：按此算力大约每天 <b>{datum}</b>{datumUsd}，而不是 {now}{nowUsd}。已接受的工作跟着走。<a href=\"/#connect\">配置网关</a>。",
     "pendingTab": "{n} 笔待付",
@@ -1047,7 +999,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     },
     "nextWin": "占窗口 {wp} · 写入下一笔 coinbase{carry}",
     "plusCarry": " · 有空间时外加结转",
-    "estFeeBonus": "{fee} 手续费及 {uplift} 奖励，按当前难度",
     "estFee": "扣除 {fee} 手续费，按当前难度",
     "noBalance": "矿池不为你保管余额，也没有需要提取的东西。矿池找到的每个区块都在其 coinbase 里直接付给此地址；输出满 {n} 个确认后可花费。唯一的例外是部分分账或仅矿池区块：找到该区块的网关未把部分矿工写进 coinbase 时，他们的份额会进入矿池的输出，待该输出成熟后由矿池补付。{carry}",
     "carryNote": " 你在更早区块挣得的 <strong>{amt}</strong> 未达最低输出，已结转：会加在下一笔跨过门槛的输出上，从矿池份额中支付。",
