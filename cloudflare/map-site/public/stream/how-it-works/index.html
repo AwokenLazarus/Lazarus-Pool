@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lightning Stream: How It Works</title>
+<meta name="description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<link rel="canonical" href="https://lazarus-xbt.xyz/stream/how-it-works/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Lazarus · Bitcoin BLAKE2b">
+<meta property="og:title" content="Lightning Stream: how it works">
+<meta property="og:description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<meta property="og:url" content="https://lazarus-xbt.xyz/stream/how-it-works/">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lazarus XBT, lazarus-xbt.xyz">
+<meta name="twitter:site" content="@LazarusPoolXBT">
+<meta name="twitter:title" content="Lightning Stream: how it works">
+<meta name="twitter:description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta name="theme-color" content="#1a1712">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="stylesheet" href="/assets/hub.css?v=7">
+<link rel="stylesheet" href="/stream/stream.css?v=2">
+<script src="/assets/js.js"></script>
+<script src="/assets/analytics.js?v=1" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://lazarus-xbt.xyz/stream/how-it-works/#article",
+ "headline": "Lightning Stream: how it works",
+ "description": "How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.",
+ "url": "https://lazarus-xbt.xyz/stream/how-it-works/",
+ "image": "https://lazarus-xbt.xyz/assets/og.png",
+ "dateModified": "2026-10-27",
+ "inLanguage": "en",
+ "author": {
+  "@type": "Organization",
+  "name": "Lightning Stream",
+  "url": "https://github.com/AwokenLazarus/Lightning-Stream"
+ },
+ "publisher": {
+  "@id": "https://lazarus-xbt.xyz/#org"
+ },
+ "isPartOf": {
+  "@id": "https://lazarus-xbt.xyz/stream/#article"
+ },
+ "about": [
+  "Lightning Network",
+  "hold invoices",
+  "x402",
+  "AI agents",
+  "streaming payments",
+  "probabilistic payments",
+  "XBT"
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="topbar wrap">
+    <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <a href="/learn/">The chain</a><a href="/ecosystem/">Ecosystem</a><a href="/map/">Galaxy map</a><a href="/naughtylist/">Naughty list</a><a href="/key/">Lazarus Key</a><a href="/faq/">FAQ</a>
+      <a class="btn small" href="https://pool.lazarus-xbt.xyz" rel="noopener">Lazarus Pool</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero wrap">
+  <h1><span class="kicker">Lightning Stream · How it works</span>How Stream <em>connects</em> everything</h1>
+  <p class="lede">One picture of Lightning Stream: who talks to whom, how the bytes travel, how the money moves, and where shops are found. Parts marked <em>in progress</em> are built and in testing but not yet released; parts marked <em>designed, not yet built</em> are planned. Everything else is in the app today.</p>
+  <p class="note">Updated 29 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <nav class="toc" aria-label="On this page">
+    <p class="category">On this page</p>
+    <a href="#map">The map</a><a href="#buy">When you buy</a><a href="#sell">When you sell</a><a href="#hash">When you rent hashrate</a><a href="#money">How the money moves</a><a href="#labels">What the labels mean</a>
+  </nav>
+  <nav class="toc" aria-label="More pages">
+    <p class="category">The whitepaper and its pages</p>
+    <a href="/stream/">The whitepaper</a><a href="/stream/how-it-works/">How it works</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+  </nav>
+</section>
+
+<section class="section wrap">
+  <figure class="fig fig-wide" id="map">
+<svg viewBox="0 0 1200 970" role="img" aria-label="How Lightning Stream connects buyers and sellers: devices on the buyer's network talk to the buyer's Stream app, which reaches the seller's Stream app over an encrypted iroh link, directly or through a relay; payments travel separately over XBT Lightning between the two people's own nodes, and shops are found through signed listings on Nostr.">
+<rect class="box-brass" x="20" y="20" width="1160" height="96" rx="12"/>
+<text class="t-h" x="40" y="48">NOSTR RELAYS</text>
+<text class="t" x="40" y="72">Signed shop listings · link address records · relay announcements · hashrate delivery records and ratings</text>
+<text class="t-s" x="40" y="96">Where buyers find shops and relays: no directory of ours, anyone can run a relay</text>
+<rect class="box-plan" x="870" y="34" width="290" height="68" rx="8"/>
+<text class="t" x="886" y="58">Nostr DVMs as AI sellers</text>
+<text class="t-plan" x="886" y="80">(designed, not yet built)</text>
+<rect class="zone" x="20" y="140" width="360" height="660" rx="14"/>
+<text class="t-h" x="40" y="166">BUYER (YOUR BOX)</text>
+<rect class="zone" x="820" y="140" width="360" height="660" rx="14"/>
+<text class="t-h" x="840" y="166">SELLER (THEIR BOX)</text>
+<text class="t-h" x="600" y="166" text-anchor="middle">BETWEEN THEM</text>
+<rect class="box" x="40" y="180" width="320" height="96" rx="10"/>
+<text class="t" x="56" y="204">Browser, TV and phone apps</text>
+<text class="t" x="56" y="228">AI apps and agents (OpenAI-compatible)</text>
+<text class="t" x="56" y="252">Router or devices on WireGuard</text>
+<text class="t-prog" x="56" y="268">(in progress)</text>
+<polyline class="ln" points="200,276 200,300"/>
+<polygon class="arrow" points="200,306 194,294 206,294"/>
+<text class="t-s" x="212" y="294">plain HTTP on your own network</text>
+<rect class="box" x="40" y="308" width="320" height="336" rx="10"/>
+<text class="t-h" x="56" y="332">YOUR STREAM APP</text>
+<text class="t" x="56" y="358">Browse: shops found on Nostr</text>
+<text class="t" x="56" y="382">Seller web apps, each in its own sealed visit</text>
+<text class="t-prog" x="56" y="397">(in progress)</text>
+<text class="t" x="56" y="420">Local AI address, routed to the best seller</text>
+<text class="t" x="56" y="444">Hashtaker: rented work to your DATUM Gateway</text>
+<text class="t" x="56" y="468">Local links for TVs and native apps</text>
+<text class="t-plan" x="56" y="483">(designed, not yet built)</text>
+<text class="t" x="56" y="506">WireGuard endpoint for VPN exits</text>
+<text class="t-prog" x="56" y="521">(in progress)</text>
+<text class="t" x="56" y="544">Built-in relay, off unless you switch it on</text>
+<text class="t-prog" x="56" y="559">(in progress)</text>
+<rect class="box-brass" x="52" y="576" width="296" height="58" rx="8"/>
+<text class="t" x="64" y="598">Signer: holds your keys and pays</text>
+<text class="t" x="64" y="618">only within spending rules you signed</text>
+<rect class="box" x="40" y="664" width="320" height="62" rx="10"/>
+<text class="t" x="56" y="688">Your node: Lightning Fork + Knots-BLAKE2b</text>
+<text class="t-s" x="56" y="710">pays the tickets; nothing held by anyone else</text>
+<rect class="box-plan" x="40" y="734" width="320" height="54" rx="8"/>
+<text class="t" x="56" y="754">Pay from an NWC wallet instead of a node</text>
+<text class="t-plan" x="56" y="772">(designed, not yet built)</text>
+<polyline class="ln" points="200,634 200,658"/>
+<polygon class="arrow" points="200,664 194,652 206,652"/>
+<text class="t-s" x="212" y="656">pays</text>
+<rect class="box" x="840" y="180" width="320" height="96" rx="10"/>
+<text class="t" x="856" y="204">Your local services: Jellyfin and</text>
+<text class="t" x="856" y="224">other web apps, an AI model, miners</text>
+<text class="t" x="856" y="248">Blossom media server</text>
+<text class="t-plan" x="856" y="268">(designed, not yet built)</text>
+<polyline class="ln" points="1000,308 1000,282"/>
+<polygon class="arrow" points="1000,276 994,288 1006,288"/>
+<text class="t-s" x="1012" y="298">local HTTP and Stratum</text>
+<rect class="box" x="840" y="308" width="320" height="336" rx="10"/>
+<text class="t-h" x="856" y="332">THEIR STREAM APP</text>
+<text class="t" x="856" y="358">Gateway: prices, meters to the millisatoshi,</text>
+<text class="t" x="856" y="382">signs a receipt for every answer</text>
+<text class="t" x="856" y="406">Hashmaker: carries miners' work, paid per slice</text>
+<text class="t" x="856" y="430">A Jellyfin account for each buyer, private handle</text>
+<text class="t-prog" x="856" y="445">(in progress)</text>
+<text class="t" x="856" y="468">Busy limits, checked before anyone pays</text>
+<text class="t-prog" x="856" y="483">(in progress)</text>
+<text class="t" x="856" y="506">VPN exit, private or filtered</text>
+<text class="t-prog" x="856" y="521">(in progress)</text>
+<text class="t" x="856" y="544">Built-in relay, optional</text>
+<text class="t-prog" x="856" y="559">(in progress)</text>
+<rect class="box" x="840" y="664" width="320" height="62" rx="10"/>
+<text class="t" x="856" y="688">Their node: Lightning Fork + Knots-BLAKE2b</text>
+<text class="t-s" x="856" y="710">receives the tickets; no custody, ever</text>
+<polyline class="ln" points="1000,644 1000,658"/>
+<polygon class="arrow" points="1000,664 994,652 1006,652"/>
+<text class="t-s" x="1012" y="656">invoices</text>
+<text class="t" x="600" y="200" text-anchor="middle">iroh link: QUIC with TLS 1.3, end to end encrypted</text>
+<text class="t-s" x="600" y="220" text-anchor="middle">The seller's link key is signed by their Lightning node in the</text>
+<text class="t-s" x="600" y="236" text-anchor="middle">listing; your app checks it before sending a byte.</text>
+<text class="t-prog" x="600" y="252" text-anchor="middle">(in progress)</text>
+<polyline class="ln-link" points="360,330 840,330"/>
+<polygon class="arrow-ink" points="840,330 828,324 828,336"/>
+<polygon class="arrow-ink" points="360,330 372,324 372,336"/>
+<text class="t" x="600" y="320" text-anchor="middle">direct, hole-punched through both routers</text>
+<text class="t-m" x="430" y="360">1  price (402)</text>
+<text class="t-m" x="430" y="380">2  small ticket</text>
+<text class="t-m" x="430" y="400">3  request</text>
+<text class="t-m" x="430" y="420">4  metered answer</text>
+<text class="t-m" x="430" y="440">5  signed receipt</text>
+<text class="t-s" x="600" y="360">what travels on the link</text>
+<text class="t-s" x="600" y="378">for every web page, AI answer,</text>
+<text class="t-s" x="600" y="396">stream, share or VPN packet</text>
+<polyline class="ln-link" points="360,520 440,520"/>
+<polyline class="ln-link" points="760,520 840,520"/>
+<polygon class="arrow-ink" points="840,520 828,514 828,526"/>
+<polygon class="arrow-ink" points="360,520 372,514 372,526"/>
+<text class="t-s" x="400" y="510" text-anchor="middle">or</text>
+<text class="t-s" x="800" y="510" text-anchor="middle">or</text>
+<rect class="box" x="440" y="470" width="320" height="150" rx="10"/>
+<text class="t-h" x="456" y="494">STREAM RELAYS</text>
+<text class="t" x="456" y="518">iroh.lazarus-xbt.xyz, ours</text>
+<text class="t" x="456" y="542">Relays run by anyone, built into Stream</text>
+<text class="t-prog" x="456" y="558">(in progress)</text>
+<text class="t" x="456" y="582">Relays paid per GB</text>
+<text class="t-prog" x="588" y="582">(in progress)</text>
+<text class="t-s" x="456" y="604">see only ciphertext, addresses and volume</text>
+<rect class="box-plan" x="440" y="664" width="320" height="72" rx="8"/>
+<text class="t" x="456" y="688">Rented rigs reach a hashtaker's DATUM</text>
+<text class="t" x="456" y="708">Gateway with no port forward</text>
+<text class="t-plan" x="456" y="726">(designed, not yet built)</text>
+<polyline class="ln-dot" points="1170,308 1170,116"/>
+<polygon class="arrow-dot" points="1170,116 1164,128 1176,128"/>
+<text class="t-s" x="1160" y="134" text-anchor="end">publishes listings</text>
+<polyline class="ln-dot" points="30,116 30,302"/>
+<polygon class="arrow-dot" points="30,308 24,296 36,296"/>
+<text class="t-s" x="40" y="134">finds shops and relays</text>
+<text class="t-s" x="58" y="140"></text>
+<rect class="box-brass" x="20" y="820" width="1160" height="70" rx="12"/>
+<text class="t-h" x="600" y="846" text-anchor="middle">XBT LIGHTNING NETWORK</text>
+<text class="t" x="600" y="870" text-anchor="middle">small tickets (about 900 sat), refilled just before they run out: paid as you use it, at most one ticket at risk</text>
+<polyline class="ln-money" points="360,695 395,695 395,814"/>
+<polygon class="arrow-brass" points="395,820 389,808 401,808"/>
+<text class="t-m" x="403" y="770">pays</text>
+<polyline class="ln-money" points="805,820 805,695 834,695"/>
+<polygon class="arrow-brass" points="840,695 828,689 828,701"/>
+<text class="t-m" x="797" y="770" text-anchor="end">paid</text>
+<polyline class="ln-link" points="40,920 74,920"/>
+<text class="t-s" x="84" y="924">data, encrypted</text>
+<polyline class="ln-money" points="210,920 244,920"/>
+<text class="t-s" x="254" y="924">money, over Lightning</text>
+<polyline class="ln-dot" points="410,920 444,920"/>
+<text class="t-s" x="454" y="924">discovery, via Nostr</text>
+<text class="t-prog" x="600" y="924">(in progress)</text>
+<text class="t-s" x="690" y="924">built, in testing, not yet released</text>
+<text class="t-plan" x="600" y="946">(designed, not yet built)</text>
+<text class="t-s" x="760" y="946">planned; not in the app</text>
+<text class="t-s" x="40" y="946">No label: released and in the app today.</text>
+</svg>
+    <figcaption><b>The map.</b> Your devices talk only to your own Stream app. Your app reaches the seller's over an encrypted iroh link, directly or through a relay. Money never travels on that link: it moves over XBT Lightning, from your node to theirs, in small tickets as you use the service. Shops and relays are found through signed listings on Nostr. On a phone, scroll the picture sideways.</figcaption>
+  </figure>
+
+  <div class="prose paper" data-reveal>
+
+    <h2 id="buy"><span class="n">1</span>When you buy</h2>
+    <ol>
+      <li>You find a shop in Browse. Its listing is signed and published on Nostr: what it sells, the prices, and how to reach it.</li>
+      <li>You allow the shop in your spending rules, which you sign with your own key. The signer in your app pays nothing outside them.</li>
+      <li>You open the shop's service: a seller's whole web app (for example Jellyfin) in a sealed visit, your local AI address, or a file. Your browser or AI app talks only to your own Stream app, on your own network.</li>
+      <li>Your app connects to the seller's app. Today that is over the seller's https address; with the iroh link <em>(in progress)</em> it is by the seller's key, end to end encrypted, with no address needed, and your app first checks that the seller's Lightning node vouches for that key.</li>
+      <li>The seller answers with its price. Your app pays a small ticket from your own node, sends the request, and the seller meters what it delivers to the millisatoshi and signs a receipt. The next ticket is paid just before the last runs out.</li>
+    </ol>
+
+    <h2 id="sell"><span class="n">2</span>When you sell</h2>
+    <ol>
+      <li>You point your Stream app at a service on your own network, set a price, and press Sell. Your app signs a listing and publishes it on Nostr.</li>
+      <li>Your gateway sits in front of the service: it states the price, meters every answer, signs receipts, and passes the request on. With buyer accounts <em>(in progress)</em> each buyer gets their own account in your app under a private handle; with busy limits <em>(in progress)</em> new buyers are turned away before they pay when your box is full.</li>
+      <li>You are paid into your own node. Nobody holds the money in between.</li>
+      <li>With the iroh link <em>(in progress)</em> you need no domain, certificate, tunnel or port forward: buyers reach you by your key, directly or through a relay.</li>
+    </ol>
+
+    <h2 id="hash"><span class="n">3</span>When you rent hashrate</h2>
+    <ol>
+      <li>A hashmaker lists its miners; a hashtaker rents them into its own DATUM Gateway, which builds the block template and checks every share.</li>
+      <li>The hashmaker's app carries the miners' work to the hashtaker's app. The link between them is encrypted end to end. Over iroh <em>(in progress)</em> neither side needs a port forward.</li>
+      <li>The hashtaker pays for each slice of work after it is delivered, counting only the shares its own gateway accepted.</li>
+      <li>Rented rigs from rental sites reaching a hashtaker's DATUM Gateway without a port forward is <em>designed, not yet built</em>.</li>
+    </ol>
+
+    <h2 id="money"><span class="n">4</span>How the money moves</h2>
+    <p>Every service pays the same way: small tickets of about 900 sat over XBT Lightning, from the buyer's own node to the seller's own node, drawn down exactly as the service is used and refilled just before they run out. A buyer can lose at most one ticket to a seller that stops serving. Relays and the iroh link never carry money, and Stream never holds anyone's funds. Paying from an NWC wallet instead of your own node is <em>designed, not yet built</em>.</p>
+
+    <h2 id="labels"><span class="n">5</span>What the labels mean</h2>
+    <ul>
+      <li><strong>No label:</strong> released, in the app today.</li>
+      <li><strong>In progress:</strong> built and in testing, not yet released: the iroh link and relays built into Stream, sellers' whole web apps with buyer accounts, busy limits, VPN exits, and relays paid per GB.</li>
+      <li><strong>Designed, not yet built:</strong> planned, with a design, not in the app: local links for TVs and native apps, paying from an NWC wallet, Nostr DVMs as AI sellers, a Blossom media server sold by the MiB, and rented rigs reaching a DATUM Gateway with no port forward.</li>
+    </ul>
+    <p>The <a href="/stream/changelog/">changelog</a> lists what each release added, and <a href="/stream/progress/">progress and status</a> what is built, planned and not built.</p>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+      <p class="note" style="margin-top:.8rem;max-width:22rem">A hub for Bitcoin on BLAKE2b proof of work: the chain, the pools, the software and the people building on it.</p>
+      <p class="note faint"><i>Proverbs 11:1</i> — a just weight is his delight.</p>
+    </div>
+    <div class="footer-col">
+      <p class="category">Network</p>
+      <a href="/learn/">What XBT is</a>
+      <a href="/blake2b/">BLAKE2b vs SHA-256</a>
+      <a href="/learn/#softfork">Soft fork status</a>
+      <a href="https://mempool.lazarus-xbt.xyz" rel="noopener">Block explorer</a>
+      <a href="/map/">Galaxy map</a>
+      <a href="/ecosystem/#pools">Pool directory</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Mine</p>
+      <a href="https://pool.lazarus-xbt.xyz" rel="noopener">XBT mining pool</a>
+      <a href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Connect a Siacoin ASIC</a>
+      <a href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">ASICs that mine XBT</a>
+      <a href="https://pool.lazarus-xbt.xyz/how" rel="noopener">How the pool pays</a>
+      <a href="/ecosystem/#pools">Other pools</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Build</p>
+      <a href="https://github.com/AwokenLazarus/Bitcoin" rel="noopener">Source on GitHub</a>
+      <a href="https://github.com/AwokenLazarus/lazarus-key" rel="noopener">Lazarus Key source</a>
+      <a href="/ecosystem/#software">Software</a>
+      <a href="/stream/">Stream whitepaper</a>
+      <a href="https://mcp.lazarus-xbt.xyz" rel="noopener">MCP server</a>
+      <a href="https://mempool.lazarus-xbt.xyz/api" rel="noopener">Explorer API</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Community</p>
+      <a href="https://discord.gg/fD33dJXnzz" rel="noopener">Discord</a>
+      <a href="https://x.com/Awoken_Lazarus" rel="noopener">X</a>
+      <a href="/faq/">FAQ</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>Lazarus · Bitcoin BLAKE2b (XBT). Public data, no accounts, no custody.</span>
+    <span class="live">live</span>
+  </div>
+</footer>
+<script src="/assets/hub.js?v=2" defer></script>
+</body>
+</html>

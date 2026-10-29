@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
 <link rel="stylesheet" href="/assets/hub.css?v=7">
-<link rel="stylesheet" href="/stream/stream.css?v=1">
+<link rel="stylesheet" href="/stream/stream.css?v=2">
 <script src="/assets/js.js"></script>
 <script src="/assets/analytics.js?v=1" defer></script>
 <script type="application/ld+json">
@@ -68,6 +68,25 @@
   <h1><span class="kicker">Whitepaper · XBT</span>Lightning Stream: pay as it <em>arrives</em></h1>
   <p class="lede">Anyone who runs a Lightning node should be able to sell a service to the network (a film, an AI model, hashrate, an API, software of their own) and be paid for it piece by piece as it is delivered, by people and by AI agents alike.</p>
   <p class="lede">Lightning Stream does that on ordinary XBT Lightning. The buyer pays a small ticket ahead, the seller counts what it delivers to the millisatoshi and signs a receipt for every answer, and the buyer can lose no more than one ticket. For pieces too small to pay one by one, a fair roll decides which pieces are paid.</p>
+  <a class="hiw-thumb" href="/stream/how-it-works/" aria-label="See how Stream works: the full map">
+  <figure class="fig">
+<svg viewBox="0 0 640 170" role="img" aria-label="Thumbnail of how Stream works: your Stream app and the seller's are joined by an encrypted link; money moves between your nodes over XBT Lightning; shops are found on Nostr.">
+<rect class="box-brass" x="10" y="10" width="620" height="30" rx="8"/>
+<text class="t-s" x="320" y="30" text-anchor="middle">Nostr: signed listings, found in Browse</text>
+<rect class="box" x="20" y="58" width="170" height="54" rx="8"/>
+<text class="t" x="105" y="82" text-anchor="middle">Your Stream app</text>
+<text class="t-s" x="105" y="100" text-anchor="middle">rules you sign</text>
+<rect class="box" x="450" y="58" width="170" height="54" rx="8"/>
+<text class="t" x="535" y="82" text-anchor="middle">Seller's Stream app</text>
+<text class="t-s" x="535" y="100" text-anchor="middle">web apps, AI, hashrate</text>
+<polyline class="ln-link" points="190,85 450,85"/>
+<text class="t-s" x="320" y="77" text-anchor="middle">encrypted link to the seller</text>
+<rect class="box-brass" x="10" y="128" width="620" height="30" rx="8"/>
+<text class="t-m" x="320" y="148" text-anchor="middle">XBT Lightning: small tickets, paid as you use it</text>
+</svg>
+    <figcaption><b>See how Stream works:</b> the full map of buyers, sellers, relays, miners, exits, Nostr and Lightning.</figcaption>
+  </figure>
+  </a>
   <p class="note">Draft 11 · 27 October 2026 · Lightning Stream (<a href="https://github.com/AwokenLazarus/Lightning-Stream" rel="noopener">source</a>). The app is released for Umbrel, StartOS and Linux and runs on XBT mainnet: <a href="/stream/start/">Try it</a> says how. It has been tested on mainnet between our own nodes, with small amounts, and is not audited; see <a href="#status">Status</a>.</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
@@ -75,7 +94,7 @@
   </nav>
   <nav class="toc" aria-label="More pages">
     <p class="category">More, for readers who want it</p>
-    <a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+    <a href="/stream/how-it-works/">How it works</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
   </nav>
 </section>
 

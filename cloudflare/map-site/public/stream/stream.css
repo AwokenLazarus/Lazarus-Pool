@@ -40,3 +40,20 @@
 .status dt { font: 600 0.72rem/1.9 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
 .status dd { margin: 0; }
 @media (max-width: 34rem) { .status { grid-template-columns: 1fr; } .status dd { margin-bottom: 0.6rem; } }
+
+/* /stream/how-it-works/ — the map of how Stream connects everything. */
+.fig-wide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.fig-wide svg { min-width: 980px; }
+.fig .zone { fill: none; stroke: var(--line); stroke-width: 1; }
+.fig .box-plan { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 5 4; }
+.fig .ln-link { stroke: var(--ink); stroke-width: 2; fill: none; }
+.fig .ln-money { stroke: var(--brass); stroke-width: 3; fill: none; }
+.fig .ln-dot { stroke: var(--muted); stroke-width: 1.6; fill: none; stroke-dasharray: 1 5; stroke-linecap: round; }
+.fig .arrow-ink { fill: var(--ink); }
+.fig .arrow-dot { fill: var(--muted); }
+.fig .t-prog { font: 500 10.5px var(--mono); fill: var(--warn); }
+.fig .t-plan { font: 500 10.5px var(--mono); fill: var(--faint); }
+.hiw-link { display: inline-flex; gap: 0.5rem; align-items: center; }
+.hiw-thumb { display: block; max-width: 44rem; text-decoration: none; color: inherit; }
+.hiw-thumb .fig { margin: 1.4rem 0 1rem; }
+.hiw-thumb:hover svg, .hiw-thumb:focus-visible svg { border-color: var(--brass-dim); }
