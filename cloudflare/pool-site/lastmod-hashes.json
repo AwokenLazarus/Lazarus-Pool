@@ -1,7 +1,7 @@
 {
  "/": {
   "lastmod": "2026-10-29",
-  "sha256": "f17fc26df2e2cf700b145ea68505708d00f9bcc7293510a8af2a5ee0bb829d45"
+  "sha256": "774f6d89a8a3c27777dcbf583baf775894adc6fdfc294dd03bd96b8465152795"
  },
  "/api": {
   "lastmod": "2026-10-29",
@@ -21,11 +21,11 @@
  },
  "/connect": {
   "lastmod": "2026-10-29",
-  "sha256": "b74ed9043af659090f4067111032ca3b2ecfab89297ea7a68f732b7e2107ea3c"
+  "sha256": "ad1a8534f840f16c29d9b30ec34e416125f4a99e3471d55d44fd2595df5e5856"
  },
  "/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "c20758a24140f07fcbe315fffa9852b3cc12f60ec34456be26e663f76fd5287c"
+  "sha256": "97cd1546abacb625e8d50f3f159e7b67acff1572548ebcd03b53f5013b9c15b9"
  },
  "/hardware": {
   "lastmod": "2026-10-29",
@@ -45,7 +45,7 @@
  },
  "/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "7bcc6eb9877f0e256dbe904a1ce060a281c1b773ec0855c06a7474564d4620ba"
+  "sha256": "acbe83e4656d847e3a1d3273716a7d99beb73d5776ca1a915427758c589de0de"
  },
  "/rentals": {
   "lastmod": "2026-10-29",
@@ -57,7 +57,7 @@
  },
  "/zh/": {
   "lastmod": "2026-10-29",
-  "sha256": "03f0dc458f39d101d54cda3b2a1107f51aa1ef909ad4e04ae1163645fe3912ba"
+  "sha256": "ad4469377c7444ceeac7b893223048b5dc449880f8c4501d4417c64401db72d2"
  },
  "/zh/api": {
   "lastmod": "2026-10-29",
@@ -77,11 +77,11 @@
  },
  "/zh/connect": {
   "lastmod": "2026-10-29",
-  "sha256": "ee1d94b2f3ff08e5e480b8ce82c97f4b894ab3e5963bef895bb095513427b758"
+  "sha256": "b479b982184043b583cc8f566588310518720bda73865fc807a501259545c281"
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-10-29",
-  "sha256": "f6cf71e3d2171f5820b787683138f0563dcb0b86823c30e61fe812085d3a1aff"
+  "sha256": "5e6c8afefc368ec4ab5a093ff9386d3a06b090718603dc7820fe82956040116b"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-29",
@@ -101,7 +101,7 @@
  },
  "/zh/ratum": {
   "lastmod": "2026-10-29",
-  "sha256": "d370b7d7d3726b974ff33a8c145810beaf46765acdd36eb8c5a1ffc12cee5d9c"
+  "sha256": "6e59e39766ad12cbb1dd3e8d90e9fcf07e797006156229fdd7220ad235c58b08"
  },
  "/zh/rentals": {
   "lastmod": "2026-10-29",
