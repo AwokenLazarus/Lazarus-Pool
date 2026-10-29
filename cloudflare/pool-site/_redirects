@@ -16,3 +16,6 @@
 /zh/profitability /zh/calculator 301
 /bip-110 /bip110 301
 /zh/bip-110 /zh/bip110 301
+# The DATUM bonus ended on 2026-10-24 and its page was removed; old links land on the DATUM setup page.
+/datum-subsidy /connect 301
+/zh/datum-subsidy /zh/connect 301

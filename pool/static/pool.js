@@ -112,9 +112,7 @@
 
   // Fee schedule as primed reports it: one rate for work through a miner's own DATUM
   // gateway, another for our public stratum. Filled from /api/pool on every refresh.
-  // `rebate` is the points of the stratum fee credited to DATUM work; `uplift` is what that
-  // is worth to a DATUM miner at today's split (rebate × stratum work ÷ DATUM work).
-  const fees = { datum: 0, stratum: 10, rebate: 5, uplift: 0, datumWorkPct: 0, stratumWorkPct: 0, datumMiners: 0 };
+  const fees = { datum: 0, stratum: 10, datumWorkPct: 0, stratumWorkPct: 0, datumMiners: 0 };
   const feeForPath = (path) => (String(path || "").toLowerCase() === "stratum" ? fees.stratum : fees.datum);
   // Which fee schedule an address is on, as a small labelled pill.
   // `feePath` is the schedule primed applies to the identity's window work (the fee that is
@@ -160,13 +158,7 @@
     return " · " + moneyOnly(u);
   };
   // 1 TH/s of continuous work at the current difficulty, base subsidy (no tx fees).
-  // `key` picks which of primed's pre-computed figures to prefer: with the rebate on,
-  // "datum_bonus" is the DATUM rate including the credit at today's work split.
-  const thsDay = (p, feePercent, key) => {
-    if (key) {
-      const pre = Number(p && p["ths_btc_day_" + key]);
-      if (Number.isFinite(pre) && pre > 0) return pre;
-    }
+  const thsDay = (p, feePercent) => {
     const billed = Number(p && p["ths_btc_day_" + (feePercent === fees.stratum ? "stratum" : "datum")]);
     if (Number.isFinite(billed) && billed > 0) return billed;
     const gross = Number(p && p.ths_btc_day);
@@ -295,107 +287,17 @@
     wrap.hidden = false;
   }
 
-  // "one point", "seven and a half points" — rebate percentages read as points of the stratum fee when we are
-  // talking about a slice of it rather than a rate in its own right. `Pts` starts a sentence.
-  const pts = (n) => {
-    const x = Number(n) || 0;
-    if (x === 0.5) return t("pts.half");
-    if (x === 7.5) return t("pts.sevenHalf");
-    const list = (window.LZ_I18N && LZ_I18N.raw && LZ_I18N.raw("pts.word")) || ["zero", "one", "two", "three", "four", "five"];
-    const s = Number.isInteger(x) && x < list.length ? list[x] : String(sig4(x));
-    return t(x === 1 ? "pts.one" : "pts.other", { s });
-  };
-  const Pts = (n) => { const s = pts(n); return s.charAt(0).toUpperCase() + s.slice(1); };
-  // The uplift, as the page shows it: a signed percent with a decimal until it gets big.
-  const upliftPct = (n) => "+" + pct(Number(n) || 0, Math.abs(Number(n)) < 100 ? 1 : 0);
-  // The DATUM bonus, everywhere it appears. One knob (`datum_rebate_percent`) turns all of it
-  // on: with the rebate off every element here is hidden and the page reads as it did before.
-  // `uplift` is the number that matters to a miner — what DATUM work earns above its
-  // proportional share of a block right now — so it is what we lead with when Prime reports it.
-  function rebateCopy(p) {
+  // The fee copy that depends on the live schedule: the DATUM card and the stratum grace.
+  function feeCopy() {
     const setText = (id, text) => { const e = $(id); if (e) e.textContent = text; };
-    const show = (id, on) => { const e = $(id); if (e) e.hidden = !on; };
-    const on = fees.rebate > 0;
-    const upliftTxt = fees.uplift > 0 ? upliftPct(fees.uplift) : "";
-    const upliftPhrase = fees.uplift > 0
-      ? t("connect.upliftPhrase", { uplift: upliftTxt })
-      : "";
-
-    show("live-bonus-chip", on && !!upliftTxt);
-    setText("live-bonus", upliftTxt || "\u2014");
-
-    setText("lede-rebate-pts", pts(fees.rebate));
     const feesBody = $("fee-lede-body");
-    if (feesBody) {
-      feesBody.innerHTML = on
-        ? t("hero.feesBody", { pts: `<span id="lede-rebate-pts">${esc(pts(fees.rebate))}</span>` })
-        : t("hero.feesBodyOff");
-    }
-    show("top-bonus-datum", on && !!upliftTxt);
-    setText("top-bonus-datum", upliftTxt ? t("hero.topBonus", { uplift: upliftTxt }) : "");
-    setText("top-fee-datum-sub", on ? t("hero.datumSubOn") : t("hero.datumSubOff"));
-    // With the rebate off the stratum card still names the grace; the pool keeps the fee.
-    setText("top-stratum-rebate", on
-      ? t("hero.stratumRebate", { pts: pts(fees.rebate), fee: feePct(fees.stratum) })
-      : t("hero.stratumGrace", { fee: feePct(fees.stratum) }));
-
-    const pillar = $("pillar-rebate");
-    if (pillar) {
-      pillar.textContent = on ? t("status.pillarRebate", { pts: pts(fees.rebate) }) : "";
-      pillar.hidden = !on;
-    }
-
-    show("tab-bonus-datum", on && !!upliftTxt);
-    setText("tab-bonus-datum", upliftTxt || "");
-
-    const stratumLine = $("stratum-rebate-line");
+    if (feesBody) feesBody.innerHTML = t("hero.feesBody");
+    setText("top-fee-datum-sub", t("hero.datumSub"));
+    setText("top-stratum-grace", t("hero.stratumGrace", { fee: feePct(fees.stratum) }));
+    const stratumLine = $("stratum-grace-line");
     if (stratumLine) {
-      stratumLine.innerHTML = on ? t("connect.stratumRebate", { pts: pts(fees.rebate) }) : t("connect.stratumGrace");
+      stratumLine.innerHTML = t("connect.stratumGrace");
       stratumLine.querySelector("[data-tab]")?.addEventListener("click", () => selectTab("tab-datum"));
-    }
-
-    show("datum-bonus-explain", on);
-    const explain = $("datum-bonus-explain-text");
-    if (explain && on) {
-      explain.innerHTML = t("connect.bonusExplain", {
-        fee: feePct(fees.stratum),
-        Pts: Pts(fees.rebate),
-        uplift: "",
-      });
-    }
-    show("datum-bonus-dt", on && !!upliftTxt);
-    show("datum-bonus-dd", on && !!upliftTxt);
-    const bonusDd = $("datum-bonus-dd");
-    if (bonusDd && on && upliftTxt) {
-      bonusDd.innerHTML = t("connect.bonusDd", {
-        uplift: upliftTxt,
-        pts: pts(fees.rebate),
-        fee: feePct(fees.stratum),
-        n: fees.datumMiners || "\u2014",
-        who: t("connect.miner", { n: fees.datumMiners || 0 }),
-      });
-    }
-
-    show("how-step-bonus", on);
-    const howBonus = $("how-bonus-copy");
-    if (howBonus && on) {
-      howBonus.innerHTML = t("connect.howBonus", {
-        Pts: Pts(fees.rebate),
-        fee: feePct(fees.stratum),
-        upliftDot: upliftPhrase ? upliftPhrase + "." : "",
-      });
-    }
-
-    const payoutNote = $("payout-rebate-note");
-    if (payoutNote) {
-      const sample = Number(p.fees && p.fees.sample_rebate_btc) || 0;
-      payoutNote.hidden = !on;
-      if (on) {
-        payoutNote.innerHTML = t("payout.plusBonus", {
-          sample: sample > 0 ? `<b>${amt(sample)}</b>${money(sample)}` : t("payout.plusBonusPts", { pts: pts(fees.rebate) }),
-        });
-        payoutNote.querySelector("[data-tab]")?.addEventListener("click", () => selectTab("tab-datum"));
-      }
     }
   }
 
@@ -607,8 +509,6 @@
     if (p.fees) {
       if (Number.isFinite(Number(p.fees.datum_percent))) fees.datum = Number(p.fees.datum_percent);
       if (Number.isFinite(Number(p.fees.stratum_percent))) fees.stratum = Number(p.fees.stratum_percent);
-      if (Number.isFinite(Number(p.fees.datum_rebate_percent))) fees.rebate = Number(p.fees.datum_rebate_percent);
-      if (Number.isFinite(Number(p.fees.datum_uplift_percent))) fees.uplift = Number(p.fees.datum_uplift_percent);
       if (Number.isFinite(Number(p.fees.datum_work_percent))) fees.datumWorkPct = Number(p.fees.datum_work_percent);
       if (Number.isFinite(Number(p.fees.stratum_work_percent))) fees.stratumWorkPct = Number(p.fees.stratum_work_percent);
       fees.datumMiners = Number(p.fees.datum_miners) || 0;
@@ -617,7 +517,7 @@
     const setText = (id, text) => { const e = $(id); if (e) e.textContent = text; };
     for (const id of ["tab-fee-datum", "datum-fee-line", "top-fee-datum"]) setText(id, feePct(fees.datum));
     for (const id of ["tab-fee-stratum", "stratum-fee-line", "top-fee-stratum"]) setText(id, feePct(fees.stratum));
-    rebateCopy(p);
+    feeCopy();
     if (fees.datum === 0 && fees.stratum > 0) {
       setText("fee-ratio", t("connect.noCut"));
     } else if (fees.datum > 0 && fees.stratum > fees.datum) {
@@ -659,9 +559,6 @@
     const gws = Number(pr.gateways_online) || 0;
     const remote = Number(pr.gateways_remote) || 0;
     const thsDatum = thsDay(p, fees.datum);
-    // Headline yield is the DATUM one including the bonus: it is the number we want a miner
-    // comparing pools to see, and it is what they actually get through a gateway.
-    const thsBonus = fees.rebate > 0 ? thsDay(p, fees.datum, "datum_bonus") : thsDatum;
     // Rigs (stratum sessions, plus one per own-gateway address) vs. distinct payout addresses.
     const workers = Number(p.workers_online) || Number(p.miners_online) || 0;
     const addrs = Number(p.miners_online) || 0;
@@ -676,8 +573,8 @@
         ? t("status.sharesLifetime", { run: num(run), rej: rejPct })
         : t("status.sharesVerified", { rej: rejPct });
     const cells = [
-      [t("status.thsEst", { label: t("hero.ths") }), thsBonus != null ? t("status.perDay", { amt: amt(thsBonus) + money(thsBonus) }) : "\u2014",
-        fees.rebate > 0 ? t("status.thsSubOn") : t("status.thsSubOff")],
+      [t("status.thsEst", { label: t("hero.ths") }), thsDatum != null ? t("status.perDay", { amt: amt(thsDatum) + money(thsDatum) }) : "\u2014",
+        t("status.thsSub")],
       [t("status.hashrate"), fmtHr(p.pool_hr_ghs), hrSub],
       [t("status.miners"), String(inWindow || p.miners_online || 0), inWindow ? t("status.minersSub", { seen: p.miners_seen ?? "\u2014" }) : t("status.minersEver", { seen: p.miners_seen ?? "\u2014" })],
       [t("status.shares"), num(sharesMain), sharesSub],
@@ -737,8 +634,8 @@
     if ($("live-price")) $("live-price").textContent = priceUsd != null ? moneyOnly(priceUsd) : "\u2014";
     const priceChip = $("live-price-chip");
     if (priceChip) priceChip.classList.toggle("stale", priceUsd == null);
-    if ($("live-ths")) $("live-ths").textContent = thsBonus != null ? "~" + t("status.perDay", { amt: amt(thsBonus) + money(thsBonus) }) : "\u2014";
-    calcRate = thsBonus;
+    if ($("live-ths")) $("live-ths").textContent = thsDatum != null ? "~" + t("status.perDay", { amt: amt(thsDatum) + money(thsDatum) }) : "\u2014";
+    calcRate = thsDatum;
     renderCalc();
     if ($("live-tip")) $("live-tip").textContent = p.height || "\u2014";
     paintForkNotice(p.height);
@@ -776,30 +673,21 @@
     const value = Number(cb.value) || Math.round((Number(p.subsidy_btc) || 0) * 1e8);
     const minerSats = Number(cb.miner_sats) || 0;
     const n = Number(cb.miner_outputs) || 0;
-    const rebateSats = Number(cb.rebate_sats) || 0;
     $("payout-reward").textContent = value ? amtSats(value) + money(value / 1e8) : "\u2014";
     $("payout-reward-sub").textContent = value ? t("payout.rewardSub", { h: p.height ? num(Number(p.height) + 1) : "\u2014" }) : t("payout.rewardSubWait");
     $("payout-miners-btc").textContent = value ? amtSats(minerSats) : "\u2014";
     $("payout-miners-sub").textContent = value ? t("payout.minersSub", { pct: pct(100 * minerSats / value, 1), n }) : "\u2014";
-    // The DATUM-credit box only means something while the rebate is on (or this block still credits one).
-    const poolSplit = $("payout-pool-split");
-    if (poolSplit) poolSplit.hidden = !(fees.rebate > 0 || rebateSats > 0);
-    $("payout-pool-btc").textContent = value ? amtSats(rebateSats) : "\u2014";
-    $("payout-pool-sub").textContent = value
-      ? (rebateSats > 0 ? t("payout.datumSub") : t("payout.datumSubNone"))
-      : "\u2014";
     payoutFlow(p, cb, value);
   }
 
-  // The same split as a six-step ledger: where the reward comes from, who has earned a cut and
-  // why, what each path pays, what goes out in this coinbase, what the DATUM subsidy is and
-  // why it is not an output, and what is left for the pool. Every number is the live figure
+  // The same split as a five-step ledger: where the reward comes from, who has earned a cut and
+  // why, what each path pays, what goes out in this coinbase, and what is left for the pool. Every number is the live figure
   // from /api/coinbaser and /api/pool, so it reads as the coinbase Prime is issuing right now.
   function payoutFlow(p, cb, value) {
     const set = (id, html) => { const e = $(id); if (e) e.innerHTML = html; };
     if (!$("cb-flow-reward")) return;
     if (!value) {
-      for (const id of ["cb-flow-reward", "cb-flow-window", "cb-flow-fee", "cb-flow-paid", "cb-flow-datum", "cb-flow-pool"]) set(id, t("payout.flow.rewardWait"));
+      for (const id of ["cb-flow-reward", "cb-flow-window", "cb-flow-fee", "cb-flow-paid", "cb-flow-pool"]) set(id, t("payout.flow.rewardWait"));
       return;
     }
     const pr = p.prime || {};
@@ -807,8 +695,6 @@
     const minerSats = Number(cb.miner_sats) || 0;
     const poolSats = Number(cb.pool_sats) || 0;
     const feeSats = Number(cb.fee_sats) || 0;
-    const rebateSats = Number(cb.rebate_sats) || 0;
-    const rebateOwed = Number(cb.rebate_owed_sats) || 0;
     const carryPaid = Number(cb.carry_paid_sats) || 0;
     const carryTotal = Number(cb.carry_total_sats) || 0;
     const deferred = Number(cb.deferred_sats) || 0;
@@ -819,7 +705,6 @@
     const nblocks = Number(cb.window_multiple) || Number(p.window_multiple) || 8;
     const fill = Number.isFinite(Number(cb.window_fill_percent)) ? Number(cb.window_fill_percent) : Number(p.window_fill_percent) || 0;
     const eff = Number.isFinite(Number(cb.effective_fee_percent)) ? Number(cb.effective_fee_percent) : (100 * feeSats / value);
-    const datumMiners = Number((p.fees || {}).datum_miners) || 0;
 
     set("cb-flow-reward", t("payout.flow.reward", {
       h: p.height ? num(Number(p.height) + 1) : "\u2014",
@@ -842,28 +727,14 @@
       carry: carryPaid > 1000 ? t("payout.flow.paidCarry", { carry: amtSats(carryPaid) }) : "",
       floor: unpaid > 0 && deferred > 0 ? t("payout.flow.paidFloor", { n: unpaid, deferred: amtSats(deferred), floor: amtSats(floor) }) : "",
     }));
-    set("cb-flow-datum", fees.rebate > 0
-      ? t("payout.flow.datum", {
-          pts: Pts(fees.rebate),
-          amt: amtSats(rebateSats) + money(rebateSats / 1e8),
-          n: num(datumMiners),
-          floor: amtSats(floor),
-          owed: rebateOwed > 1000 ? t("payout.flow.datumOwed", { owed: amtSats(rebateOwed) }) : "",
-        })
-      : t("payout.flow.datumOff"));
     // Where the fee came from, spelled out in the pool's own step: with the gateway path at 0%
-    // nothing in this output is a cut of a gateway's share, and part of what the stratum paid
-    // leaves again as the subsidy.
+    // nothing in this output is a cut of a gateway's share.
     const feeSource = fees.datum === 0
-      ? t("payout.flow.poolFeeDatumFree", {
-          stratum: feePct(fees.stratum),
-          giveBack: fees.rebate > 0 ? t("payout.flow.poolFeeGiveBack", { pts: pts(fees.rebate) }) : "",
-        })
+      ? t("payout.flow.poolFeeDatumFree", { stratum: feePct(fees.stratum) })
       : t("payout.flow.poolFeeBothPaths", { datum: feePct(fees.datum), stratum: feePct(fees.stratum) });
     set("cb-flow-pool", poolSats > 0
       ? t("payout.flow.pool", { amt: amtSats(poolSats), pct: pct(100 * poolSats / value, 2), source: feeSource, carryTotal: amtSats(carryTotal), holders: num(cb.carry_holders || 0) })
       : t("payout.flow.poolNone", { source: feeSource, carryTotal: amtSats(carryTotal), holders: num(cb.carry_holders || 0) }));
-    $("cb-flow-datum")?.querySelector("[data-tab]")?.addEventListener("click", () => selectTab("tab-datum"));
   }
 
   // --------------------------------------------------------- payout donut
@@ -1478,7 +1349,7 @@
 
   // ------------------------------------------------------------- calculator
   // Same per-TH/s figure the status panel shows, so the calculator can never disagree with the
-  // rest of the page: whatever the DATUM rate including the bonus is right now, times your
+  // rest of the page: whatever the DATUM rate is right now, times your
   // hashrate. Null until the first /api/pool lands.
   let calcRate = null;
 

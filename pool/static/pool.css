@@ -113,7 +113,7 @@
     margin-inline: auto;
   }
 
-  /* ---- Sticky chrome: nav + DATUM bonus banner freeze together at the top. */
+  /* ---- Sticky chrome: nav + notices freeze together at the top. */
   .site-mast {
     position: sticky;
     top: 0;
@@ -259,9 +259,8 @@
     .topbar-side .btn.small { display: none; }
   }
 
-  /* ---- DATUM bonus banner: full-bleed strip under the nav, hidden when the rebate is off. */
   /* ---- Notice strip at the top of the page (gateway update notice), dismissible. Red and
-     heavy on purpose: it asks operators to act, and the brass strip above it is a promotion. */
+     heavy on purpose: it asks operators to act. */
   .softfork {
     margin: 0;
     border-bottom: 1px solid color-mix(in oklch, var(--brass) 45%, var(--line));
@@ -381,17 +380,6 @@
     border-color: var(--brass);
   }
 
-  /* The bonus, wherever it rides alongside a fee rate. */
-  .fee-bonus {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0;
-    color: var(--brass) !important;
-    white-space: nowrap;
-  }
-  .fee-lede-rate .fee-bonus { margin-top: -0.1rem; }
-  .tab-fee.bonus { border-color: var(--brass-dim); color: var(--brass); }
   .chip.reco { border-color: color-mix(in oklch, var(--brass) 45%, var(--line)); }
   .chip.reco b { color: var(--brass); }
   .rebate-callout { border-left-color: var(--brass); background: color-mix(in oklch, var(--brass) 9%, var(--bg-inset)); }
@@ -1868,7 +1856,6 @@
   .payout-split .metric b { margin-top: 0; font-size: clamp(1.2rem, 1rem + 0.8vw, 1.6rem); }
   .payout-split .split-miners { border-left: 3px solid var(--good); }
   .payout-split .split-miners b { color: var(--ink); }
-  .payout-split .split-pool { border-left: 3px solid var(--brass-dim); }
 
   /* ---- Coinbase ledger: the hero's split, step by step, with the live numbers. */
   .cb-flow {
@@ -1894,7 +1881,6 @@
     background: var(--bg-inset);
   }
   .cb-step.is-miners { border-left-color: var(--good); }
-  .cb-step.is-datum { border-left-color: var(--brass); }
   .cb-step.is-pool { border-left-color: var(--brass-dim); }
   .cb-n {
     font-family: var(--mono);
@@ -1920,7 +1906,6 @@
     color: color-mix(in oklch, var(--ink) 88%, var(--muted));
   }
   .cb-copy b { color: var(--ink); font-variant-numeric: tabular-nums; }
-  .cb-step.is-datum .cb-copy b { color: var(--brass); }
   .cb-copy a { color: var(--brass); text-decoration: underline; text-underline-offset: 2px; }
 
   /* ---- Coinbase ring: the same split as the table below it. */

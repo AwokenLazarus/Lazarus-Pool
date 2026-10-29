@@ -100,21 +100,15 @@ window.LZ_I18N_DICTS["en"] = {
     "priceTitle": "Bitcoin (BTCB2) · volume-weighted Neoxa BTCB2/USDC and NonKYC BTCB2/USDT",
     "ths": "1 TH/s yields",
     "thsTitle": "Estimate: 1 TH/s versus the current network, base subsidy only (no tx fees), through your own DATUM gateway at 0% fee. Luck and fees in the next block can move this.",
-    "bonus": "DATUM bonus",
-    "bonusTitle": "What DATUM work earns above its proportional share of each block right now: the slice of the stratum fee credited to DATUM miners, divided over the DATUM work in the window.",
     "feesTitle": "One way in: DATUM",
-    "feesBody": "Run your own node and DATUM gateway: you build the block, pay 0%, and earn {pts} of the public stratum’s fee on every block.",
-    "feesBodyOff": "Run your own node and DATUM gateway: you build the block and pay 0%.",
+    "feesBody": "Run your own node and DATUM gateway: you build the block and pay 0%.",
     "datumSmall": "Your DATUM gateway",
-    "datumSubOn": "You keep 100%, build your own blocks and earn the bonus",
-    "datumSubOff": "You keep 100% and build your own blocks",
+    "datumSub": "You keep 100% and build your own blocks",
     "stratumSmall": "Donation, validation and fallback",
     "stratumSub": "For testing a miner, or as a fallback · ",
-    "stratumRebate": "25% for the first 24 h (96 h for DATUM miners), then {fee}; {pts} goes to DATUM miners",
     "stratumGrace": "25% for the first 24 h (96 h for DATUM miners), then {fee}; the pool keeps the fee",
     "ctaStrong": "Set up a DATUM gateway.",
-    "ctaBody": "Pick one from <a href=\"#gw-pick\">our tested list</a>.",
-    "topBonus": "{uplift} DATUM bonus"
+    "ctaBody": "Pick one from <a href=\"#gw-pick\">our tested list</a>."
   },
   "status": {
     "eyebrow": "Live",
@@ -150,7 +144,6 @@ window.LZ_I18N_DICTS["en"] = {
     "p1": "<b>Paid in the block itself.</b> No pool balance, no withdrawals. When a block is found, its coinbase pays your address directly. <a href=\"#payout\">See the next payout</a>.",
     "p2a": "<b>Your own gateway: 0% fee.</b> Your node builds the block; the pool only sets the split.",
     "p3": "<b>Verifiable end to end.</b> Every share is rebuilt and hashed; every block found is on the <a href=\"https://mempool.lazarus-xbt.xyz/mining/pool/lazarus\" target=\"_blank\" rel=\"noreferrer\">Lazarus Mempool</a>. Source on <a href=\"https://github.com/AwokenLazarus/Bitcoin\" target=\"_blank\" rel=\"noreferrer\">GitHub</a>.",
-    "pillarRebate": ", and {pts} of that is credited to DATUM miners on every block, with a 24 h / 96 h grace at 25%, then 100%",
     "hashrate": "Hashrate",
     "miners": "Miners",
     "shares": "Shares",
@@ -162,8 +155,7 @@ window.LZ_I18N_DICTS["en"] = {
     "primeUnreachable": "Prime unreachable",
     "sharesLifetime": "lifetime · {rej}",
     "sharesVerified": "verified by Prime since it started · {rej}",
-    "thsSubOn": "own DATUM gateway, bonus included · base subsidy",
-    "thsSubOff": "own DATUM gateway · base subsidy",
+    "thsSub": "own DATUM gateway · base subsidy",
     "hrSub": {
       "one": "{n} worker{extra} online",
       "other": "{n} workers{extra} online"
@@ -261,31 +253,21 @@ window.LZ_I18N_DICTS["en"] = {
         "one": " {n} more address earned {deferred} this block but under the {floor} minimum output; it stays on that balance and rides on the next output that clears it — never forfeited.",
         "other": " {n} more addresses earned {deferred} between them, each under the {floor} minimum output; it stays on their balances and rides on the next output that clears it — never forfeited."
       },
-      "datumHead": "Subsidy to DATUM gateways",
-      "datum": "<b>{pts}</b> of the stratum fee — <b>{amt}</b> on this block — is credited to the {n} DATUM miners in the window, pro rata by their DATUM work. It is not one of the outputs above: it joins each miner’s carry, the same balance under-floor earnings use, and is paid with their next output that clears the {floor} floor. <a href=\"#connect\" data-tab=\"tab-datum\">Run a gateway</a> and you are in it.{owed}",
-      "datumOwed": " {owed} of earlier credits is still waiting for a DATUM miner to credit it to.",
-      "datumOff": "The DATUM bonus ended on 24 October 2026; the whole stratum fee stays with the pool. Bonus already credited to a miner’s balance is still paid with their next output.",
       "poolHead": "What Lazarus keeps",
-      "poolFeeDatumFree": " Every sat of that fee came off public stratum work, charged at <b>{stratum}</b>. Lazarus takes <b>0%</b> from work through your own DATUM gateway, so no part of this output is a cut of a gateway’s share.{giveBack}",
-      "poolFeeGiveBack": " Of what the stratum did pay, {pts} goes straight back out as the subsidy in step 5.",
+      "poolFeeDatumFree": " Every sat of that fee came off public stratum work, charged at <b>{stratum}</b>. Lazarus takes <b>0%</b> from work through your own DATUM gateway, so no part of this output is a cut of a gateway’s share.",
       "poolFeeBothPaths": " That fee is charged at <b>{datum}</b> on work through your own DATUM gateway and <b>{stratum}</b> on the public stratum.",
-      "pool": "The last output, <b>{amt}</b> ({pct} of the block), pays the pool’s own address. It is the fee, less the carry the pool paid back inside this coinbase, plus whatever the floor held back this block.{source} It is also the only place the carry is paid from — one balance per address, fed by both under-floor earnings and the DATUM subsidy, and currently <b>{carryTotal}</b> owed to {holders} addresses. Clear a lot of backlog and this output shrinks by exactly that much.",
-      "poolNone": "Nothing is left for the pool in this coinbase: the carry it pays back this block is more than the fee it charged.{source} The pool is still holding <b>{carryTotal}</b> for {holders} addresses — one balance per address, fed by both under-floor earnings and the DATUM subsidy."
+      "pool": "The last output, <b>{amt}</b> ({pct} of the block), pays the pool’s own address. It is the fee, less the carry the pool paid back inside this coinbase, plus whatever the floor held back this block.{source} It is also the only place the carry is paid from — one balance per address, fed by earnings under the minimum output (and DATUM credits from before 24 October 2026), and currently <b>{carryTotal}</b> owed to {holders} addresses. Clear a lot of backlog and this output shrinks by exactly that much.",
+      "poolNone": "Nothing is left for the pool in this coinbase: the carry it pays back this block is more than the fee it charged.{source} The pool is still holding <b>{carryTotal}</b> for {holders} addresses — one balance per address, fed by earnings under the minimum output (and DATUM credits from before 24 October 2026)."
     },
     "reward": "Block reward",
     "rewardSubWait": "waiting for Prime",
     "rewardSub": "base subsidy at height {h} · transaction fees add to every output",
     "toMiners": "To all addresses",
     "toPool": "To the pool",
-    "toDatum": "Subsidy to DATUM gateways",
-    "datumSub": "from this block’s fee · paid with their next output",
-    "datumSubNone": "no DATUM credit this block",
     "minersSub": {
       "one": "{pct} of the block · {n} address paid directly",
       "other": "{pct} of the block · {n} addresses paid directly"
     },
-    "poolFeeOnly": "{pct} fee · no DATUM bonus this block",
-    "poolFeeBonus": "{pct} fee after the DATUM bonus credit",
     "meter": "TIDES window fill",
     "windowSize": "Window size",
     "filled": "Filled",
@@ -344,27 +326,10 @@ window.LZ_I18N_DICTS["en"] = {
       "one": "The pool is holding {amt} of carry for {n} miner.",
       "other": "The pool is holding {amt} of carry for {n} miners."
     },
-    "plusBonus": "<strong>Plus the DATUM bonus.</strong> This block also credits {sample} to the DATUM miners in the window, pro rata by DATUM work. It is not one of the outputs above — it goes onto their balances and is paid with their next output. <a href=\"#connect\" data-tab=\"tab-datum\">Run a gateway</a> and you are in it.",
-    "plusBonusPts": "{pts} of the stratum fee",
     "blendedFee": "{pct} blended fee",
     "feeSplit": " ({datum} gateway · {stratum} stratum)",
-    "rebateCredit": " − {amt} credited to DATUM miners",
     "carryFwdAmt": " + {amt} carried forward",
     "carryBackAmt": " − {amt} carry paid back"
-  },
-  "pts": {
-    "word": [
-      "zero",
-      "one",
-      "two",
-      "three",
-      "four",
-      "five"
-    ],
-    "half": "half a point",
-    "sevenHalf": "seven and a half points",
-    "one": "{s} point",
-    "other": "{s} points"
   },
   "connect": {
     "eyebrow": "Get connected",
@@ -393,19 +358,14 @@ window.LZ_I18N_DICTS["en"] = {
     "userHint": "bc1q…youraddress.worker",
     "stratumFee": "{fee} of your window share, taken inside the coinbase",
     "stratumFeeTail": " of your window share, taken inside the coinbase",
-    "stratumRebate": ". {pts} of it goes to DATUM miners, after a 25% grace for the first 24 h (96 h for DATUM miners). <a href=\"#pane-datum\" data-tab=\"tab-datum\">Run your own gateway</a> and you receive it instead",
     "stratumGrace": ", after a 25% grace for the first 24 h (96 h for DATUM miners). The pool keeps the fee. <a href=\"#pane-datum\" data-tab=\"tab-datum\">Run your own gateway</a> and you pay 0%",
     "algo": "BLAKE2b — Sia-style header, not SHA-256d",
     "payout": "Your share of the TIDES window, in the coinbase of every block the pool finds. See <a href=\"#payout\">Next payout</a>.",
     "stratumNote": "Our public endpoint on <strong>:23334</strong> is itself a DATUM gateway on Prime (see <a href=\"#gateways\">Gateways</a>), so its work lands in the same window under your address. Sessions start at difficulty <strong>4096</strong>; vardiff doubles about every 20 s toward your hashrate.",
     "datumLead": "<strong>You build the block. We only split the coinbase.</strong> Run Bitcoin Knots and a DATUM gateway, point the gateway at Prime, and point your miners at the gateway. <a href=\"#gw-pick\">Which gateway to run</a>.",
-    "bonusTitle": "The DATUM bonus.",
-    "bonusExplain": "{Pts} of the public stratum’s {fee} fee is credited to every DATUM miner with work in the window, by their share of DATUM work, on every block, whether or not your address was in that coinbase. It is paid with your next output. {uplift}",
-    "upliftPhrase": "At the moment that is <b>{uplift}</b> on top of every DATUM miner's share of every block",
     "dtHost": "Host",
     "dtPort": "Port",
     "dtPubkey": "Pubkey",
-    "dtBonus": "Bonus",
     "feeLine": "{fee} of your window share — {ratio} the public stratum",
     "feeLineMid": " of your window share — ",
     "feeLineVs": " the public stratum",
@@ -451,14 +411,12 @@ window.LZ_I18N_DICTS["en"] = {
     "soloOddsBody": "Expected time to a block at your hashrate is shown on your <a href=\"#dashboard\">stats</a> page.",
     "soloNote": "Solo work is kept out of the TIDES window on purpose. Point some miners at solo and others at the pooled ports if you want both; the pooled ones keep earning their window share while the solo ones chase a whole block. Your solo shares will never appear under <a href=\"#miners\">Miners</a> or in <a href=\"#payout\">Next payout</a> — look under <a href=\"#solo\">Solo</a> instead.",
     "soloOwnNode": "Already running your own node? Then solo mine against it directly — you do not need us for that, and you should not pay us for it. These ports are for miners who want to solo without running a node.",
-    "bonusDd": "<b>{uplift}</b> above your proportional share right now — {pts} of the stratum's {fee}, split across the {n} DATUM {who} in the window by work. Credited on every block, paid with your next output.",
     "miner": {
       "one": "miner",
       "other": "miners"
     },
     "howFeesSame": "Both paths are charged {fee} of window share, taken inside the coinbase.",
-    "howFeesDiff": "DATUM work is charged {datum}; public-stratum work is charged {stratum}. Both are taken inside the coinbase.",
-    "howBonus": "The same block settles the bonus: {Pts} of the {fee} charged to public-stratum work is credited to the DATUM miners in the window, by their work, and rides along with your next output. {upliftDot}"
+    "howFeesDiff": "DATUM work is charged {datum}; public-stratum work is charged {stratum}. Both are taken inside the coinbase."
   },
   "hardware": {
     "eyebrow": "Buy a miner",
@@ -761,8 +719,7 @@ window.LZ_I18N_DICTS["en"] = {
     "s2t": "The window decides the split",
     "s2": "The window holds the last <strong><span id=\"how-window\">8</span> × network difficulty</strong> of accepted work — days of pool work at typical hashrate, not the last hour. A found block pays each address in proportion to its share of that window, less its fee. A new rig starts near 0% and ramps as its work enters and older work ages out.",
     "s3t": "The block pays you directly",
-    "s3": "Prime hands every gateway the same coinbase output list — the one shown under <a href=\"#payout\">Next payout</a>. A share whose coinbase pays anything else is refused, so whoever finds the block, it pays the window. There is no pool balance to withdraw and no operator to trust with your coins.",
-    "s4t": "DATUM work is paid the bonus"
+    "s3": "Prime hands every gateway the same coinbase output list — the one shown under <a href=\"#payout\">Next payout</a>. A share whose coinbase pays anything else is refused, so whoever finds the block, it pays the window. There is no pool balance to withdraw and no operator to trust with your coins."
   },
   "footer": {
     "mcp": "MCP server for AI assistants",
@@ -780,7 +737,6 @@ window.LZ_I18N_DICTS["en"] = {
     "learn": "Learn",
     "bip110": "What is BIP-110?",
     "tides": "How TIDES pays",
-    "subsidy": "DATUM bonus (ended)",
     "calc": "Mining calculator",
     "asics": "Siacoin BLAKE2b ASICs",
     "compare": "Compare XBT pools",
@@ -958,10 +914,6 @@ window.LZ_I18N_DICTS["en"] = {
     "thPayableAt": "Payable from",
     "thLands": "Lands in",
     "thTx": "Transaction",
-    "bonus": "DATUM bonus",
-    "bonusSub": "credited to your balance by the next block{uplift} · your cut of the public stratum's fee, paid with your next output",
-    "bonusUplift": " · {pct} above your proportional share",
-    "estBonus": "at current difficulty, {fee} fee and the {uplift} DATUM bonus included · once the window matches this hashrate",
     "estPlain": "at current difficulty, after the {fee} fee · once the window matches this hashrate",
     "pitch": "<strong>You are paying {fee} on the public stratum, and the pool keeps it.</strong> Point this hashrate through your own DATUM gateway and you pay 0%: about <b>{datum}</b>{datumUsd} a day at this hashrate instead of {now}{nowUsd}. Your accepted work comes with you. <a href=\"/#connect\">Set up a gateway</a>.",
     "pendingTab": "{n} pending",
@@ -1050,7 +1002,6 @@ window.LZ_I18N_DICTS["en"] = {
     },
     "nextWin": "{wp} of the window · in the next coinbase{carry}",
     "plusCarry": " · plus carry as room allows",
-    "estFeeBonus": "{fee} fee and the {uplift} bonus, at current difficulty",
     "estFee": "after the {fee} fee at current difficulty",
     "noBalance": "The pool keeps no balance for you and there is nothing to withdraw. Every block the pool finds pays this address directly in its coinbase; the output becomes spendable once it has {n} confirmations. The one exception is a partial or pool-only block: when the gateway that finds it leaves miners out of its coinbase, their share lands in the pool's output and the pool pays it on once that output matures.{carry}",
     "carryNote": " <strong>{amt}</strong> you earned in earlier blocks was under the minimum output and is carried forward: it is added to your next output that clears the floor, paid out of the pool's share.",
