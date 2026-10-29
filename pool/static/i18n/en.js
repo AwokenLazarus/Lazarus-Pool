@@ -54,6 +54,17 @@ window.LZ_I18N_DICTS["en"] = {
     "joinDiscord": "Join Discord",
     "joinDiscordTitle": "Chat with miners and the team on the Lazarus Pool Discord"
   },
+  "forknotice": {
+    "kicker": "Urgent",
+    "title": "DATUM gateway operators: upgrade your node to Bitcoin Knots 29.4.3.",
+    "text": "Upgrade the Knots node your gateway uses to 29.4.3 before block <b>979,919</b>; the gateway itself needs no update. 29.4.3 activates a <b>180-day rolling coinbase maturity</b>: rewards from block 979,919 on unlock about 180 days after their own block, on every pool. Coins mined from block 973,440 to 979,918 unlock about 45 days after their own block. Once the fork activates, Lazarus refuses gateways whose node is on an old version when it sees one: a found block the network rejects as invalid, or work built on a chain the upgraded network rejects. <b>A block lost to an outdated node is not compensated.</b> Upgrading late makes the node recheck blocks at startup; pruned nodes may need a full resync.",
+    "countdown": "{n} blocks (~{h} h / ~{d} d) until block 979,919",
+    "countdownDone": "In effect since block 979,919: gateways on outdated nodes are refused.",
+    "download": "Download Knots 29.4.3 →",
+    "notes": "Release notes",
+    "setup": "Set up a DATUM gateway",
+    "dismiss": "Dismiss notice"
+  },
   "gatewaynotice": {
     "kicker": "Action needed",
     "title": "Running an old DATUM gateway? Update it.",

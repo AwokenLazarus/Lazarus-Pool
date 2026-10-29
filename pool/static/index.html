@@ -108,6 +108,19 @@
 </header>
 </div>
 
+<aside class="softfork urgent" id="forknotice" role="alert" aria-labelledby="forknotice-title">
+  <div class="softfork-row">
+    <span class="softfork-tag" data-i18n="forknotice.kicker">Urgent</span>
+    <div class="softfork-body">
+      <strong class="softfork-title" id="forknotice-title" data-i18n="forknotice.title">DATUM gateway operators: upgrade your node to Bitcoin Knots 29.4.3.</strong>
+      <span class="softfork-countdown" id="forknotice-countdown" aria-live="polite">—</span>
+      <p class="softfork-text" data-i18n-html="forknotice.text">Upgrade the Knots node your gateway uses to 29.4.3 before block <b>979,919</b>; the gateway itself needs no update. 29.4.3 activates a <b>180-day rolling coinbase maturity</b>: rewards from block 979,919 on unlock about 180 days after their own block, on every pool. Coins mined from block 973,440 to 979,918 unlock about 45 days after their own block. Once the fork activates, Lazarus refuses gateways whose node is on an old version when it sees one: a found block the network rejects as invalid, or work built on a chain the upgraded network rejects. <b>A block lost to an outdated node is not compensated.</b> Upgrading late makes the node recheck blocks at startup; pruned nodes may need a full resync.</p>
+    </div>
+    <p class="softfork-actions"><a class="btn small" href="https://bitcoinknots.org/files/29.x/29.4.3.knots20260508/" target="_blank" rel="noreferrer" data-i18n="forknotice.download">Download Knots 29.4.3 →</a> <a class="btn small ghost" href="https://github.com/bitcoinknots/bitcoin/releases/tag/v29.4.3.knots20260508" target="_blank" rel="noreferrer" data-i18n="forknotice.notes">Release notes</a> <a class="btn small ghost" href="#connect" data-tab="tab-datum" data-i18n="forknotice.setup">Set up a DATUM gateway</a></p>
+    <button type="button" class="promo-dismiss" id="forknotice-dismiss" data-i18n-aria="forknotice.dismiss" data-i18n-title="forknotice.dismiss" aria-label="Dismiss notice" title="Dismiss notice">×</button>
+  </div>
+</aside>
+
 <aside class="softfork urgent" id="gatewaynotice" role="alert" aria-labelledby="gatewaynotice-title">
   <div class="softfork-row">
     <span class="softfork-tag" data-i18n="gatewaynotice.kicker">Action needed</span>

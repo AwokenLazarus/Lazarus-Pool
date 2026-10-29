@@ -7021,10 +7021,10 @@ _SEO_ARTICLE = {
     "/non-custodial": ("Article", "2026-09-13", "2026-10-24"),
     "/bip110": ("Article", "2026-09-13", "2026-10-24"),
     "/how": ("Article", "2026-09-13", "2026-10-24"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-10-24"),
-    "/ratum": ("TechArticle", "2026-09-28", "2026-10-24"),
-    "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-24"),
-    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-24"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-10-29"),
+    "/ratum": ("TechArticle", "2026-09-28", "2026-10-29"),
+    "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-29"),
+    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-29"),
     "/api": ("TechArticle", "2026-09-13", "2026-10-24"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
@@ -7032,7 +7032,7 @@ _SEO_ARTICLE = {
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-10-24",
+    "/": "2026-10-29",
     "/calculator": "2026-10-24",
     "/blocks": "2026-10-24",
 }
@@ -7056,7 +7056,7 @@ def _keyword_page(raw, meta):
     # scripts, and on /zh/ the summary was English.
     raw = re.sub(r'<noscript id="nojs-summary">.*?</noscript>\n?', "", raw, count=1, flags=re.S)
     if meta["path"] not in _NOTICE_PAGES:
-        raw = re.sub(r'<aside class="softfork urgent" id="gatewaynotice".*?</aside>\n', "", raw, count=1, flags=re.S)
+        raw = re.sub(r'<aside class="softfork urgent" id="(?:forknotice|gatewaynotice)".*?</aside>\n', "", raw, count=2, flags=re.S)
     home = "/zh/" if meta["lang"] == "zh-CN" else "/"
 
     def relink(m):

@@ -303,6 +303,8 @@
   .softfork-tag::before { content: "\26A0\FE0E"; font-size: 0.85rem; line-height: 1; }
   .softfork-title { color: #fff; font-weight: 600; margin-right: 0.35rem; }
   .softfork-text { display: inline; margin: 0; color: color-mix(in oklch, var(--ink) 78%, var(--muted)); }
+  /* Block countdown to a fork height; stays visible on phones, where the text is hidden. */
+  .softfork-countdown { display: block; margin: 0.1rem 0; color: #ffd4ce; font-family: var(--mono); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
   .softfork.urgent .softfork-text b { color: #fff; font-weight: 600; }
   .softfork-actions { margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .softfork.urgent .btn.ghost { border-color: rgba(255, 255, 255, 0.4); color: #fff; }
