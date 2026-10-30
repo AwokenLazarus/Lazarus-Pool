@@ -3393,22 +3393,32 @@ def gateway_names_by_address():
         ident = str(r["identity"] or "").strip()
         if ident:
             tags[ident] = (str(r["gateway"]), str(r["tag"] or "").strip())
+    # One payout address can sit behind several gateway keys at once, and primed keeps the
+    # sessions it has seen go offline. `gateways` holds each key's own name and state so a
+    # worker keeps the gateway it hashes through (issue #109); the address-level fields
+    # describe a live session when there is one, never an offline record marked connected.
     out = {}
-    live = set()
     for c in meta.get("clients") or []:
         ident = str(c.get("identity") or "").strip()
         if not ident or _is_own_gateway(c):
             continue
         gw = str(c.get("gateway") or "")
-        live.add(ident)
+        online = not c.get("offline")
         live_tag = str(c.get("secondary_tag") or c.get("name") or "").strip()[:40]
         db_gw, db_tag = tags.get(ident, ("", ""))
         # Same payout address is the same operator even if they rotated the gateway key.
         name = live_tag or db_tag
-        out[ident] = {"name": name, "gateway": gw or db_gw, "connected": True}
+        entry = out.setdefault(ident, {"name": "", "gateway": "", "connected": False, "gateways": {}})
+        if gw:
+            known = entry["gateways"].get(gw)
+            if known is None or (online and not known["connected"]):
+                entry["gateways"][gw] = {"name": name, "connected": online}
+        if not entry["gateway"] or (online and not entry["connected"]):
+            entry.update(name=name, gateway=gw or db_gw, connected=online)
     for ident, (gw, tag) in tags.items():
-        if ident not in live:
-            out[ident] = {"name": tag, "gateway": gw, "connected": False}
+        if ident not in out:
+            out[ident] = {"name": tag, "gateway": gw, "connected": False,
+                          "gateways": {gw: {"name": tag, "connected": False}} if gw else {}}
     return out
 
 
@@ -3511,11 +3521,21 @@ def gateway_outdated_for(address, makegoods=(), clients=None, now=None):
 
 
 def stamp_gateway_names(rows, names=None):
-    """Attach `gateway_name` / `gateway` from `gateway_names_by_address` onto miner dicts."""
+    """Attach `gateway_name` / `gateway` / `gateway_connected` from `gateway_names_by_address`.
+
+    A row that already names its gateway (a worker from `prime_worker_records`) keeps it and gets
+    that gateway's own name and state; only rows without one take the address-level entry.
+    """
     names = names if names is not None else gateway_names_by_address()
     for rec in rows or []:
         who = names.get(rec.get("address") or "")
         if not who:
+            continue
+        own = rec.get("gateway") or ""
+        if own:
+            g = (who.get("gateways") or {}).get(own)
+            rec["gateway_name"] = (g or {}).get("name") or rec.get("gateway_name") or who.get("name") or ""
+            rec["gateway_connected"] = bool(g["connected"]) if g else bool(rec.get("online"))
             continue
         rec["gateway_name"] = who.get("name") or ""
         rec["gateway"] = who.get("gateway") or ""
