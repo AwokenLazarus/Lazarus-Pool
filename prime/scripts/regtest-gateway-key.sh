@@ -31,6 +31,8 @@ D=$(mktemp -d /tmp/gwkey-XXXXXX)
 PIDS=()
 cleanup() {
 	for p in "${PIDS[@]:-}"; do [ -n "$p" ] && kill "$p" 2>/dev/null; done
+	sleep 3
+	for p in "${PIDS[@]:-}"; do [ -n "$p" ] && kill -9 "$p" 2>/dev/null; done
 	"$BIN_DIR/bitcoin-cli" -datadir="$D/node" stop >/dev/null 2>&1
 	sleep 2
 	pkill -f "datadir=$D" 2>/dev/null
@@ -84,7 +86,7 @@ listen = "127.0.0.1:$PRIME"
 stats-listen = "127.0.0.1:$STATS"
 advertise-address = "127.0.0.1:$PRIME"
 data-dir = "$D/prime/data"
-motd = "gateway key probe"
+motd = "Lazarus"
 headline = "Lazarus"
 payout-address = "$PAY"
 coinbase-tag = "Lazarus"
