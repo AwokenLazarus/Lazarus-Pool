@@ -119,7 +119,7 @@ gateway_conf() { # stratum port, api port, tag
 	cat <<EOF
 {"bitcoind":{"rpccookiefile":"$D/node/regtest/.cookie","rpcurl":"http://127.0.0.1:$RPC","work_update_seconds":5,"notify_fallback":true},
  "stratum":{"listen_addr":"127.0.0.1","listen_port":$1,"vardiff_min":1,"fingerprint_miners":false},
- "mining":{"pool_address":"$PAY","coinbase_tag_primary":"Lazarus","coinbase_tag_secondary":"$3"},
+ "mining":{"pool_address":"bc1qt5praystcdle0nq04e3h02yjszha82uzhww85x6972lcy40k4eyqz9jfaq","coinbase_tag_primary":"Lazarus","coinbase_tag_secondary":"$3"},
  "api":{"listen_addr":"127.0.0.1","listen_port":$2,"admin_password":""},
  "logger":{"log_to_console":true,"log_to_file":false,"log_level_console":1},
  "datum":{"pool_host":"127.0.0.1","pool_port":$PRIME,"pool_pubkey":"$PUB","pool_pass_workers":true,"pool_pass_full_users":true,"pooled_mining_only":true,"protocol_global_timeout":60}}

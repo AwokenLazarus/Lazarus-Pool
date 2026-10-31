@@ -727,17 +727,18 @@ mod tests {
         let wire = s.encode();
         assert_eq!(PowSubmit::decode(&wire[1..]).unwrap(), s);
         assert_eq!(wire.len(), plain.encode().len() + 34);
-        let at = wire.windows(2).position(|w| w == [SECTION_GATEWAY_KEY, 45]).unwrap();
+        let at = wire.windows(2).position(|w| w == [0x06, 45]).expect("section 0x06, as the gateway writes it");
         assert_eq!(&wire[at + 2..at + 34], &[0xab; 32]);
 
         s.xor_key = Some([0x5a; 16]);
         let wire = s.encode();
         assert_eq!(PowSubmit::decode(&wire[1..]).unwrap(), s);
         assert_eq!(wire.len(), plain.encode().len() + 34 + 17);
+        assert!(wire.windows(17).any(|w| w[0] == 0x07 && w[1..] == [0x5a; 16]), "section 0x07, as the gateway writes it");
         // 0x05 stays CONVOY's: not read as anything of ours
         let mut abw = plain.encode();
         let end = abw.len() - 1;
-        abw.splice(end..end, [0x05, 0]);
+        abw.splice(end..end, std::iter::once(0x05).chain([45u8; 33]));
         assert!(PowSubmit::decode(&abw[1..]).is_err());
         assert_eq!(reject_name(REJECT_BAD_GATEWAY_KEY), "bad-gateway-key");
     }
