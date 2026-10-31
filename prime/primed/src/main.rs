@@ -6,6 +6,7 @@
 
 mod address;
 mod config;
+mod keys;
 mod node;
 mod payouts;
 mod rpc;
@@ -332,10 +333,18 @@ fn run(cfg: Config) -> i32 {
         gateway_payouts: Mutex::new(Shared::load_gateway_payouts(&cfg.data_dir)),
         pinned_scripts: Mutex::new(Default::default()),
         parents: Default::default(),
+        revealed: Default::default(),
         faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
         class_budget_held_off: AtomicBool::new(false),
         cfg,
     });
+    match shared.revealed.open(&shared.cfg.data_dir) {
+        Ok(n) => log::info!("{n} xor_key(s) shown by earlier blocks, from {}", keys::FILE),
+        Err(e) => {
+            eprintln!("{}: {e}", keys::FILE);
+            return 1;
+        }
+    }
     log::info!("pool pubkey {}", shared.pool.public_hex());
     log::info!(
         "payout {} fee {}bps stratum {}bps window {}x min-diff {}",

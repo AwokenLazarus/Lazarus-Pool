@@ -170,13 +170,14 @@ def mixed(out, cli, datadir, keyed_addr, stock_addr):
     res.check('Invalid data structure' not in log_stock and 'Bad configuration' not in log_stock, 'the stock gateway took its configure')
     res.check('DATUM Pool ABW:              disabled' in log_stock, 'and read ABW disabled, as it always has')
 
-    disclosed = []
+    disclosed, ids = [], set()
     for line in open(out + '/jobs.jsonl'):
         r = json.loads(line)
-        if r['status'] == 200:
+        if r['status'] == 200 and r['id'] not in ids:
+            ids.add(r['id'])
             disclosed.append(json.loads(r['api']))
     res.check(disclosed and all(a['mode'] == 'pool-key' and a['clear_bits'] == 32 for a in disclosed),
-              f'/xbt/job says pool-key with clear_bits 32 on {len(disclosed)} recent jobs')
+              f'/xbt/job says pool-key with clear_bits 32 on {len(disclosed)} jobs')
     keyhex = None
     keyed_blocks = [b for b in st['blocks'] if b['gateway'] == k['gateway']]
     stock_blocks = [b for b in st['blocks'] if b['gateway'] == s['gateway']]
@@ -187,6 +188,19 @@ def mixed(out, cli, datadir, keyed_addr, stock_addr):
             keyhex = header[112:128].hex()
     for b in stock_blocks:
         check_block(res, rpc, b, False)
+    # A key a block showed must not blind any later job: the hasher has its raw hashes and now the mask.
+    for b in keyed_blocks:
+        header = bytes.fromhex(rpc('getblockheader', b['hash'], 'false').stdout.strip())
+        shown = tagged('Bitcoin block hash PoW XOR key', header[112:128]).hex()
+        later = [a for a in disclosed if a['height'] > b['height']]
+        reused = [a for a in disclosed if a['xor_key_hash'] == shown and a['height'] > b['height']]
+        res.check(later and not reused, f'block {b["height"]}: {len(later)} later jobs disclosed, none under its key ({len(reused)} reused)')
+        same = [a for a in disclosed if a['xor_key_hash'] == shown]
+        res.check(all(a['height'] == b['height'] for a in same), f'  its key appears only on jobs at its own height ({len(same)})')
+    keys_by_height = {}
+    for a in disclosed:
+        keys_by_height.setdefault(a['xor_key_hash'], set()).add(a['height'])
+    res.check(all(len(h) == 1 for h in keys_by_height.values()), f'no key spans two heights across {len(keys_by_height)} keys disclosed')
     if keyhex:
         lines = open(out + '/lines-keyed.log', errors='replace').read()
         res.check(keyhex not in lines, 'the key of a found block never appears in a stratum line')

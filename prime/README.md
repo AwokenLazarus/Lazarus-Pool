@@ -220,10 +220,19 @@ changes. Convoy's own ABW is a different thing, a key the pool holds, and this P
   submit use the masked hash, which is the block's real id; duplicates go by the raw hash, so a
   key cannot be shown after the work was credited.
 
+**A key never outlives the block that shows it.** A block carries its key in its header, and the
+hasher already has the raw hashes, so a key used again after its block lets the hasher read every
+later share under it as a win or not. Prime keeps a book of every key a block has shown: from a
+keyed block a gateway reports (at once), from the headers of the chain its node follows (read back
+as the tip moves; the last 2016 blocks after a start), and on disk in `revealed-keys.txt`, because a
+block a reorg takes off the chain was broadcast all the same. A share under a shown key is `stale`
+on the revealing block's own parent or below, and `bad-gateway-key` past it, from any session.
+`pool.revealed_keys` in `stats.json` counts the book.
+
 Refused as `bad-gateway-key` (45): keys from a session not told it may use them; `clear_bits` that are
 not exactly `32 + pot`; the null key's hash; a key that does not hash to the commitment, or one with no
 commitment; `FLAG_BLOCK` on a keyed share with no key; a key hash already used on a different parent
-in this session. A correct key on a share that is no block is credited as a share and counted
+in this session; a key a block has shown, on any later block. A correct key on a share that is no block is credited as a share and counted
 (`gateway_key_false_blocks`).
 
 **Why the bits must be exact.** Fewer than the share's (S-4) and a winning hash is masked out of the
@@ -236,8 +245,8 @@ any miner, can throw a win away, and a key makes that no harder: it can commit t
 key for. Prime cannot see that on any one share. `totals.gateway_key_*` and each client's
 `gateway_key_work`, set against the blocks it showed, are the statistical check. A gateway that
 broadcasts a block and tells Prime nothing leaves the carry that block paid on the books; the same
-is true of one that drops the share today. Keys are not stored: a block carries its own in its header,
-and nothing on disk changes.
+is true of one that drops the share today. Unshown keys are not stored; shown ones are, in
+`revealed-keys.txt`, which an older build ignores.
 
 ## TIDES
 

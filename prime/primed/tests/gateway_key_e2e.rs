@@ -193,6 +193,7 @@ fn a_keyed_share_earns_its_credit_and_a_shown_block_is_recorded_by_its_real_hash
     assert_eq!(st["blocks"].as_array().map_or(0, Vec::len), 0);
 
     win.xor_key = Some(key2);
+    let shown = win.clone();
     let (status, code) = gw.submit(&win);
     assert!(status == mining::ACCEPTED || status == mining::ACCEPTED_TENTATIVELY, "0x{status:02x} code {code}");
     let st = settled_stats(&primed);
@@ -212,6 +213,137 @@ fn a_keyed_share_earns_its_credit_and_a_shown_block_is_recorded_by_its_real_hash
     let masked = pow::masked_hash_le(&raw, &key2, 32);
     assert_ne!(masked, raw);
     assert_eq!(blocks[0]["hash"].as_str().unwrap(), node_hex(&masked), "{st}");
+
+    // The block has made key2 public. On its own parent the work is stale; past it, from a fresh
+    // session that has never seen key2 (so only the pool-wide book can know), it is refused.
+    assert_eq!(st["pool"]["revealed_keys"], 1);
+    let mut same_parent = share_on(5, TIP, now, Some(&key2));
+    same_parent.nonce32 = 9;
+    assert_eq!(gw.submit(&same_parent), (mining::REJECTED, mining::REJECT_STALE_BLOCK), "on the found block's parent");
+    drop(gw);
+    let (mut fresh, _) = Gateway::connect_keyed(port, &pool, &Identity::generate());
+    let mut next = shown.clone();
+    next.job_id = 6;
+    next.xor_key = None;
+    next.flags &= !mining::FLAG_BLOCK;
+    let job = next.job.as_mut().unwrap();
+    job.height = HEIGHT + 1;
+    job.prev_hash = masked;
+    {
+        let mut c = n.chain.lock().unwrap();
+        c.height = HEIGHT;
+        c.parent = c.tip.clone();
+        c.tip = node_hex(&masked);
+    }
+    std::thread::sleep(Duration::from_millis(800));
+    assert_eq!(
+        fresh.submit(&next),
+        (mining::REJECTED, mining::REJECT_BAD_GATEWAY_KEY),
+        "a key a block showed, on the next block, from another session"
+    );
+    assert_eq!(settled_stats(&primed)["totals"]["work_accepted"], 2, "and it earned nothing");
+}
+
+/// A key the chain's own blocks showed, read from the node: refused on any later job, from a
+/// gateway that never revealed it here, and from a Prime that has just started. Needs no work:
+/// it is refused before the hash.
+#[test]
+fn a_key_a_block_on_the_chain_showed_is_refused_after_a_start() {
+    let (pool, id) = (Identity::generate(), Identity::generate());
+    let n = node();
+    let shown = [0x3c; 16];
+    let mut header = [0u8; pow::HEADER_V2_LEN];
+    header[..4].copy_from_slice(&(0x2000_0000u32 | pow::V2_BIT).to_le_bytes());
+    header[4..36].copy_from_slice(&[0x41; 32]);
+    header[111] = 32;
+    header[112..128].copy_from_slice(&shown);
+    n.headers.lock().unwrap().insert(node_hex(&TIP), hex::encode(header));
+    let (primed, port) = start_primed(&pool, &keyed_config(&n));
+    wait_for_tip(&primed);
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while stats(&primed)["pool"]["revealed_keys"] != 1 {
+        assert!(Instant::now() < deadline, "the tip's key was never read: {}", stats(&primed));
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    let now = unix_now();
+    let (mut gw, _) = Gateway::connect_keyed(port, &pool, &id);
+    assert_eq!(gw.submit(&share_on(0, TIP, now, Some(&shown))), (mining::REJECTED, mining::REJECT_BAD_GATEWAY_KEY));
+    // another key on the same job is judged on its work as ever (unground, so high-hash)
+    let (status, code) = gw.submit(&share_on(1, TIP, now, Some(&[0x3d; 16])));
+    assert_eq!(status, mining::REJECTED);
+    assert_ne!(code, mining::REJECT_BAD_GATEWAY_KEY);
+    assert_eq!(settled_stats(&primed)["totals"]["gateway_key_refused"], 1);
+
+    // A block found elsewhere while this Prime runs: the poller reads it as the tip moves.
+    let later = [0x3e; 16];
+    let next_tip = [0x43; 32];
+    let mut h2 = header;
+    h2[4..36].copy_from_slice(&TIP);
+    h2[112..128].copy_from_slice(&later);
+    n.headers.lock().unwrap().insert(node_hex(&next_tip), hex::encode(h2));
+    {
+        let mut c = n.chain.lock().unwrap();
+        c.height = HEIGHT;
+        c.parent = node_hex(&TIP);
+        c.tip = node_hex(&next_tip);
+    }
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while stats(&primed)["pool"]["revealed_keys"] != 2 {
+        assert!(Instant::now() < deadline, "the new tip's key was never read: {}", stats(&primed));
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    let mut s = share_on(2, next_tip, now, Some(&later));
+    s.job.as_mut().unwrap().height = HEIGHT + 1;
+    assert_eq!(gw.submit(&s), (mining::REJECTED, mining::REJECT_BAD_GATEWAY_KEY), "a network block's key, next block");
+}
+
+/// The book is kept on disk: a key shown before a restart, by a block the chain no longer has (an
+/// orphan: the node here knows no header at all), is still refused after it.
+#[test]
+fn a_key_shown_before_a_restart_is_refused_after_it_though_its_block_left_the_chain() {
+    let (pool, id) = (Identity::generate(), Identity::generate());
+    let n = node();
+    let orphan_key = [0x4d; 16];
+    let line = format!("{} {}\n", hex::encode(pow::xor_key_hash(&orphan_key)), HEIGHT - 3);
+    let (primed, port) = start_primed_seeded(&pool, &keyed_config(&n), |d| {
+        std::fs::write(d.join("revealed-keys.txt"), &line).unwrap();
+    });
+    wait_for_tip(&primed);
+    assert_eq!(stats(&primed)["pool"]["revealed_keys"], 1);
+    let (mut gw, _) = Gateway::connect_keyed(port, &pool, &id);
+    assert_eq!(
+        gw.submit(&share_on(0, TIP, unix_now(), Some(&orphan_key))),
+        (mining::REJECTED, mining::REJECT_BAD_GATEWAY_KEY)
+    );
+}
+
+/// Probe a running Prime (the regtest script's), as a keyed gateway, with a share under a given
+/// key on a given job. The share is not ground: a shown key is refused before the hash.
+/// `PMK_PROBE="port data_dir prev_display_hex height nbits_hex key_hex expected_code"`.
+#[test]
+#[ignore]
+fn probe_a_running_primed_with_a_key() {
+    let Ok(spec) = std::env::var("PMK_PROBE") else {
+        eprintln!("skipped: PMK_PROBE is not set");
+        return;
+    };
+    let f: Vec<&str> = spec.split_whitespace().collect();
+    let port: u16 = f[0].parse().unwrap();
+    let secret = hex::decode(std::fs::read_to_string(std::path::Path::new(f[1]).join("prime.key")).unwrap().trim()).unwrap();
+    let pool = Identity::from_secret_bytes(&secret[..64].try_into().unwrap());
+    let mut prev: Hash = hex::decode(f[2]).unwrap().try_into().unwrap();
+    prev.reverse();
+    let height: u32 = f[3].parse().unwrap();
+    let nbits = u32::from_str_radix(f[4], 16).unwrap();
+    let key: [u8; 16] = hex::decode(f[5]).unwrap().try_into().unwrap();
+    let expected: u16 = f[6].parse().unwrap();
+    let mut s = pool_only_share(9, height, prev, nbits, 0, unix_now());
+    s.gateway_key = Some(GatewayKey { clear_bits: 32, key_hash: pow::xor_key_hash(&key) });
+    let (mut gw, cfg) = Gateway::connect_keyed(port, &pool, &Identity::generate());
+    assert!(cfg.ends_with(mining::CONFIG_MARKER_GATEWAY_KEY), "this Prime takes gateway keys");
+    let got = gw.submit(&s);
+    println!("PROBE height {height} key {} -> status 0x{:02x} code {}", f[5], got.0, got.1);
+    assert_eq!(got, (mining::REJECTED, expected));
 }
 
 fn seed(dir: &std::path::Path, t: u32) {

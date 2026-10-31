@@ -41,6 +41,13 @@ pub async fn run(shared: Arc<Shared>) {
                     confirm_blocks(&shared, height).await;
                 }
                 if moved {
+                    // keys the new blocks showed, before any share under one is taken; the first
+                    // scan after a start reads further back, since nothing here was kept
+                    let depth =
+                        if scanned.is_none() { crate::keys::BACKFILL_BLOCKS } else { crate::keys::FOLLOW_BLOCKS };
+                    if let Some(h) = &hash {
+                        crate::keys::scan(&shared, h, height, depth).await;
+                    }
                     scanned = hash;
                     // book the DATUM rebate share of any solo block the chain just buried
                     crate::solo::scan(&shared, height).await;

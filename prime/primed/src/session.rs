@@ -1905,6 +1905,19 @@ impl Session {
             held_split: self.held.is_some(),
             gateway_keys: self.gateway_keys,
         };
+        // A key a block has shown is no blind: the hasher has the raw hashes and now the mask.
+        // Work on the found block's own parent or below is stale anyway; past it, it is reuse.
+        if let Some(shown) = s.gateway_key.as_ref().and_then(|k| self.shared.revealed.shown_at(&k.key_hash)) {
+            if height <= shown {
+                return self.reject(&s, mining::REJECT_STALE_BLOCK).await;
+            }
+            log::warn!(
+                "[{}] {} used at height {height} an xor_key a block showed at {shown}: whoever hashes for it can read its wins. Refused.",
+                self.id,
+                self.gateway_hex,
+            );
+            return self.refuse_gateway_key(&s).await;
+        }
         if s.gateway_key.as_ref().is_some_and(|k| self.key_book.reused(&k.key_hash, &prev_hash)) {
             log::warn!(
                 "[{}] {} kept one xor_key across blocks at height {height}: a hasher who read the last block can tell a win, so it blinds nothing. Refused.",
@@ -2456,6 +2469,10 @@ impl Session {
     async fn on_block_candidate(&mut self, s: PowSubmit, v: VerifiedShare, finder: String) -> Result<(), SessionError> {
         if v.keyed {
             self.shared.totals.add(&self.shared.totals.gateway_key_blocks, 1);
+            // public from now: the gateway is broadcasting it in the block's header
+            if let Some(k) = &s.xor_key {
+                self.shared.revealed.note(k, v.height);
+            }
         }
         let mut disp = v.block_hash;
         disp.reverse();

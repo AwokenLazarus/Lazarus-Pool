@@ -366,6 +366,7 @@ pub fn build(shared: &Shared) -> Value {
     });
     // Apart from the document above, which is as deep as `json!` goes.
     doc["pool"]["gateway_key"] = json!(shared.cfg.gateway_key);
+    doc["pool"]["revealed_keys"] = json!(shared.revealed.len());
     for (name, count) in [
         ("gateway_key_shares", &t.gateway_key_shares),
         ("gateway_key_work", &t.gateway_key_work),

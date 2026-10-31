@@ -531,6 +531,8 @@ pub struct Shared {
     pub parents: crate::validity::ParentBook,
     /// Gateways whose templates our node found invalid; their shares earn nothing until one passes.
     pub faults: crate::validity::Faults,
+    /// Gateway keys blocks have shown, which no later share may use; see `keys.rs`.
+    pub revealed: crate::keys::RevealedKeys,
     /// Carry reached `class-budget-carry-ceiling` and has not yet fallen back far enough: no
     /// reply is held to a class budget. See [`Shared::class_budget_open`].
     pub class_budget_held_off: AtomicBool,
@@ -872,6 +874,7 @@ mod tests {
             gateway_payouts: Mutex::new(Default::default()),
             pinned_scripts: Mutex::new(Default::default()),
             parents: Default::default(),
+            revealed: Default::default(),
             faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
             class_budget_held_off: AtomicBool::new(false),
             cfg,

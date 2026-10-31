@@ -450,6 +450,8 @@ pub struct MockNode {
     pub confirmations: Arc<std::sync::Mutex<std::collections::HashMap<String, i64>>>,
     /// What `getrawtransaction <txid> true` answers. A txid not listed is one the node lacks.
     pub txs: Arc<std::sync::Mutex<std::collections::HashMap<String, serde_json::Value>>>,
+    /// What `getblockheader <hash> false` answers: the raw header in hex.
+    pub headers: Arc<std::sync::Mutex<std::collections::HashMap<String, String>>>,
 }
 
 impl MockNode {
@@ -460,6 +462,8 @@ impl MockNode {
         let calls = Arc::new(AtomicU64::new(0));
         let confirmations: Arc<std::sync::Mutex<std::collections::HashMap<String, i64>>> = Default::default();
         let txs: Arc<std::sync::Mutex<std::collections::HashMap<String, serde_json::Value>>> = Default::default();
+        let headers: Arc<std::sync::Mutex<std::collections::HashMap<String, String>>> = Default::default();
+        let headers_in = headers.clone();
         let (c, n, confs) = (chain.clone(), calls.clone(), confirmations.clone());
         let txs_in = txs.clone();
         std::thread::spawn(move || {
@@ -467,6 +471,7 @@ impl MockNode {
                 let Ok(mut conn) = conn else { continue };
                 let (c, n, confs) = (c.clone(), n.clone(), confs.clone());
                 let txs = txs_in.clone();
+                let headers = headers_in.clone();
                 std::thread::spawn(move || {
                     let _ = conn.set_read_timeout(Some(Duration::from_secs(5)));
                     let mut buf = Vec::new();
@@ -497,6 +502,13 @@ impl MockNode {
                         "getblockchaininfo" => {
                             n.fetch_add(1, Ordering::Relaxed);
                             serde_json::json!({"chain": "main", "blocks": ch.height, "bestblockhash": ch.tip, "difficulty": 1.0})
+                        }
+                        "getblockheader" if req["params"][1] == serde_json::json!(false) => {
+                            let asked = req["params"][0].as_str().unwrap_or("").to_string();
+                            match headers.lock().unwrap().get(&asked) {
+                                Some(h) => serde_json::json!(h),
+                                None => serde_json::json!({"__error": -5}),
+                            }
                         }
                         "getblockheader" => {
                             let asked = req["params"][0].as_str().unwrap_or("").to_string();
@@ -531,7 +543,7 @@ impl MockNode {
                 });
             }
         });
-        MockNode { port, chain, calls, confirmations, txs }
+        MockNode { port, chain, calls, confirmations, txs, headers }
     }
 
     /// The `rpc` part of a Prime config pointing at this node.
