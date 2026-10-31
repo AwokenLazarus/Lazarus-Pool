@@ -360,6 +360,8 @@ fn figures(v: &mut serde_json::Value) {
         "hashrate_ghs", "tip_age_s", "seen_ts", "coinbaser_max_ms", "coinbaser_base_builds", "last_seen", "seen_shares",
         "gateway_key", "gateway_key_shares", "gateway_key_work", "gateway_key_blocks", "gateway_key_false_blocks",
         "gateway_key_refused", "template_checks", "template_checks_failed", "coinbaser_slow", "hashrate", "port",
+        // new in this build, about the key book, not money
+        "revealed_keys",
     ];
     match v {
         serde_json::Value::Object(o) => {
