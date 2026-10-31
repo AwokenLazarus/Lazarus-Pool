@@ -305,7 +305,7 @@
     const p = e.detail || {};
     const n = Number(p.blocks_found);
     if (Number.isFinite(n)) {
-      if (lastFound != null && n > lastFound) toast(T("toast.block", { h: Number(p.height || 0).toLocaleString() }), "#blocks");
+      if (lastFound != null && n > lastFound) toast(T("toast.block", { h: Number(p.last_found_height || p.height || 0).toLocaleString() }), "#blocks");
       lastFound = n;
     }
   });

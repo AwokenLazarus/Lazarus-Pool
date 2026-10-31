@@ -4949,6 +4949,9 @@ def pool_payload():
         "ttf_seconds": ttf_s,
         "block_interval_seconds": interval,
         "blocks_found": nfound,
+        # The newest of them: the "block found" popup names this, not the tip, which may already be
+        # the block after it by the time the scanner has recorded the find.
+        "last_found_height": (db("SELECT MAX(height) AS h FROM found_blocks", one=True) or {"h": None})["h"],
         "blocks_found_explorer": explorer_n,
         "blocks_found_checked_at": explorer_at,
         "blocks_expected": expected,
@@ -5909,6 +5912,7 @@ API_CATALOG = (
         (
             ApiField("name", "string", "", "Pool name.", "矿池名称。"),
             ApiField("blocks_found", "integer", "count", "Blocks this pool has recorded. Not rewritten from the explorer.", "本矿池自己记下的区块数。不会按浏览器的数字改写。"),
+            ApiField("last_found_height", "integer", "blocks", "Height of the newest block this pool has recorded.", "本矿池记下的最新区块的高度。", nullable=True),
             ApiField("blocks_found_explorer", "integer", "count", "The explorer's block count for this pool at the last successful check.", "上次核对成功时，浏览器给本矿池的区块数。", nullable=True),
             ApiField("blocks_found_checked_at", "integer", "unix seconds", "When that check succeeded.", "那次核对成功的时间。", nullable=True),
             ApiField("pool_hr_ghs", "number", "GH/s", "Credited pool hashrate.", "记入账的矿池算力。"),
@@ -7041,7 +7045,7 @@ _SEO_ARTICLE = {
     "/connect": ("TechArticle", "2026-09-13", "2026-10-29"),
     "/ratum": ("TechArticle", "2026-09-28", "2026-10-29"),
     "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-29"),
-    "/api": ("TechArticle", "2026-09-13", "2026-10-29"),
+    "/api": ("TechArticle", "2026-09-13", "2026-10-30"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
 # rule as _SEO_ARTICLE: bump a date in the commit that changes that page's words, never per deploy.
