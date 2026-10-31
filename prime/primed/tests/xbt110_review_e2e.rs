@@ -77,6 +77,7 @@ fn block_hash(s: &PowSubmit) -> Hash {
         trusted_target: false,
         uncommitted_pot: 20,
         held_split: false,
+        gateway_keys: false,
     };
     let mut slot = JobSlot::default();
     slot.absorb(s).unwrap();

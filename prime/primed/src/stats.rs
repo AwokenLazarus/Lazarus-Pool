@@ -364,6 +364,17 @@ pub fn build(shared: &Shared) -> Value {
         "template_faults": shared.faults.all().into_iter().map(|(k, f)| serde_json::json!({"gateway": &k[..16.min(k.len())], "fault": f})).collect::<Vec<_>>(),
         "blocks": blocks,
     });
+    // Apart from the document above, which is as deep as `json!` goes.
+    doc["pool"]["gateway_key"] = json!(shared.cfg.gateway_key);
+    for (name, count) in [
+        ("gateway_key_shares", &t.gateway_key_shares),
+        ("gateway_key_work", &t.gateway_key_work),
+        ("gateway_key_blocks", &t.gateway_key_blocks),
+        ("gateway_key_false_blocks", &t.gateway_key_false_blocks),
+        ("gateway_key_refused", &t.gateway_key_refused),
+    ] {
+        doc["totals"][name] = json!(count.load(Ordering::Relaxed));
+    }
     // Only with `class-budget`, or once a block carries a class-budget reserve, so a Prime that
     // has never had the key writes the document it always has.
     if shared.cfg.class_budget || carry_reserved > 0 {

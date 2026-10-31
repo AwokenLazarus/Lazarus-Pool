@@ -17,7 +17,7 @@ use datum_wire::crypto::{self, Channel, Identity};
 use datum_wire::frame::{Header, KeyStream, CLIENT_INITIAL_KEY};
 use datum_wire::handshake::{self, ClientHello, Generation};
 use datum_wire::mining::{self, ClientMsg, JobValidationReply, PowSubmit, ValidationStatus};
-use datum_wire::verify::{self, CoinbaseKind, JobSlot, Policy, VerifiedShare};
+use datum_wire::verify::{self, CoinbaseKind, JobSlot, KeyBook, Policy, VerifiedShare};
 use datum_wire::{cmd, MAX_CMD_LEN};
 use rand_core::{OsRng, RngCore};
 use tides::split::Split;
@@ -772,6 +772,10 @@ struct Session {
     coinbaser_send_at: Option<tokio::time::Instant>,
     /// This session's row for the clients table, until its first frame earns it a place there.
     row: Option<ClientInfo>,
+    /// This gateway asked to blind its jobs with its own key and this Prime takes that.
+    gateway_keys: bool,
+    /// Its recent keys, so one held across blocks is refused; see `KeyBook`.
+    key_book: KeyBook,
     /// The template check waiting on the gateway's transactions, by job id.
     template_check: Option<(u8, TemplateCheck)>,
     template_check_due: Instant,
@@ -903,6 +907,13 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
             _ => "",
         }
     );
+    let gateway_keys = shared.cfg.gateway_key && hello.gateway_key;
+    if hello.gateway_key {
+        log::info!(
+            "[{id}] {remote} gateway={gateway_hex} asks to blind its jobs with its own xor_key: {}",
+            if gateway_keys { "told yes" } else { "gateway-key is off, so it is not told" }
+        );
+    }
     let pins_script = shared.pins_script(&gateway_key);
     if pins_script {
         log::info!(
@@ -1007,6 +1018,8 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         suspect: false,
         dead_work_warned: None,
         row: Some(row),
+        gateway_keys,
+        key_book: KeyBook::default(),
     };
     s.serve().await
 }
@@ -1174,12 +1187,16 @@ impl Session {
 
     fn configure_body(&self, script: &[u8], tag: &str) -> Vec<u8> {
         let cfg = &self.shared.cfg;
-        match self.hello.generation {
+        let mut body = match self.hello.generation {
             Generation::Ocean => mining::configure_v1(script, cfg.prime_id, tag, cfg.min_diff),
             Generation::Convoy => {
                 mining::configure_v3(script, u64::from(cfg.prime_id), &self.resume_token, tag, cfg.min_diff)
             }
+        };
+        if self.gateway_keys {
+            body.extend_from_slice(mining::CONFIG_MARKER_GATEWAY_KEY);
         }
+        body
     }
 
     async fn send_configure_script(&mut self, script: &[u8], gateway: bool) -> Result<(), SessionError> {
@@ -1886,9 +1903,19 @@ impl Session {
             trusted_target: self.is_house_stratum(),
             uncommitted_pot: self.shared.cfg.uncommitted_pot,
             held_split: self.held.is_some(),
+            gateway_keys: self.gateway_keys,
         };
+        if s.gateway_key.as_ref().is_some_and(|k| self.key_book.reused(&k.key_hash, &prev_hash)) {
+            log::warn!(
+                "[{}] {} kept one xor_key across blocks at height {height}: a hasher who read the last block can tell a win, so it blinds nothing. Refused.",
+                self.id,
+                self.gateway_hex,
+            );
+            return self.refuse_gateway_key(&s).await;
+        }
         let v = match verify::verify(&mut self.slots[job_id], &s, &policy) {
             Ok(v) => v,
+            Err(mining::REJECT_BAD_GATEWAY_KEY) => return self.refuse_gateway_key(&s).await,
             Err(code) => {
                 let refused = (code == mining::REJECT_BAD_COINBASE_OUTPUTS)
                     .then(|| verify::coinbase_of(&self.slots[job_id], &s))
@@ -1906,6 +1933,9 @@ impl Session {
         };
         if v.coinbase_kind == CoinbaseKind::GatewaySolo && self.shows_pinned_script(&v.coinbase, &policy) {
             self.hold_on_pool_script().await?;
+        }
+        if let Some(k) = &s.gateway_key {
+            self.key_book.note(&k.key_hash, &prev_hash);
         }
         // One credit per hash, pool-wide and for as long as the height is live: the set is
         // shared, keyed by height, and never cleared by anything a gateway can send. A share
@@ -1985,6 +2015,28 @@ impl Session {
             return self.reject(&s, mining::REJECT_BAD_USERNAME).await;
         }
         self.shared.totals.add(&self.shared.totals.accepted, 1);
+        if v.keyed {
+            // What an audit of blocks against work per gateway reads: Prime cannot tell a win
+            // on these shares itself, so finding none in time is the only sign of withholding.
+            let window_work = if solo { 0 } else { v.work };
+            self.shared.totals.add(&self.shared.totals.gateway_key_shares, 1);
+            self.shared.totals.add(&self.shared.totals.gateway_key_work, window_work);
+            self.shared.client_update(self.id, |c| {
+                c.gateway_key_shares += 1;
+                c.gateway_key_work += window_work;
+            });
+            if v.key_revealed && !v.is_block_candidate {
+                // It costs the gateway its own key on a live job and earns nothing more: the
+                // share is the work it is.
+                self.shared.totals.add(&self.shared.totals.gateway_key_false_blocks, 1);
+                log::warn!(
+                    "[{}] {} showed its xor_key on a share at height {} that is not a block",
+                    self.id,
+                    self.gateway_hex,
+                    v.height
+                );
+            }
+        }
         if solo {
             match v.coinbase_kind {
                 CoinbaseKind::EmptySolo => {
@@ -2105,6 +2157,12 @@ impl Session {
             self.hello.user_agent,
             self.shared.cfg.uncommitted_pot.max(self.shared.cfg.min_pot()),
         );
+    }
+
+    /// Refuse a share whose gateway key does not stand (`verify::share_key`), and count it.
+    async fn refuse_gateway_key(&mut self, s: &PowSubmit) -> Result<(), SessionError> {
+        self.shared.totals.add(&self.shared.totals.gateway_key_refused, 1);
+        self.reject(s, mining::REJECT_BAD_GATEWAY_KEY).await
     }
 
     async fn reject(&mut self, s: &PowSubmit, code: u16) -> Result<(), SessionError> {
@@ -2396,7 +2454,10 @@ impl Session {
     // --- blocks ------------------------------------------------------------------------
 
     async fn on_block_candidate(&mut self, s: PowSubmit, v: VerifiedShare, finder: String) -> Result<(), SessionError> {
-        let mut disp = v.hash;
+        if v.keyed {
+            self.shared.totals.add(&self.shared.totals.gateway_key_blocks, 1);
+        }
+        let mut disp = v.block_hash;
         disp.reverse();
         let hash_hex = hex::encode(disp);
         log::info!(
@@ -3434,6 +3495,7 @@ mod tests {
                 trusted_target: false,
                 uncommitted_pot: 20,
                 held_split: false,
+                gateway_keys: false,
             }
         }
         let (pool, gw, payee, stranger) = (wpkh(1), tr(2), wpkh(3), wpkh(4));
@@ -3531,6 +3593,7 @@ mod tests {
             trusted_target: false,
             uncommitted_pot: 20,
             held_split: false,
+            gateway_keys: false,
         }
     }
 

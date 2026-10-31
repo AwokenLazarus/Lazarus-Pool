@@ -132,6 +132,10 @@ solo-rebate-bps = 0
 # by its hash alone: 2^uncommitted-pot if the hash meets that, nothing otherwise. Fair on
 # average for miners at any vardiff up to it, so keep it at or above the largest vardiff in use.
 # uncommitted-pot = 20
+# Take shares on jobs a gateway blinded with an xor_key of its own, so that whoever hashes for it
+# cannot tell a winning share (README, "A gateway's own key"). Only gateways that ask are told;
+# nothing changes for one that does not.
+# gateway-key = false
 # house-loopback = true
 # Smallest share difficulty accepted; power of two. Also the vardiff floor sent to gateways.
 # A share under it is not refused: it is credited by its hash alone, at this difficulty, so a

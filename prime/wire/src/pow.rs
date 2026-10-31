@@ -116,6 +116,9 @@ pub struct Commitment {
     pub flags: u8,
     pub xor_clear_bits: u8,
     pub xor_key: [u8; 16],
+    /// The key's hash where that is all that is known: a gateway's own key, until a block
+    /// reveals it. `None` hashes `xor_key`.
+    pub xor_key_hash: Option<Hash>,
     pub rhs: Hash,
 }
 
@@ -135,7 +138,7 @@ impl Commitment {
         p[81..85].copy_from_slice(&self.txcount.to_le_bytes());
         p[85] = self.flags;
         p[86] = self.xor_clear_bits;
-        p[87..119].copy_from_slice(&xor_key_hash(&self.xor_key));
+        p[87..119].copy_from_slice(&self.xor_key_hash.unwrap_or_else(|| xor_key_hash(&self.xor_key)));
         p
     }
 
@@ -168,6 +171,16 @@ pub fn xor_mask(key: &[u8; 16], clear_bits: u8) -> Hash {
         m[bytes] &= 0xff >> rem;
     }
     m
+}
+
+/// The block hash of a raw work hash (`pow_hash_le` with a null key) under `key`.
+pub fn masked_hash_le(raw_le: &Hash, key: &[u8; 16], clear_bits: u8) -> Hash {
+    let m = xor_mask(key, clear_bits);
+    let mut out = *raw_le;
+    for i in 0..32 {
+        out[31 - i] ^= m[i];
+    }
+    out
 }
 
 /// Sia `coinb1` for a job: three zero bytes, H2, four zero bytes.
@@ -410,6 +423,7 @@ mod tests {
             flags: FLAG_USE_TIME_OFFSET,
             xor_clear_bits: 13,
             xor_key,
+            xor_key_hash: None,
             rhs,
         };
         let h2 = c.h2();
@@ -458,6 +472,7 @@ mod tests {
             flags: 0x1c,
             xor_clear_bits: 0,
             xor_key: [0u8; 16],
+            xor_key_hash: None,
             rhs,
         };
         assert_eq!(c.h2(), hx32("ab5becb2336a3701557b0f6e33de39bd333072b8494c7c60952a8e8a636565e3"));
@@ -546,5 +561,40 @@ mod tests {
         assert_eq!(m[1], full[1] & 0x07);
         assert_eq!(&m[2..], &full[2..]);
         assert_eq!(xor_mask(&[0u8; 16], 13), [0u8; 32]);
+    }
+
+    /// The hash a gateway computes from the raw work hash is the one Knots computes from the
+    /// header, whichever side knows the key first, and the header commits the same either way.
+    #[test]
+    fn a_key_known_only_by_its_hash_commits_and_masks_as_the_key_does() {
+        let key = [0x5a; 16];
+        let mut c = Commitment {
+            version: 0x2000_0000,
+            prev_hash: [0xc0; 32],
+            height: 12345,
+            merkle_root: [0x11; 32],
+            time_on_wire: 0x6553_412f,
+            nbits: 0x207f_ffff,
+            txcount: 3,
+            flags: FLAG_USE_TIME_OFFSET,
+            xor_clear_bits: 45,
+            xor_key: key,
+            xor_key_hash: None,
+            rhs: [0u8; 32],
+        };
+        let full = c.h2();
+        c.xor_key = [0u8; 16];
+        c.xor_key_hash = Some(xor_key_hash(&key));
+        assert_eq!(c.h2(), full, "H1 sees only the hash");
+
+        let work = [0x33u8; WORK_LEN];
+        let raw = pow_hash_le(&work, &[0u8; 16], 0);
+        assert_eq!(masked_hash_le(&raw, &key, 45), pow_hash_le(&work, &key, 45));
+        assert_eq!(masked_hash_le(&raw, &[0u8; 16], 45), raw, "a null key masks nothing");
+        // the top 45 bits are clear of the mask: the rest differ
+        let masked = masked_hash_le(&raw, &key, 45);
+        assert_eq!(masked[27..], raw[27..]);
+        assert_eq!(masked[26] & 0xf8, raw[26] & 0xf8);
+        assert_ne!(masked[..26], raw[..26]);
     }
 }

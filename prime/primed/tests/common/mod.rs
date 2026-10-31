@@ -146,6 +146,11 @@ impl Gateway {
         Gateway::connect_with(port, pool, identity, ua, &handshake::convoy_hello_extension(None))
     }
 
+    /// [`Gateway::connect_as`] with a hello asking to blind its jobs with its own key.
+    pub fn connect_keyed(port: u16, pool: &Identity, identity: &Identity) -> (Gateway, Vec<u8>) {
+        Gateway::connect_with(port, pool, identity, "keyed-test/0.1", &handshake::gateway_key_hello_extension())
+    }
+
     fn connect_with(port: u16, pool: &Identity, identity: &Identity, ua: &str, pad: &[u8]) -> (Gateway, Vec<u8>) {
         let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
         stream.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
@@ -336,6 +341,8 @@ pub fn pool_only_share(
         reserved: [0; 4],
         blake2b: Some(Blake2bSection { ntime: [0; 8], nonce: [0; 8] }),
         time_on_wire: Some(now),
+        gateway_key: None,
+        xor_key: None,
         job: Some(JobSection {
             prev_hash,
             target_byte_index: tidx as u16,
