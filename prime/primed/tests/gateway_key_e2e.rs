@@ -227,7 +227,7 @@ fn figures(v: &mut serde_json::Value) {
         "ts", "uptime_s", "started_ts", "connected_ts", "connected_s", "last_share_ts", "last_share_s", "remote",
         "hashrate_ghs", "tip_age_s", "seen_ts", "coinbaser_max_ms", "coinbaser_base_builds", "last_seen", "seen_shares",
         "gateway_key", "gateway_key_shares", "gateway_key_work", "gateway_key_blocks", "gateway_key_false_blocks",
-        "gateway_key_refused", "template_checks", "template_checks_failed", "coinbaser_slow",
+        "gateway_key_refused", "template_checks", "template_checks_failed", "coinbaser_slow", "hashrate", "port",
     ];
     match v {
         serde_json::Value::Object(o) => {
@@ -331,7 +331,28 @@ fn a_gateway_with_no_key_gets_the_same_money_and_credit_as_before() {
     eprintln!("work {} blocks {}", before["stats"]["totals"]["work_accepted"], before["stats"]["blocks"]);
     assert_eq!(before["stats"]["totals"]["work_accepted"], 2, "both ground shares credited: {before}");
     assert_eq!(before["stats"]["blocks"].as_array().map_or(0, Vec::len), 2, "both found: {before}");
-    assert_eq!(before, after);
+    let mut differ = vec![];
+    differences("", &before, &after, &mut differ);
+    assert!(differ.is_empty(), "before and after differ at: {differ:#?}");
+}
+
+fn differences(at: &str, a: &serde_json::Value, b: &serde_json::Value, out: &mut Vec<String>) {
+    use serde_json::Value::{Array, Object};
+    match (a, b) {
+        (Object(x), Object(y)) => {
+            for k in x.keys().chain(y.keys().filter(|k| !x.contains_key(*k))) {
+                let none = serde_json::Value::Null;
+                differences(&format!("{at}.{k}"), x.get(k).unwrap_or(&none), y.get(k).unwrap_or(&none), out);
+            }
+        }
+        (Array(x), Array(y)) if x.len() == y.len() => {
+            for (i, (p, q)) in x.iter().zip(y).enumerate() {
+                differences(&format!("{at}[{i}]"), p, q, out);
+            }
+        }
+        _ if a != b => out.push(format!("{at}: {a} vs {b}")),
+        _ => {}
+    }
 }
 
 /// Keyed and unkeyed gateways on one pool, one block each, real work: each is credited, and a

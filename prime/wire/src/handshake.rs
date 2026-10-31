@@ -263,6 +263,9 @@ mod tests {
         let both = parse(&[b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | 0x02]);
         assert!(both.gateway_key);
         assert_eq!(both.resume_token, None);
+        // a token is read only where the byte is exactly 1, as before: not with the flag beside it
+        let flagged = parse(&[b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | 0x01]);
+        assert_eq!((flagged.gateway_key, flagged.resume_token), (true, None));
 
         assert!(!parse(&convoy_hello_extension(None)).gateway_key);
         assert!(!parse(&[b'D', b'R', b'S', 1, 0x02]).gateway_key, "a stock gateway's framing bit asks nothing");
