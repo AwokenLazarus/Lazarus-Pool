@@ -434,7 +434,6 @@ fn run_no_key_gateway(
     pool: &Identity,
     id: &Identity,
     node: &MockNode,
-    window_ts: u32,
     shares: &mut Option<(PowSubmit, PowSubmit)>,
     now: u32,
     reuse: bool,
@@ -449,7 +448,8 @@ fn run_no_key_gateway(
         // the production setting, and a v0.5.0 gateway that offers framing v2 and scaled reuse
         cfg.push_str("\nscaled-reuse-ack = true");
     }
-    let (primed, port) = start_primed_seeded(pool, &cfg, |d| seed(d, window_ts));
+    // the window opens ten minutes before the shares, in both runs
+    let (primed, port) = start_primed_seeded(pool, &cfg, |d| seed(d, now - 600));
     wait_for_tip(&primed);
     let (mut gw, configure, selection) = if reuse {
         Gateway::connect_convoy_flags(port, pool, id, "stock/1", datum_wire::handshake::DRS_FRAMING_V2 | datum_wire::handshake::DRS_SCALED_REUSE)
@@ -511,8 +511,8 @@ fn a_gateway_with_no_key_gets_the_same_money_and_credit_as_before() {
         let n = node();
         let now = unix_now();
         let mut shares = None;
-        let before = run_no_key_gateway(Some(&old), &pool, &id, &n, now - 600, &mut shares, now, reuse);
-        let after = run_no_key_gateway(None, &pool, &id, &n, now - 600, &mut shares, now, reuse);
+        let before = run_no_key_gateway(Some(&old), &pool, &id, &n, &mut shares, now, reuse);
+        let after = run_no_key_gateway(None, &pool, &id, &n, &mut shares, now, reuse);
         std::env::remove_var("PRIMED_BIN");
         eprintln!("reuse {reuse}: receipts {} coinbaser {}", before["receipts"], before["coinbaser"]);
         eprintln!("work {} blocks {}", before["stats"]["totals"]["work_accepted"], before["stats"]["blocks"]);
