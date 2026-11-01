@@ -258,6 +258,11 @@ fn a_key_a_block_on_the_chain_showed_is_refused_after_a_start() {
     header[111] = 32;
     header[112..128].copy_from_slice(&shown);
     n.headers.lock().unwrap().insert(node_hex(&TIP), hex::encode(header));
+    // the tip's parent has no v2 bit, so the start-up read finishes there and a later key is left
+    // to the read as the tip moves
+    let mut v1 = [0u8; pow::HEADER_V2_LEN];
+    v1[..4].copy_from_slice(&0x2000_0000u32.to_le_bytes());
+    n.headers.lock().unwrap().insert(node_hex(&[0x41; 32]), hex::encode(v1));
     let (primed, port) = start_primed(&pool, &keyed_config(&n));
     wait_for_tip(&primed);
     let deadline = Instant::now() + Duration::from_secs(10);
