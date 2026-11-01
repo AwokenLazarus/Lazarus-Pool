@@ -152,6 +152,23 @@ impl Gateway {
     }
 
     fn connect_with(port: u16, pool: &Identity, identity: &Identity, ua: &str, pad: &[u8]) -> (Gateway, Vec<u8>) {
+        let (g, cfg, _) = Gateway::connect_full(port, pool, identity, ua, pad);
+        (g, cfg)
+    }
+
+    /// A Convoy hello with this DRS feature byte. Also returns the reply's bytes between the
+    /// MOTD's NUL and the signature (the DRS selection, when the pool sends one).
+    pub fn connect_convoy_flags(
+        port: u16,
+        pool: &Identity,
+        identity: &Identity,
+        ua: &str,
+        flags: u8,
+    ) -> (Gateway, Vec<u8>, Vec<u8>) {
+        Gateway::connect_full(port, pool, identity, ua, &[b'D', b'R', b'S', 1, flags])
+    }
+
+    fn connect_full(port: u16, pool: &Identity, identity: &Identity, ua: &str, pad: &[u8]) -> (Gateway, Vec<u8>, Vec<u8>) {
         let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
         stream.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
         let session = Identity::generate();
@@ -175,13 +192,15 @@ impl Gateway {
         stream.read_exact(&mut payload).unwrap();
         let (_srv_sign, srv_box, motd) = handshake::parse_server_hello(&pool.sign_pk(), &session, &payload).unwrap();
         assert_eq!(motd, "Lazarus");
+        let body = crypto::verify_trailing(&pool.sign_pk(), &session.unseal(&payload).unwrap()).unwrap().to_vec();
+        let after_motd = body[128 + 64..].iter().position(|&b| b == 0).map(|i| body[128 + 64 + i + 1..].to_vec()).unwrap();
         let (recv_nonce, send_nonce) = crypto::session_nonces(seed, &session.sign_pk());
         let channel = Channel::new(session.precompute(&srv_box), send_nonce, recv_nonce);
         let mut g = Gateway { stream, send_keys, recv_keys, channel };
         // configure arrives first; consume it so the channel nonces stay in step
         let cfg = g.next_mining();
         assert_eq!(cfg[0], mining::SUB_CONFIGURE, "first mining message is the configure");
-        (g, cfg)
+        (g, cfg, after_motd)
     }
 
     pub fn send_mining(&mut self, plain: &[u8]) {

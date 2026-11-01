@@ -297,6 +297,43 @@ fn a_key_a_block_on_the_chain_showed_is_refused_after_a_start() {
     assert_eq!(gw.submit(&s), (mining::REJECTED, mining::REJECT_BAD_GATEWAY_KEY), "a network block's key, next block");
 }
 
+/// A start-up read the node breaks off is done again in full: it is not cut to the follow depth,
+/// and a key shown further back than one block is still read once the node answers.
+#[test]
+fn a_start_up_read_the_node_broke_off_is_done_again() {
+    let pool = Identity::generate();
+    let n = node();
+    let v2 = |key: [u8; 16], parent: [u8; 32]| {
+        let mut h = [0u8; pow::HEADER_V2_LEN];
+        h[..4].copy_from_slice(&(0x2000_0000u32 | pow::V2_BIT).to_le_bytes());
+        h[4..36].copy_from_slice(&parent);
+        h[111] = 32;
+        h[112..128].copy_from_slice(&key);
+        h
+    };
+    let (parent, grandparent) = ([0x51; 32], [0x52; 32]);
+    // the tip shows a key; its parent is unknown to the node, so the read stops on an rpc error
+    n.headers.lock().unwrap().insert(node_hex(&TIP), hex::encode(v2([0x5a; 16], parent)));
+    let (primed, _port) = start_primed(&pool, &keyed_config(&n));
+    wait_for_tip(&primed);
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while stats(&primed)["pool"]["revealed_keys"] != 1 {
+        assert!(Instant::now() < deadline, "the tip's key was never read: {}", stats(&primed));
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    std::thread::sleep(Duration::from_millis(600));
+    // the node answers now: the parent shows a key, and the grandparent ends the read (no v2 bit)
+    let mut end = v2([0; 16], [0; 32]);
+    end[..4].copy_from_slice(&0x2000_0000u32.to_le_bytes());
+    n.headers.lock().unwrap().insert(node_hex(&parent), hex::encode(v2([0x5b; 16], grandparent)));
+    n.headers.lock().unwrap().insert(node_hex(&grandparent), hex::encode(end));
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while stats(&primed)["pool"]["revealed_keys"] != 2 {
+        assert!(Instant::now() < deadline, "the broken-off read was not done again: {}", stats(&primed));
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
 /// The book is kept on disk: a key shown before a restart, by a block the chain no longer has (an
 /// orphan: the node here knows no header at all), is still refused after it.
 #[test]
@@ -362,6 +399,9 @@ fn figures(v: &mut serde_json::Value) {
         "gateway_key_refused", "template_checks", "template_checks_failed", "coinbaser_slow", "hashrate", "port",
         // new in this build, about the key book, not money
         "revealed_keys",
+        // any local process that connects to the test port while the first run grinds its shares
+        // (about 25 s) counts here; the run's own gateway shows in its receipts and client rows
+        "handshake_failures",
     ];
     match v {
         serde_json::Value::Object(o) => {
@@ -397,16 +437,26 @@ fn run_no_key_gateway(
     window_ts: u32,
     shares: &mut Option<(PowSubmit, PowSubmit)>,
     now: u32,
+    reuse: bool,
 ) -> serde_json::Value {
     let _g = BIN.lock().unwrap_or_else(|e| e.into_inner());
     match bin {
         Some(b) => std::env::set_var("PRIMED_BIN", b),
         None => std::env::remove_var("PRIMED_BIN"),
     }
-    let cfg = format!("{}\nhouse-loopback = false\nwindow-min-work = 100000000\nmin-payout = 546", node.config(0.2));
+    let mut cfg = format!("{}\nhouse-loopback = false\nwindow-min-work = 100000000\nmin-payout = 546", node.config(0.2));
+    if reuse {
+        // the production setting, and a v0.5.0 gateway that offers framing v2 and scaled reuse
+        cfg.push_str("\nscaled-reuse-ack = true");
+    }
     let (primed, port) = start_primed_seeded(pool, &cfg, |d| seed(d, window_ts));
     wait_for_tip(&primed);
-    let (mut gw, configure) = Gateway::connect_convoy_as(port, pool, id, "stock/1");
+    let (mut gw, configure, selection) = if reuse {
+        Gateway::connect_convoy_flags(port, pool, id, "stock/1", datum_wire::handshake::DRS_FRAMING_V2 | datum_wire::handshake::DRS_SCALED_REUSE)
+    } else {
+        let (g, c) = Gateway::connect_convoy_as(port, pool, id, "stock/1");
+        (g, c, vec![])
+    };
     let (cb_id, outputs) = gw.request_coinbaser_outputs(VALUE, &TIP);
     let (split, pool_only) = shares.get_or_insert_with(|| {
         let mut split = split_share(&outputs, 0, now);
@@ -438,6 +488,7 @@ fn run_no_key_gateway(
     blocks.iter_mut().for_each(figures);
     serde_json::json!({
         "configure": hex::encode(cfg_bytes),
+        "hello_selection": hex::encode(selection),
         "coinbaser": outputs.iter().map(|o| (o.sats, hex::encode(&o.script))).collect::<Vec<_>>(),
         "receipts": receipts,
         "stats": st,
@@ -445,7 +496,8 @@ fn run_no_key_gateway(
     })
 }
 
-/// A gateway with no key, before and after: same configure, same coinbaser, same receipts and the
+/// A gateway with no key, before and after, with scaled reuse off and on (the production
+/// setting, with a gateway offering 0x02|0x04): same DRS selection, same configure, same coinbaser, same receipts and the
 /// same books, sat for sat, on the same shares. Needs `GATEWAY_KEY_OLD_PRIMED`.
 #[test]
 #[ignore]
@@ -454,20 +506,24 @@ fn a_gateway_with_no_key_gets_the_same_money_and_credit_as_before() {
         eprintln!("skipped: GATEWAY_KEY_OLD_PRIMED is not set");
         return;
     };
-    let (pool, id) = (Identity::generate(), Identity::generate());
-    let n = node();
-    let now = unix_now();
-    let mut shares = None;
-    let before = run_no_key_gateway(Some(&old), &pool, &id, &n, now - 600, &mut shares, now);
-    let after = run_no_key_gateway(None, &pool, &id, &n, now - 600, &mut shares, now);
-    std::env::remove_var("PRIMED_BIN");
-    eprintln!("receipts {} coinbaser {}", before["receipts"], before["coinbaser"]);
-    eprintln!("work {} blocks {}", before["stats"]["totals"]["work_accepted"], before["stats"]["blocks"]);
-    assert_eq!(before["stats"]["totals"]["work_accepted"], 2, "both ground shares credited: {before}");
-    assert_eq!(before["stats"]["blocks"].as_array().map_or(0, Vec::len), 2, "both found: {before}");
-    let mut differ = vec![];
-    differences("", &before, &after, &mut differ);
-    assert!(differ.is_empty(), "before and after differ at: {differ:#?}");
+    for reuse in [false, true] {
+        let (pool, id) = (Identity::generate(), Identity::generate());
+        let n = node();
+        let now = unix_now();
+        let mut shares = None;
+        let before = run_no_key_gateway(Some(&old), &pool, &id, &n, now - 600, &mut shares, now, reuse);
+        let after = run_no_key_gateway(None, &pool, &id, &n, now - 600, &mut shares, now, reuse);
+        std::env::remove_var("PRIMED_BIN");
+        eprintln!("reuse {reuse}: receipts {} coinbaser {}", before["receipts"], before["coinbaser"]);
+        eprintln!("work {} blocks {}", before["stats"]["totals"]["work_accepted"], before["stats"]["blocks"]);
+        assert_eq!(before["stats"]["totals"]["work_accepted"], 2, "both ground shares credited: {before}");
+        assert_eq!(before["stats"]["blocks"].as_array().map_or(0, Vec::len), 2, "both found: {before}");
+        let want_selection = if reuse { "04" } else { "" };
+        assert_eq!(before["hello_selection"], want_selection, "the old build's DRS selection: {before}");
+        let mut differ = vec![];
+        differences("", &before, &after, &mut differ);
+        assert!(differ.is_empty(), "reuse {reuse}: before and after differ at: {differ:#?}");
+    }
 }
 
 fn differences(at: &str, a: &serde_json::Value, b: &serde_json::Value, out: &mut Vec<String>) {

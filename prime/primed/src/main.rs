@@ -340,10 +340,7 @@ fn run(cfg: Config) -> i32 {
     });
     match shared.revealed.open(&shared.cfg.data_dir) {
         Ok(n) => log::info!("{n} xor_key(s) shown by earlier blocks, from {}", keys::FILE),
-        Err(e) => {
-            eprintln!("{}: {e}", keys::FILE);
-            return 1;
-        }
+        Err(e) => log::error!("{}: {e}", keys::FILE),
     }
     log::info!("pool pubkey {}", shared.pool.public_hex());
     log::info!(

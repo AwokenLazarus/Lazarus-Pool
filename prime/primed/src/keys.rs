@@ -56,19 +56,35 @@ impl RevealedKeys {
     /// Load the book kept in `dir` and keep appending to it. Returns how many keys it held.
     pub fn open(&self, dir: &Path) -> std::io::Result<usize> {
         let path = dir.join(FILE);
-        let text = match std::fs::read_to_string(&path) {
-            Ok(t) => t,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
-            Err(e) => return Err(e),
+        // the book never stops a start: a file that cannot be read is named and passed over (the
+        // chain read below still loads every key a block in reach has shown)
+        let bytes = match std::fs::read(&path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+            Err(e) => {
+                log::error!("{FILE}: {e}; read as empty, keys come from the chain read only");
+                Vec::new()
+            }
         };
-        for line in text.lines() {
+        for line in String::from_utf8_lossy(&bytes).lines() {
             let mut f = line.split_whitespace();
             let (Some(h), Some(at)) = (f.next(), f.next()) else { continue };
             let (Ok(h), Ok(at)) = (hex::decode(h), at.parse::<u32>()) else { continue };
             let Ok(h) = <Hash>::try_from(h.as_slice()) else { continue };
             self.insert(h, at);
         }
-        *self.file.lock().unwrap() = Some(std::fs::OpenOptions::new().create(true).append(true).open(path)?);
+        match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+            Ok(mut f) => {
+                // a line torn by a crash is closed off, so the next key is a line of its own
+                if bytes.last().is_some_and(|&b| b != b'\n') {
+                    if let Err(e) = writeln!(f) {
+                        log::error!("{FILE}: {e}");
+                    }
+                }
+                *self.file.lock().unwrap() = Some(f);
+            }
+            Err(e) => log::error!("{FILE}: {e}; new keys are held in memory only until a restart"),
+        }
         Ok(self.len())
     }
 
@@ -145,8 +161,11 @@ pub fn header_key(header: &[u8]) -> Option<([u8; 16], String)> {
 
 /// Read the chain back from `tip` (at `height`) for keys its blocks showed, up to `depth` blocks
 /// or the first one already read.
-pub async fn scan(shared: &Shared, tip: &str, height: u32, depth: u32) {
+/// Whether the read finished. Blocks are marked read only then, so a read the node broke off
+/// is done again in full on the next poll.
+pub async fn scan(shared: &Shared, tip: &str, height: u32, depth: u32) -> bool {
     let (mut block, mut at, mut found, mut read) = (tip.to_string(), height, 0usize, 0u32);
+    let mut done: Vec<String> = Vec::new();
     let started = Instant::now();
     for _ in 0..depth {
         if block.is_empty() || shared.revealed.scanned(&block) {
@@ -157,24 +176,27 @@ pub async fn scan(shared: &Shared, tip: &str, height: u32, depth: u32) {
             Ok(serde_json::Value::String(h)) => hex::decode(h).ok(),
             Ok(_) => None,
             Err(e) => {
-                log::debug!("getblockheader {block} for its xor_key: {e}");
-                return;
+                log::debug!("getblockheader {block} for its xor_key: {e}; the read is done again on the next poll");
+                return false;
             }
         };
         let Some((key, parent)) = raw.as_deref().and_then(header_key) else {
             // not a v2 header (or not one the node would give): nothing past it either
-            shared.revealed.mark_scanned(&block);
+            done.push(block);
             break;
         };
         if key.iter().any(|&b| b != 0) {
             shared.revealed.note(&key, at);
             found += 1;
         }
-        shared.revealed.mark_scanned(&block);
+        done.push(block.clone());
         if at == 0 {
             break;
         }
         (block, at) = (parent, at - 1);
+    }
+    for b in &done {
+        shared.revealed.mark_scanned(b);
     }
     let ms = started.elapsed().as_millis();
     if found > 0 || depth == BACKFILL_BLOCKS || ms > 1000 {
@@ -183,6 +205,7 @@ pub async fn scan(shared: &Shared, tip: &str, height: u32, depth: u32) {
             shared.revealed.len()
         );
     }
+    true
 }
 
 #[cfg(test)]
@@ -219,6 +242,23 @@ mod tests {
         // a torn last line is skipped, not fatal
         std::fs::write(d.join(FILE), format!("{} 5\nabc", hex::encode(pow::xor_key_hash(&[9u8; 16])))).unwrap();
         assert_eq!(RevealedKeys::default().open(&d).unwrap(), 1);
+        // and the next key written after it is a line of its own, read back at the next start
+        let torn = RevealedKeys::default();
+        assert_eq!(torn.open(&d).unwrap(), 1);
+        torn.note(&[10u8; 16], 30);
+        drop(torn);
+        let after = RevealedKeys::default();
+        assert_eq!(after.open(&d).unwrap(), 2);
+        assert_eq!(after.shown_at(&pow::xor_key_hash(&[10u8; 16])), Some(30));
+        // bytes that are not text and a book that cannot be read never stop a start
+        std::fs::write(d.join(FILE), [0xffu8, 0xfe, b'\n']).unwrap();
+        assert_eq!(RevealedKeys::default().open(&d).unwrap(), 0);
+        std::fs::remove_file(d.join(FILE)).unwrap();
+        std::fs::create_dir(d.join(FILE)).unwrap();
+        let blocked = RevealedKeys::default();
+        assert_eq!(blocked.open(&d).unwrap(), 0);
+        blocked.note(&[11u8; 16], 31);
+        assert_eq!(blocked.shown_at(&pow::xor_key_hash(&[11u8; 16])), Some(31), "held in memory");
         let _ = std::fs::remove_dir_all(&d);
     }
 
