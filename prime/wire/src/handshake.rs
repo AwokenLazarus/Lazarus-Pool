@@ -247,8 +247,8 @@ pub fn parse_server_hello(
 mod tests {
     use super::*;
 
-    /// The flag is read off the byte a resume is read off, and a resume is what it always was:
-    /// the token only where that byte is exactly 1. CONVOY's framing bit is left alone too.
+    /// The flag is read off the DRS feature byte, a bit field: it asks for a key and nothing else,
+    /// and the resume and framing bits read as they do without it.
     #[test]
     fn the_gateway_key_flag_changes_nothing_else_in_a_hello() {
         let pool = Identity::generate();
@@ -263,9 +263,11 @@ mod tests {
         let both = parse(&[b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | 0x02]);
         assert!(both.gateway_key);
         assert_eq!(both.resume_token, None);
-        // a token is read only where the byte is exactly 1, as before: not with the flag beside it
-        let flagged = parse(&[b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | 0x01]);
-        assert_eq!((flagged.gateway_key, flagged.resume_token), (true, None));
+        // the byte is a bit field (scaled-reuse build): the resume bit beside the flag still reads a token
+        let mut ext = vec![b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | DRS_RESUME_TOKEN];
+        ext.extend_from_slice(&[9u8; RESUME_TOKEN]);
+        let flagged = parse(&ext);
+        assert_eq!((flagged.gateway_key, flagged.resume_token), (true, Some([9u8; RESUME_TOKEN])));
 
         assert!(!parse(&convoy_hello_extension(None)).gateway_key);
         assert!(!parse(&[b'D', b'R', b'S', 1, 0x02]).gateway_key, "a stock gateway's framing bit asks nothing");
