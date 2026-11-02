@@ -16,16 +16,20 @@
 //!
 //! * **OCEAN lineage** (`datum_gateway` v0.4.x and the BLAKE2b forks) — the pad after
 //!   the seed is random.
-//! * **Convoy lineage** — the pad begins with `"DRS\x01"`, a resume flag byte, and when
-//!   the flag is set a 40-byte resume token from a previous session.
+//! * **Convoy lineage** — the pad begins with `"DRS\x01"` and a feature byte: bit 0x01 a
+//!   40-byte resume token from a previous session follows, 0x02 framing v2, 0x04 the gateway
+//!   can stretch its last split over a new value (`coinbaser_reuse`) once the pool acks it.
 //!
 //! **Server reply** (cmd 2, `sealed | signed`), sealed to the client's *session* box key,
 //! signed by the pool's long-term signing key:
 //!
 //! ```text
 //! the client's four public keys echoed back (128) | server session sign pk (32)
-//! server session box pk (32) | MOTD, NUL-terminated | signature (64)
+//! server session box pk (32) | MOTD, NUL-terminated | [DRS selection (1)] | signature (64)
 //! ```
+//!
+//! The selection byte, sent only to a Convoy hello, carries the DRS features the pool takes up.
+//! A gateway reads it as the bytes between the MOTD's NUL and the end of the signed body.
 //!
 //! After that both sides box on `(their session box sk, other side's session box pk)` and
 //! the server signs configuration with its *session* signing key.
@@ -37,6 +41,10 @@ pub const MAX_USER_AGENT: usize = 512;
 pub const MAX_MOTD: usize = 511;
 pub const RESUME_TOKEN: usize = 40;
 const RESUME_MARKER: &[u8; 4] = b"DRS\x01";
+/// DRS feature bits (CONVOY `datum_protocol.h`).
+pub const DRS_RESUME_TOKEN: u8 = 0x01;
+pub const DRS_FRAMING_V2: u8 = 0x02;
+pub const DRS_SCALED_REUSE: u8 = 0x04;
 
 /// Which configuration layout the client parses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -61,6 +69,8 @@ pub struct ClientHello {
     pub generation: Generation,
     /// A Convoy client asking to continue an earlier session.
     pub resume_token: Option<[u8; RESUME_TOKEN]>,
+    /// The Convoy feature byte as sent (0 for an OCEAN hello).
+    pub drs_flags: u8,
 }
 
 /// Hello UAs that never publish empty/tiny or size-class-truncated coinbases while pooled.
@@ -95,10 +105,13 @@ pub fn parse_client_hello(pool: &Identity, sealed: &[u8]) -> Result<ClientHello>
     let seed = c.u32()?;
     let mut generation = Generation::Ocean;
     let mut resume_token = None;
+    let mut drs_flags = 0u8;
     if c.remaining() >= 5 && &body[c.pos..c.pos + 4] == RESUME_MARKER {
         generation = Generation::Convoy;
         c.take(4)?;
-        if c.u8()? == 1 {
+        // A bit field: v0.5.0 always sets framing v2, so a resume asks with 0x03, not 1.
+        drs_flags = c.u8()?;
+        if drs_flags & DRS_RESUME_TOKEN != 0 {
             resume_token = Some(c.array::<RESUME_TOKEN>()?);
         }
     }
@@ -111,6 +124,7 @@ pub fn parse_client_hello(pool: &Identity, sealed: &[u8]) -> Result<ClientHello>
         seed,
         generation,
         resume_token,
+        drs_flags,
     })
 }
 
@@ -119,7 +133,7 @@ pub fn convoy_hello_extension(resume_token: Option<&[u8; RESUME_TOKEN]>) -> Vec<
     let mut v = RESUME_MARKER.to_vec();
     match resume_token {
         Some(t) => {
-            v.push(1);
+            v.push(DRS_RESUME_TOKEN);
             v.extend_from_slice(t);
         }
         None => v.push(0),
@@ -127,9 +141,22 @@ pub fn convoy_hello_extension(resume_token: Option<&[u8; RESUME_TOKEN]>) -> Vec<
     v
 }
 
+/// The DRS selection byte the pool sends back: the features of `hello` it takes up. Only
+/// scaled reuse, and only when `ack_scaled_reuse`; framing v2 and resume are not offered.
+pub fn drs_selection(hello: &ClientHello, ack_scaled_reuse: bool) -> Option<u8> {
+    (hello.generation == Generation::Convoy && ack_scaled_reuse && hello.drs_flags & DRS_SCALED_REUSE != 0)
+        .then_some(DRS_SCALED_REUSE)
+}
+
 /// Build the sealed, signed reply payload for a hello we accepted.
-pub fn build_server_hello(pool: &Identity, session: &Identity, hello: &ClientHello, motd: &str) -> Vec<u8> {
-    let mut m = Vec::with_capacity(6 * 32 + motd.len() + 1 + crypto::SIG);
+pub fn build_server_hello(
+    pool: &Identity,
+    session: &Identity,
+    hello: &ClientHello,
+    motd: &str,
+    selection: Option<u8>,
+) -> Vec<u8> {
+    let mut m = Vec::with_capacity(6 * 32 + motd.len() + 2 + crypto::SIG);
     m.extend_from_slice(&hello.identity_sign_pk);
     m.extend_from_slice(&hello.identity_box_pk);
     m.extend_from_slice(&hello.session_sign_pk);
@@ -140,6 +167,9 @@ pub fn build_server_hello(pool: &Identity, session: &Identity, hello: &ClientHel
     let n = motd.len().min(MAX_MOTD);
     m.extend_from_slice(&motd[..n]);
     m.push(0);
+    if let Some(sel) = selection {
+        m.push(sel);
+    }
     let sig = pool.sign(&m);
     m.extend_from_slice(&sig);
     crypto::seal_to(&hello.session_box_pk, &m)
@@ -168,6 +198,15 @@ pub fn build_client_hello(
     let sig = identity.sign(&m);
     m.extend_from_slice(&sig);
     crypto::seal_to(pool_box_pk, &m)
+}
+
+/// Client-side read of the DRS selection byte after the MOTD's NUL, if any. Test/tool helper.
+pub fn server_hello_selection(pool_sign_pk: &[u8; SIGN_PK], session: &Identity, sealed: &[u8]) -> Option<u8> {
+    let plain = session.unseal(sealed).ok()?;
+    let body = crypto::verify_trailing(pool_sign_pk, &plain).ok()?;
+    let rest = body.get(6 * 32..)?;
+    let nul = rest.iter().position(|&b| b == 0)?;
+    rest.get(nul + 1).copied()
 }
 
 /// Client-side parse of the server reply. Test/tool helper.
@@ -221,11 +260,53 @@ mod tests {
         assert_eq!(h3.resume_token, Some(tok));
 
         let srv_sess = Identity::generate();
-        let reply = build_server_hello(&pool, &srv_sess, &h, "Lazarus");
+        let reply = build_server_hello(&pool, &srv_sess, &h, "Lazarus", None);
         let (ssk, sbk, motd) = parse_server_hello(&pool.sign_pk(), &gw_sess, &reply).unwrap();
         assert_eq!(ssk, srv_sess.sign_pk());
         assert_eq!(sbk, srv_sess.box_pk());
         assert_eq!(motd, "Lazarus");
+        assert_eq!(server_hello_selection(&pool.sign_pk(), &gw_sess, &reply), None);
+    }
+
+    /// v0.5.0 sends the feature byte as bits: framing v2 always, resume 0x01 on top, and
+    /// privkeyio's scaled reuse 0x04. The token follows whenever 0x01 is set.
+    #[test]
+    fn convoy_feature_bits_and_the_scaled_reuse_ack() {
+        let pool = Identity::generate();
+        let gw_id = Identity::generate();
+        let gw_sess = Identity::generate();
+        let tok = [0xcd; RESUME_TOKEN];
+        let hello = |flags: u8, token: bool| {
+            let mut ext = RESUME_MARKER.to_vec();
+            ext.push(flags);
+            if token {
+                ext.extend_from_slice(&tok);
+            }
+            parse_client_hello(&pool, &build_client_hello(&pool.box_pk(), &gw_id, &gw_sess, "v0.5.0-beta/x", 1, &ext))
+                .unwrap()
+        };
+        let resume = hello(DRS_FRAMING_V2 | DRS_RESUME_TOKEN, true);
+        assert_eq!((resume.drs_flags, resume.resume_token), (0x03, Some(tok)), "0x03 carries a token");
+        let plain = hello(DRS_FRAMING_V2, false);
+        assert_eq!((plain.drs_flags, plain.resume_token), (0x02, None));
+        let reuse = hello(DRS_FRAMING_V2 | DRS_SCALED_REUSE, false);
+        let all = hello(DRS_FRAMING_V2 | DRS_SCALED_REUSE | DRS_RESUME_TOKEN, true);
+        assert_eq!(all.resume_token, Some(tok));
+
+        assert_eq!(drs_selection(&reuse, true), Some(DRS_SCALED_REUSE));
+        assert_eq!(drs_selection(&all, true), Some(DRS_SCALED_REUSE), "never framing v2 or resume");
+        assert_eq!(drs_selection(&reuse, false), None, "off unless configured");
+        assert_eq!(drs_selection(&plain, true), None, "only to a gateway that offers it");
+        let ocean =
+            parse_client_hello(&pool, &build_client_hello(&pool.box_pk(), &gw_id, &gw_sess, "ua", 1, &[0x04; 9]))
+                .unwrap();
+        assert_eq!((ocean.generation, drs_selection(&ocean, true)), (Generation::Ocean, None));
+
+        let srv = Identity::generate();
+        let reply = build_server_hello(&pool, &srv, &reuse, "Lazarus", drs_selection(&reuse, true));
+        let (_, _, motd) = parse_server_hello(&pool.sign_pk(), &gw_sess, &reply).unwrap();
+        assert_eq!(motd, "Lazarus", "the MOTD still ends at its NUL");
+        assert_eq!(server_hello_selection(&pool.sign_pk(), &gw_sess, &reply), Some(DRS_SCALED_REUSE));
     }
 
     #[test]

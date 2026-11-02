@@ -154,6 +154,14 @@ pub struct Config {
     /// can grind a key to match, so give the full key.
     #[serde(default)]
     pub house_gateways: Vec<String>,
+    /// Ack DRS scaled reuse (0x04) to a CONVOY-lineage gateway that offers it (privkeyio
+    /// `coinbaser_reuse`): while the pool's split for a new value or tip is late, the gateway
+    /// stretches its last split from this session over the new value (each output floored by
+    /// new/old, the rest to the pool output or the last one) instead of publishing a coinbase
+    /// that pays only the pool. The issued-list check already holds a scaled list to its
+    /// proportional amounts, so nothing else changes here. Default off.
+    #[serde(default)]
+    pub scaled_reuse_ack: bool,
     /// Treat loopback Prime connections as house stratum. Default on.
     #[serde(default = "d_true")]
     pub house_loopback: bool,
