@@ -192,6 +192,10 @@ pub struct Config {
     /// largest vardiff a gateway's miners run at. A power-of-two exponent: 20 is 1 048 576.
     #[serde(default = "d_uncommitted_pot")]
     pub uncommitted_pot: u8,
+    /// Take shares on jobs a gateway blinded with an `xor_key` of its own, from gateways that
+    /// ask in their hello. Off: no gateway is told it may, and such a share is refused.
+    #[serde(default)]
+    pub gateway_key: bool,
     /// Shares for a height this many blocks behind the tip are stale. 0 means only the
     /// current height. The default tolerates a template refresh in flight.
     #[serde(default = "d_stale_grace")]
@@ -714,6 +718,13 @@ require-split-gateway = true
 
     /// No build is held unless listed. An entry that cannot name a commit is said at startup and
     /// matches nothing: a short prefix would take more builds off the window than meant.
+    #[test]
+    fn gateway_keys_are_off_unless_set() {
+        let base = "rpc = \"http://127.0.0.1:9\"\ndata-dir = \"/tmp\"\npayout-address = \"bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4\"\n";
+        assert!(!toml::from_str::<Config>(base).unwrap().gateway_key);
+        assert!(toml::from_str::<Config>(&format!("{base}gateway-key = true\n")).unwrap().gateway_key);
+    }
+
     #[test]
     fn held_split_builds_are_off_by_default_and_a_bad_entry_matches_nothing() {
         let dir = std::env::temp_dir().join(format!("primed-cfg-hs-{}", std::process::id()));

@@ -31,6 +31,10 @@
 //! The selection byte, sent only to a Convoy hello, carries the DRS features the pool takes up.
 //! A gateway reads it as the bytes between the MOTD's NUL and the end of the signed body.
 //!
+//! The Convoy feature byte has one bit of ours: [`HELLO_GATEWAY_KEY`], a gateway asking whether it
+//! may blind its jobs with a key of its own. A Prime that does not know it ignores it, and
+//! nothing a gateway that does not set it is sent changes.
+//!
 //! After that both sides box on `(their session box sk, other side's session box pk)` and
 //! the server signs configuration with its *session* signing key.
 
@@ -45,6 +49,8 @@ const RESUME_MARKER: &[u8; 4] = b"DRS\x01";
 pub const DRS_RESUME_TOKEN: u8 = 0x01;
 pub const DRS_FRAMING_V2: u8 = 0x02;
 pub const DRS_SCALED_REUSE: u8 = 0x04;
+/// Ours, not CONVOY's: this gateway can blind pool jobs with its own key.
+pub const HELLO_GATEWAY_KEY: u8 = 0x80;
 
 /// Which configuration layout the client parses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -71,6 +77,8 @@ pub struct ClientHello {
     pub resume_token: Option<[u8; RESUME_TOKEN]>,
     /// The Convoy feature byte as sent (0 for an OCEAN hello).
     pub drs_flags: u8,
+    /// The gateway set [`HELLO_GATEWAY_KEY`].
+    pub gateway_key: bool,
 }
 
 /// Hello UAs that never publish empty/tiny or size-class-truncated coinbases while pooled.
@@ -106,11 +114,13 @@ pub fn parse_client_hello(pool: &Identity, sealed: &[u8]) -> Result<ClientHello>
     let mut generation = Generation::Ocean;
     let mut resume_token = None;
     let mut drs_flags = 0u8;
+    let mut gateway_key = false;
     if c.remaining() >= 5 && &body[c.pos..c.pos + 4] == RESUME_MARKER {
         generation = Generation::Convoy;
         c.take(4)?;
         // A bit field: v0.5.0 always sets framing v2, so a resume asks with 0x03, not 1.
         drs_flags = c.u8()?;
+        gateway_key = drs_flags & HELLO_GATEWAY_KEY != 0;
         if drs_flags & DRS_RESUME_TOKEN != 0 {
             resume_token = Some(c.array::<RESUME_TOKEN>()?);
         }
@@ -125,6 +135,7 @@ pub fn parse_client_hello(pool: &Identity, sealed: &[u8]) -> Result<ClientHello>
         generation,
         resume_token,
         drs_flags,
+        gateway_key,
     })
 }
 
@@ -146,6 +157,13 @@ pub fn convoy_hello_extension(resume_token: Option<&[u8; RESUME_TOKEN]>) -> Vec<
 pub fn drs_selection(hello: &ClientHello, ack_scaled_reuse: bool) -> Option<u8> {
     (hello.generation == Generation::Convoy && ack_scaled_reuse && hello.drs_flags & DRS_SCALED_REUSE != 0)
         .then_some(DRS_SCALED_REUSE)
+}
+
+/// Bytes a Convoy-lineage client asking for a gateway key puts after the seed. Test/tool helper.
+pub fn gateway_key_hello_extension() -> Vec<u8> {
+    let mut v = RESUME_MARKER.to_vec();
+    v.push(HELLO_GATEWAY_KEY);
+    v
 }
 
 /// Build the sealed, signed reply payload for a hello we accepted.
@@ -228,6 +246,39 @@ pub fn parse_server_hello(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The flag is read off the DRS feature byte, a bit field: it asks for a key and nothing else,
+    /// and the resume and framing bits read as they do without it.
+    #[test]
+    fn the_gateway_key_flag_changes_nothing_else_in_a_hello() {
+        let pool = Identity::generate();
+        let (id, sess) = (Identity::generate(), Identity::generate());
+        let parse = |pad: &[u8]| {
+            parse_client_hello(&pool, &build_client_hello(&pool.box_pk(), &id, &sess, "ua", 5, pad)).unwrap()
+        };
+        let asked = parse(&gateway_key_hello_extension());
+        assert!(asked.gateway_key);
+        assert_eq!((asked.generation, asked.resume_token), (Generation::Convoy, None));
+        // framing v2 + the flag, as the gateway sends it
+        let both = parse(&[b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | 0x02]);
+        assert!(both.gateway_key);
+        assert_eq!(both.resume_token, None);
+        // the byte is a bit field (scaled-reuse build): the resume bit beside the flag still reads a token
+        let mut ext = vec![b'D', b'R', b'S', 1, HELLO_GATEWAY_KEY | DRS_RESUME_TOKEN];
+        ext.extend_from_slice(&[9u8; RESUME_TOKEN]);
+        let flagged = parse(&ext);
+        assert_eq!((flagged.gateway_key, flagged.resume_token), (true, Some([9u8; RESUME_TOKEN])));
+
+        assert!(!parse(&convoy_hello_extension(None)).gateway_key);
+        assert!(!parse(&[b'D', b'R', b'S', 1, 0x02]).gateway_key, "a stock gateway's framing bit asks nothing");
+        let token = [7u8; RESUME_TOKEN];
+        let resumed = parse(&convoy_hello_extension(Some(&token)));
+        assert!(!resumed.gateway_key);
+        assert_eq!(resumed.resume_token, Some(token));
+        // Random pad on an OCEAN hello is not a flag, even with the high bit set.
+        let ocean = parse(&[0xff; 37]);
+        assert_eq!((ocean.generation, ocean.gateway_key), (Generation::Ocean, false));
+    }
 
     #[test]
     fn hello_round_trip() {

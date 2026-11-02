@@ -194,6 +194,60 @@ is `coinb1 ‖ 12 zero bytes ‖ coinb2` with the target byte patched in. A per-
 repeat share on the same job costs one BLAKE2b, not a coinbase parse, a merkle fold, and two
 tagged SHA256s.
 
+### A gateway's own key
+
+`xor_key` lets a gateway blind its jobs, so that whoever hashes for it (a rented miner, say) can
+check a share but cannot tell whether it wins. The header commits only to the key's hash; the block
+hash is the raw BLAKE2b output XOR a mask of the key, with the top `clear_bits` of the mask zero.
+With `gateway-key = true`, Prime takes such jobs from a gateway that asks. The gateway keeps the key,
+makes a fresh one per template and submits its own blocks, so nothing about sovereign submission
+changes. Convoy's own ABW is a different thing, a key the pool holds, and this Prime does not run it:
+`ABW_DISABLED` stays set.
+
+* **Asking.** The gateway sets `0x80` in the flag byte after `DRS\x01` in its hello; Prime, if it
+  takes keys, appends `DGK\x01` after the 0xFE of every configure on that session. A new flags bit
+  was not available: Convoy gateways refuse a configure with an unknown bit. A gateway that does not
+  ask is sent exactly what it was before, and the sections below are refused from it. A Prime without
+  this reads them as a malformed message and answers nothing, so a gateway must not use a key
+  without the marker; a gateway that asks an old Prime just stays on the null key.
+* **A share** carries section `0x06` (`clear_bits`, key hash), every time. Prime rebuilds H1 from those
+  and checks the raw hash against the share target. The top bits are clear of the mask, so that is
+  the same test on the same bits as the masked hash, and credit is what it always was: `2^pot`.
+* **A block** comes with section `0x07`, the key, on the share that found it. **Prime cannot read a
+  win before that**: without the key there is no block hash, and at regtest's target every raw hash
+  would look like a block. So a keyed share is a candidate only if the key is shown and the masked
+  hash meets the `nbits` already held to the node's chain. The record, the settle and the backup
+  submit use the masked hash, which is the block's real id; duplicates go by the raw hash, so a
+  key cannot be shown after the work was credited.
+
+**A key never outlives the block that shows it.** A block carries its key in its header, and the
+hasher already has the raw hashes, so a key used again after its block lets the hasher read every
+later share under it as a win or not. Prime keeps a book of every key a block has shown: from a
+keyed block a gateway reports (at once), from the headers of the chain its node follows (read back
+as the tip moves; the last 2016 blocks after a start), and on disk in `revealed-keys.txt`, because a
+block a reorg takes off the chain was broadcast all the same. A share under a shown key is `stale`
+on the revealing block's own parent or below, and `bad-gateway-key` past it, from any session.
+`pool.revealed_keys` in `stats.json` counts the book.
+
+Refused as `bad-gateway-key` (45): keys from a session not told it may use them; `clear_bits` that are
+not exactly `32 + pot`; the null key's hash; a key that does not hash to the commitment, or one with no
+commitment; `FLAG_BLOCK` on a keyed share with no key; a key hash already used on a different parent
+in this session; a key a block has shown, on any later block. A correct key on a share that is no block is credited as a share and counted
+(`gateway_key_false_blocks`).
+
+**Why the bits must be exact.** Fewer than the share's (S-4) and a winning hash is masked out of the
+hashes that make a share: 15 in 16 blocks are never reported. More (S+4) and a hasher can see that only
+one share in 16 can win, and dropping those, 6.2% of its shares, withholds every block. At the block's
+own bits nothing is blinded.
+
+**What it does not do.** It takes withholding away from the hasher, not the gateway. A gateway, like
+any miner, can throw a win away, and a key makes that no harder: it can commit to a hash nobody has a
+key for. Prime cannot see that on any one share. `totals.gateway_key_*` and each client's
+`gateway_key_work`, set against the blocks it showed, are the statistical check. A gateway that
+broadcasts a block and tells Prime nothing leaves the carry that block paid on the books; the same
+is true of one that drops the share today. Unshown keys are not stored; shown ones are, in
+`revealed-keys.txt`, which an older build ignores.
+
 ## TIDES
 
 The window holds credits `(ts, identity, work, height)` until its total work reaches

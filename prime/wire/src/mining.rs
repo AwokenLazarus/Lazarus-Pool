@@ -48,6 +48,9 @@ pub const FLAG_BLAKE2B: u8 = 0x08;
 pub const RESERVED_USE_TIME_OFFSET: u8 = 0x01;
 /// Algorithm id inside the 0x03 section.
 pub const POW_ALGO_BLAKE2B: u8 = 1;
+/// Share sections for a gateway's own key. 0x05 is CONVOY's ABW assignment slot.
+pub const SECTION_GATEWAY_KEY: u8 = 0x06;
+pub const SECTION_XOR_KEY: u8 = 0x07;
 
 // Share receipt status.
 pub const ACCEPTED: u8 = 0x50;
@@ -76,6 +79,8 @@ pub const REJECT_BAD_COINBASE_OUTPUTS: u16 = 27;
 pub const REJECT_MISSING_POOL_TAG: u16 = 28;
 pub const REJECT_DUPLICATE_WORK: u16 = 29;
 pub const REJECT_OTHER: u16 = 30;
+/// A share's gateway key does not stand: see `verify::share_key`. 31 and 40-44 are CONVOY's.
+pub const REJECT_BAD_GATEWAY_KEY: u16 = 45;
 
 pub fn reject_name(code: u16) -> &'static str {
     match code {
@@ -99,6 +104,7 @@ pub fn reject_name(code: u16) -> &'static str {
         REJECT_BAD_COINBASE_OUTPUTS => "bad-coinbase-outputs",
         REJECT_MISSING_POOL_TAG => "missing-pool-tag",
         REJECT_DUPLICATE_WORK => "duplicate",
+        REJECT_BAD_GATEWAY_KEY => "bad-gateway-key",
         _ => "other",
     }
 }
@@ -171,6 +177,16 @@ pub struct Blake2bSection {
     pub nonce: [u8; 8],
 }
 
+/// A share on a job blinded with the gateway's own key (section 0x06, on every such share).
+/// Prime holds the job to the key's hash; the key itself comes only with a block.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GatewayKey {
+    /// The header's `xor_key_mask_clear_bits`. Must be the share's own bits (`verify::share_key`).
+    pub clear_bits: u8,
+    /// Tagged hash of the key, as H1 commits it.
+    pub key_hash: [u8; 32],
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PowSubmit {
     pub job_id: u8,
@@ -187,6 +203,9 @@ pub struct PowSubmit {
     pub blake2b: Option<Blake2bSection>,
     /// The header's serialized time (present on BLAKE2b shares).
     pub time_on_wire: Option<u32>,
+    pub gateway_key: Option<GatewayKey>,
+    /// The key behind [`PowSubmit::gateway_key`] (section 0x07), revealed on a found block.
+    pub xor_key: Option<[u8; 16]>,
     pub job: Option<JobSection>,
     pub coinbase: Option<CoinbaseSection>,
 }
@@ -245,6 +264,15 @@ impl PowSubmit {
                 m.push(0x04);
                 m.extend_from_slice(&t.to_le_bytes());
             }
+        }
+        if let Some(k) = &self.gateway_key {
+            m.push(SECTION_GATEWAY_KEY);
+            m.push(k.clear_bits);
+            m.extend_from_slice(&k.key_hash);
+        }
+        if let Some(k) = &self.xor_key {
+            m.push(SECTION_XOR_KEY);
+            m.extend_from_slice(k);
         }
         if let Some(j) = &self.job {
             m.push(0x01);
@@ -305,6 +333,8 @@ impl PowSubmit {
             reserved,
             blake2b: None,
             time_on_wire: None,
+            gateway_key: None,
+            xor_key: None,
             job: None,
             coinbase: None,
         };
@@ -321,6 +351,12 @@ impl PowSubmit {
                     s.blake2b = Some(Blake2bSection { ntime, nonce });
                 }
                 0x04 => s.time_on_wire = Some(c.u32()?),
+                SECTION_GATEWAY_KEY => {
+                    let clear_bits = c.u8()?;
+                    let key_hash = c.array::<32>()?;
+                    s.gateway_key = Some(GatewayKey { clear_bits, key_hash });
+                }
+                SECTION_XOR_KEY => s.xor_key = Some(c.array::<16>()?),
                 0x01 => {
                     let prev_hash = c.array::<32>()?;
                     let target_byte_index = c.u16()?;
@@ -475,6 +511,12 @@ pub fn parse_client(payload: &[u8]) -> Result<ClientMsg> {
 /// assignment before building templates.
 pub const CONFIG_FLAG_ABW_DISABLED: u8 = 0x01;
 pub const RESUME_TOKEN_LEN: usize = 40;
+/// After a configure's 0xFE, to a gateway that asked in its hello (`handshake::HELLO_GATEWAY_KEY`):
+/// this Prime takes shares on jobs blinded with the gateway's own key. It cannot be a flags bit:
+/// the same Convoy gateways that need `CONFIG_FLAG_ABW_DISABLED` refuse a configure with any
+/// other bit set. A Prime that does not send it reads the key's sections as a malformed
+/// message and answers nothing, so a gateway must not use a key without it.
+pub const CONFIG_MARKER_GATEWAY_KEY: &[u8; 4] = b"DGK\x01";
 
 /// Caps the newest Convoy-lineage gateways apply when parsing a configure: a pool script
 /// over [`MAX_CONFIG_POOL_SCRIPT`] bytes is a malformed configure, and a coinbase tag that
@@ -600,6 +642,8 @@ mod tests {
             reserved: [RESERVED_USE_TIME_OFFSET, 0, 0, 0],
             blake2b: Some(Blake2bSection { ntime: [1, 2, 3, 4, 5, 6, 7, 8], nonce: [9, 10, 11, 12, 13, 14, 15, 16] }),
             time_on_wire: Some(1_788_400_000),
+            gateway_key: None,
+            xor_key: None,
             job: Some(JobSection {
                 prev_hash: [0xc0; 32],
                 target_byte_index: 47,
@@ -671,6 +715,32 @@ mod tests {
         wire[17] = 8; // extranonce size
         assert_eq!(PowSubmit::decode(&wire[1..]), Err(Error::Malformed("extranonce size")));
         assert!(PowSubmit::decode(&wire[1..20]).is_err());
+    }
+
+    /// The bytes the gateway writes for a keyed share: the sections after the time, in either
+    /// combination, and a share without them encoded as it always was.
+    #[test]
+    fn a_gateway_keys_sections_round_trip() {
+        let plain = sample();
+        let mut s = plain.clone();
+        s.gateway_key = Some(GatewayKey { clear_bits: 45, key_hash: [0xab; 32] });
+        let wire = s.encode();
+        assert_eq!(PowSubmit::decode(&wire[1..]).unwrap(), s);
+        assert_eq!(wire.len(), plain.encode().len() + 34);
+        let at = wire.windows(2).position(|w| w == [0x06, 45]).expect("section 0x06, as the gateway writes it");
+        assert_eq!(&wire[at + 2..at + 34], &[0xab; 32]);
+
+        s.xor_key = Some([0x5a; 16]);
+        let wire = s.encode();
+        assert_eq!(PowSubmit::decode(&wire[1..]).unwrap(), s);
+        assert_eq!(wire.len(), plain.encode().len() + 34 + 17);
+        assert!(wire.windows(17).any(|w| w[0] == 0x07 && w[1..] == [0x5a; 16]), "section 0x07, as the gateway writes it");
+        // 0x05 stays CONVOY's: not read as anything of ours
+        let mut abw = plain.encode();
+        let end = abw.len() - 1;
+        abw.splice(end..end, std::iter::once(0x05).chain([45u8; 33]));
+        assert!(PowSubmit::decode(&abw[1..]).is_err());
+        assert_eq!(reject_name(REJECT_BAD_GATEWAY_KEY), "bad-gateway-key");
     }
 
     #[test]

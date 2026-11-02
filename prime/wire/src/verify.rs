@@ -55,6 +55,10 @@ pub struct Absorbed {
 /// Why [`JobSlot::absorb`] refused a section, as a DATUM reject code.
 pub type AbsorbError = u16;
 
+/// Everything a share chooses that H2 commits to: coinbase id, target byte, txcount, version,
+/// header time, flags, and the gateway's key hash if it has one.
+type H2Key = (u8, u8, u32, u32, u32, u8, Option<Hash>);
+
 /// One of the gateway's eight job slots as Prime remembers it for a session.
 #[derive(Clone, Debug, Default)]
 pub struct JobSlot {
@@ -62,7 +66,7 @@ pub struct JobSlot {
     pub coinbases: HashMap<u8, CoinbaseSection>,
     /// H2 per (coinbase id, target byte, txcount convention), so repeat shares on a job cost
     /// one BLAKE2b instead of a full coinbase hash + merkle fold + two tagged SHA256s.
-    h2_cache: HashMap<(u8, u8, u32, u32, u32, u8), Hash>,
+    h2_cache: HashMap<H2Key, Hash>,
     /// The parsed coinbase per (coinbase id, target byte).
     cb_cache: HashMap<(u8, u8), (Vec<u8>, Coinbase)>,
     /// Whether this gateway's `txn_count` already includes the coinbase, learned from the
@@ -183,6 +187,13 @@ pub struct VerifiedShare {
     pub target_pot: u8,
     pub height: u32,
     pub ntime: u32,
+    /// The hash a node would give this block: [`VerifiedShare::hash`] under the revealed key.
+    /// `hash` itself is the raw work hash, which is what credit and duplicates go by.
+    pub block_hash: Hash,
+    /// On a job blinded with the gateway's own key.
+    pub keyed: bool,
+    /// The share's own key came with it (a found block, or a claim to one).
+    pub key_revealed: bool,
     pub is_block_candidate: bool,
     pub coinbase_kind: CoinbaseKind,
     /// Total value of the coinbase outputs, i.e. subsidy plus fees.
@@ -239,6 +250,72 @@ pub struct Policy<'a> {
     /// and refused. Only a coinbase that would otherwise be refused is looked at again, so
     /// nothing accepted without it is classified differently with it.
     pub held_split: bool,
+    /// This Prime takes jobs blinded with the gateway's own key, and told this gateway so
+    /// ([`mining::CONFIG_MARKER_GATEWAY_KEY`]).
+    pub gateway_keys: bool,
+}
+
+/// Bits of a difficulty-1 share: the top 32 of a hash. A share at `2^pot` is `32 + pot`.
+pub const SHARE_BASE_BITS: u16 = 32;
+
+/// What a share says of the gateway's own key, once [`share_key`] has held it to the rules.
+struct ShareKey<'a> {
+    key_hash: Hash,
+    clear_bits: u8,
+    key: Option<&'a [u8; 16]>,
+}
+
+/// Hold a keyed share to the rules of a gateway-held key. The hash is checked after this and the
+/// header commits to these same values, so a share cannot name a key it was not ground under.
+///
+/// * **`clear_bits` is the share's own bits, exactly.** Fewer, and a block is masked out of the
+///   hashes that make a share, so nearly all are never reported (at 4 fewer, 94%). More, and a
+///   share can tell whether it might be a win: dropping the few that might is withholding every
+///   block (at 4 more, 6.2% of shares). At the block's own bits nothing is blinded at all.
+/// * **The null key is no key.** Its mask is zero, so its hash is unblinded whatever the bits say.
+/// * **A key shown must be the committed one**, or the block it describes was not the work done.
+/// * **A found block comes with its key.** Nothing else can tell it from a share.
+fn share_key<'a>(s: &'a PowSubmit, p: &Policy) -> Result<Option<ShareKey<'a>>, u16> {
+    let Some(commit) = &s.gateway_key else {
+        return if s.xor_key.is_some() { Err(mining::REJECT_BAD_GATEWAY_KEY) } else { Ok(None) };
+    };
+    let bits_match = u16::from(commit.clear_bits) == SHARE_BASE_BITS + u16::from(s.target_pot);
+    let null_key = commit.key_hash == pow::xor_key_hash(&[0u8; 16]);
+    let key_matches = s.xor_key.as_ref().is_none_or(|k| pow::xor_key_hash(k) == commit.key_hash);
+    let block_without_key = s.is_block() && s.xor_key.is_none();
+    if !p.gateway_keys || !bits_match || null_key || !key_matches || block_without_key {
+        return Err(mining::REJECT_BAD_GATEWAY_KEY);
+    }
+    Ok(Some(ShareKey { key_hash: commit.key_hash, clear_bits: commit.clear_bits, key: s.xor_key.as_ref() }))
+}
+
+/// How many key hashes a [`KeyBook`] remembers. A gateway has a few templates a block, so a key
+/// held across blocks is seen again well inside this.
+const KEY_BOOK_ENTRIES: usize = 64;
+
+/// One session's recent keys, by the block each was used on. A key is only secret until a block
+/// shows it: one kept across blocks is no blind at all to a hasher who read the last one.
+#[derive(Debug, Default)]
+pub struct KeyBook {
+    keys: std::collections::VecDeque<(Hash, Hash)>,
+}
+
+impl KeyBook {
+    /// Whether this key was already used on a different parent.
+    pub fn reused(&self, key_hash: &Hash, prev_hash: &Hash) -> bool {
+        self.keys.iter().any(|(k, p)| k == key_hash && p != prev_hash)
+    }
+
+    /// Note a key real work was done under. Oldest out first.
+    pub fn note(&mut self, key_hash: &Hash, prev_hash: &Hash) {
+        if self.keys.iter().any(|(k, p)| k == key_hash && p == prev_hash) {
+            return;
+        }
+        if self.keys.len() >= KEY_BOOK_ENTRIES {
+            self.keys.pop_front();
+        }
+        self.keys.push_back((*key_hash, *prev_hash));
+    }
 }
 
 fn fee_sats(value: u64, bps: u32) -> u64 {
@@ -528,6 +605,7 @@ pub fn verify_with_target(
     }
     let b2 = s.blake2b.as_ref().ok_or(mining::REJECT_BAD_VERSION)?;
     let time_on_wire = s.time_on_wire.ok_or(mining::REJECT_BAD_NTIME)?;
+    let share_key = share_key(s, p)?;
     let job = slot.job.as_ref().ok_or(mining::REJECT_BAD_JOB_ID)?;
 
     let cb_id = JobSlot::coinbase_id_for(s);
@@ -593,7 +671,8 @@ pub fn verify_with_target(
         let txcount = if includes { job.txn_count } else { job.txn_count.wrapping_add(1) };
         // every share-chosen field H2 commits to: a cached H2 stands in for the header, so a
         // field left out of the key is a field the share may lie about
-        let key = (cb_id, s.target_pot, txcount, s.version, time_on_wire, flags);
+        let key_hash = share_key.as_ref().map(|k| k.key_hash);
+        let key = (cb_id, s.target_pot, txcount, s.version, time_on_wire, flags, key_hash);
         let commitment_of = |h2_hint: Option<Hash>| -> (Commitment, Hash) {
             let c = Commitment {
                 version: s.version,
@@ -607,8 +686,9 @@ pub fn verify_with_target(
                 nbits: job.nbits_u32(),
                 txcount,
                 flags,
-                xor_clear_bits: 0,
-                xor_key: [0u8; 16],
+                xor_clear_bits: share_key.as_ref().map_or(0, |k| k.clear_bits),
+                xor_key: share_key.as_ref().and_then(|k| k.key).copied().unwrap_or([0u8; 16]),
+                xor_key_hash: key_hash,
                 rhs: [0u8; 32],
             };
             let h2 = h2_hint.unwrap_or_else(|| c.h2());
@@ -638,11 +718,22 @@ pub fn verify_with_target(
         commitment.merkle_root = pow::merkle_root(pow::sha256d(legacy), &job.merkle_branches);
     }
 
-    let is_block_candidate =
-        pow::nbits_to_target_le(commitment.nbits).map(|t| pow::meets_target(&hash, &t)).unwrap_or(false);
+    // Under a gateway's key the raw hash says nothing about a block: every share's top bits are
+    // clear, so at regtest's target it "is" one whatever the mask does to the rest. Only the
+    // masked hash decides, and without the key there is none to read.
+    let block_hash = share_key
+        .as_ref()
+        .and_then(|k| k.key.map(|key| pow::masked_hash_le(&hash, key, k.clear_bits)))
+        .unwrap_or(hash);
+    let readable = share_key.as_ref().is_none_or(|k| k.key.is_some());
+    let is_block_candidate = readable
+        && pow::nbits_to_target_le(commitment.nbits).map(|t| pow::meets_target(&block_hash, &t)).unwrap_or(false);
 
     let verified = VerifiedShare {
         hash,
+        block_hash,
+        keyed: share_key.is_some(),
+        key_revealed: share_key.as_ref().is_some_and(|k| k.key.is_some()),
         // Under the floor, as for a difficulty that was not hashed: credited by the hash alone,
         // at the floor. A gateway that does not apply the announced floor to its miners
         // (lazarus-gateway sets its own) would otherwise have every small miner's share
@@ -720,8 +811,10 @@ pub fn job_work_for(slot: &JobSlot, s: &PowSubmit, txcount_includes_coinbase: bo
         nbits: job.nbits_u32(),
         txcount: if txcount_includes_coinbase { job.txn_count } else { job.txn_count + 1 },
         flags: if s.use_time_offset() { pow::FLAG_USE_TIME_OFFSET } else { 0 },
-        xor_clear_bits: 0,
+        // A miner grinds the raw hash under the key's hash and never sees a mask.
+        xor_clear_bits: s.gateway_key.as_ref().map_or(0, |k| k.clear_bits),
         xor_key: [0u8; 16],
+        xor_key_hash: s.gateway_key.as_ref().map(|k| k.key_hash),
         rhs: [0u8; 32],
     };
     Some(JobWork::new(&c, &s.extranonce))
@@ -808,6 +901,8 @@ pub mod fixtures {
             reserved: [0; 4],
             blake2b: Some(Blake2bSection { ntime, nonce }),
             time_on_wire: Some(NOW),
+            gateway_key: None,
+            xor_key: None,
             job: Some(JobSection {
                 prev_hash: [0x77; 32],
                 target_byte_index: tidx as u16,
@@ -873,6 +968,7 @@ mod tests {
             trusted_target: false,
             uncommitted_pot: 20,
             held_split: false,
+            gateway_keys: false,
         }
     }
 
@@ -1467,6 +1563,7 @@ mod tests {
             trusted_target: false,
             uncommitted_pot: 20,
             held_split: false,
+            gateway_keys: false,
         };
         let v = check(&mut slot, &s, &p).expect("pool-only is valid work");
         assert_eq!(v.coinbase_kind, CoinbaseKind::PoolOnly);
@@ -1598,6 +1695,7 @@ mod tests {
             trusted_target: false,
             uncommitted_pot: 20,
             held_split: false,
+            gateway_keys: false,
         }
     }
 
@@ -2010,6 +2108,211 @@ mod tests {
             Err(code) => assert_eq!(code, mining::REJECT_HIGH_HASH),
             Ok(v) => assert_ne!(v.hash, first.hash, "credited for the first share's work under a time it never had"),
         }
+    }
+
+    const KEY: [u8; 16] = [0x5a; 16];
+    /// A target any masked share meets: what a regtest block needs.
+    const EASY_NBITS: u32 = 0x207f_ffff;
+
+    fn keyed_policy<'a>(iss: &'a [Output], pool: &'a [u8]) -> Policy<'a> {
+        Policy { gateway_keys: true, ..policy(iss, pool) }
+    }
+
+    /// A share ground under `KEY`'s hash, with its bits right and the key not shown.
+    fn keyed_share(slot: &mut JobSlot, iss: &[Output], pool: &[u8], pot: u8, nbits: u32) -> PowSubmit {
+        let outs = gateway_outputs(iss, pool, VALUE);
+        let mut s = share(0, 4, 1, &outs, &txids(2), pot, [0; 8], [0; 8]);
+        s.job.as_mut().unwrap().nbits = nbits.to_le_bytes();
+        s.gateway_key =
+            Some(mining::GatewayKey { clear_bits: 32 + pot, key_hash: pow::xor_key_hash(&KEY) });
+        grind(slot, &mut s);
+        s
+    }
+
+    fn fixture() -> (Vec<Output>, Vec<u8>) {
+        (split(), pool_script())
+    }
+
+    /// A keyed share earns what the same share would on a null key, and can't be read as a block
+    /// without the key: at this target the raw hash meets `nbits`, and that means nothing.
+    #[test]
+    fn a_keyed_share_is_credited_as_any_share_and_is_no_block_until_shown() {
+        let (iss, pool) = fixture();
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, EASY_NBITS);
+        let v = check(&mut slot, &s, &keyed_policy(&iss, &pool)).expect("real work under the key's hash");
+        assert_eq!((v.work, v.target_pot, v.target_committed), (8, 3, true));
+        assert_eq!(v.coinbase_kind, CoinbaseKind::Split);
+        assert!(v.keyed && !v.key_revealed && !v.is_block_candidate);
+        assert!(pow::meets_target(&v.hash, &pow::nbits_to_target_le(EASY_NBITS).unwrap()), "the raw hash would pass");
+        assert_eq!(v.block_hash, v.hash);
+        assert_eq!((v.commitment.xor_clear_bits, v.commitment.xor_key), (35, [0u8; 16]));
+
+        let mut plain_slot = JobSlot::default();
+        let outs = gateway_outputs(&iss, &pool, VALUE);
+        let mut plain = share(0, 4, 1, &outs, &txids(2), 3, [0; 8], [0; 8]);
+        plain.job.as_mut().unwrap().nbits = EASY_NBITS.to_le_bytes();
+        grind(&mut plain_slot, &mut plain);
+        let n = check(&mut plain_slot, &plain, &policy(&iss, &pool)).unwrap();
+        assert_eq!((n.work, n.coinbase_kind.clone()), (v.work, v.coinbase_kind.clone()));
+        assert!(!n.keyed && !n.key_revealed && n.is_block_candidate, "a null key's share is read as it always was");
+        assert_eq!(n.block_hash, n.hash);
+    }
+
+    /// The whole of the rule: only the share's exact bits stand. Judged before any hashing.
+    #[test]
+    fn clear_bits_are_the_shares_own_bits_exactly() {
+        let (iss, pool) = fixture();
+        let p = keyed_policy(&iss, &pool);
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, 0x193c_2d40);
+        assert!(check(&mut slot, &s, &p).is_ok());
+        // S-4, S-1, S+1, S+4, a block's own bits, none, and the top of the byte
+        for bits in [31u8, 34, 36, 39, 72, 0, 255] {
+            let mut lie = s.clone();
+            lie.gateway_key.as_mut().unwrap().clear_bits = bits;
+            assert_eq!(check(&mut slot, &lie, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY), "clear_bits {bits}");
+        }
+    }
+
+    /// A false target: the bits and the pot agree with each other, and neither with the work.
+    /// Both are in the header, so the claim is a different header that has to find its own work.
+    #[test]
+    fn a_share_cannot_claim_a_harder_target_than_it_was_ground_at() {
+        let (iss, pool) = fixture();
+        let p = keyed_policy(&iss, &pool);
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, 0x193c_2d40);
+        let first = check(&mut slot, &s, &p).unwrap();
+        let mut lie = s.clone();
+        lie.target_pot = 4;
+        lie.gateway_key.as_mut().unwrap().clear_bits = 36;
+        match check(&mut slot, &lie, &p) {
+            Err(code) => assert_eq!(code, mining::REJECT_HIGH_HASH),
+            Ok(v) => assert_ne!(v.hash, first.hash, "credited 16 for work done at 8"),
+        }
+    }
+
+    #[test]
+    fn the_null_key_is_no_key_and_a_prime_that_takes_none_refuses_them() {
+        let (iss, pool) = fixture();
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, 0x193c_2d40);
+        assert_eq!(check(&mut slot, &s, &policy(&iss, &pool)).err(), Some(mining::REJECT_BAD_GATEWAY_KEY), "off");
+        let p = keyed_policy(&iss, &pool);
+        let mut null = s.clone();
+        null.gateway_key.as_mut().unwrap().key_hash = pow::xor_key_hash(&[0u8; 16]);
+        assert_eq!(check(&mut slot, &null, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY));
+        null.xor_key = Some([0u8; 16]);
+        assert_eq!(check(&mut slot, &null, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY));
+        // and a key with no commitment to hold it to
+        let mut bare = s.clone();
+        bare.gateway_key = None;
+        bare.xor_key = Some(KEY);
+        assert_eq!(check(&mut slot, &bare, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY));
+    }
+
+    #[test]
+    fn a_tampered_key_is_refused_and_so_is_a_block_claim_with_no_key() {
+        let (iss, pool) = fixture();
+        let p = keyed_policy(&iss, &pool);
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, EASY_NBITS);
+        for i in 0..16 {
+            let mut tampered = s.clone();
+            let mut k = KEY;
+            k[i] ^= 1;
+            tampered.xor_key = Some(k);
+            assert_eq!(check(&mut slot, &tampered, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY), "byte {i}");
+        }
+        let mut flagged = s.clone();
+        flagged.flags |= mining::FLAG_BLOCK;
+        assert_eq!(check(&mut slot, &flagged, &p).err(), Some(mining::REJECT_BAD_GATEWAY_KEY));
+        // Shown properly it stands, flag or no flag: a block goes by its hash, not by what is claimed.
+        for flags in [mining::FLAG_BLAKE2B, mining::FLAG_BLAKE2B | mining::FLAG_BLOCK] {
+            let mut shown = s.clone();
+            shown.flags = flags;
+            shown.xor_key = Some(KEY);
+            assert!(check(&mut slot, &shown, &p).unwrap().is_block_candidate);
+        }
+    }
+
+    /// The key on a share that is no block: real work, credited, and nothing recorded as a find.
+    #[test]
+    fn a_key_shown_on_a_non_win_is_a_share_not_a_block() {
+        let (iss, pool) = fixture();
+        let mut slot = JobSlot::default();
+        let mut s = keyed_share(&mut slot, &iss, &pool, 3, 0x193c_2d40);
+        s.xor_key = Some(KEY);
+        s.flags |= mining::FLAG_BLOCK;
+        let v = check(&mut slot, &s, &keyed_policy(&iss, &pool)).unwrap();
+        assert_eq!(v.work, 8);
+        assert!(v.key_revealed && !v.is_block_candidate);
+        assert_ne!(v.block_hash, v.hash);
+    }
+
+    /// A shown key makes the header a node would read, whose hash is the masked one.
+    #[test]
+    fn a_shown_block_assembles_to_the_header_a_node_hashes_to_the_masked_hash() {
+        let (iss, pool) = fixture();
+        let mut slot = JobSlot::default();
+        let mut s = keyed_share(&mut slot, &iss, &pool, 3, EASY_NBITS);
+        s.xor_key = Some(KEY);
+        let v = check(&mut slot, &s, &keyed_policy(&iss, &pool)).unwrap();
+        assert!(v.is_block_candidate);
+        let b2 = s.blake2b.as_ref().unwrap();
+        let block = assemble_block(&v, &s, &[]);
+        assert_eq!(block[111], 35, "clear_bits in the header");
+        assert_eq!(&block[112..128], &KEY, "the key in the header");
+        // the node knows only the header: it hashes the key itself
+        let node_reads = Commitment { xor_key_hash: None, ..v.commitment.clone() };
+        assert_eq!(node_reads.h2(), v.commitment.h2());
+        assert_eq!(JobWork::new(&node_reads, &s.extranonce).hash(&b2.nonce, &b2.ntime), v.block_hash);
+        assert_ne!(v.block_hash, v.hash);
+        // The share's own bits are clear of the mask, so it is a share by either hash.
+        let target = pow::share_target_le(3).unwrap();
+        assert_eq!(pow::meets_target(&v.hash, &target), pow::meets_target(&v.block_hash, &target));
+    }
+
+    /// A cached H2 stands in for the header, so the key's hash has to be in the cache's key:
+    /// else any key could be named on the work done under the first.
+    #[test]
+    fn a_share_cannot_borrow_another_keys_commitment() {
+        let (iss, pool) = fixture();
+        let p = keyed_policy(&iss, &pool);
+        let mut slot = JobSlot::default();
+        let s = keyed_share(&mut slot, &iss, &pool, 3, 0x193c_2d40);
+        let first = check(&mut slot, &s, &p).unwrap();
+        let mut other = s.clone();
+        other.gateway_key.as_mut().unwrap().key_hash = pow::xor_key_hash(&[0x77; 16]);
+        match check(&mut slot, &other, &p) {
+            Err(code) => assert_eq!(code, mining::REJECT_HIGH_HASH),
+            Ok(v) => assert_ne!(v.hash, first.hash, "credited under a key it was not ground under"),
+        }
+        // and the null-key reading of the same nonces is a different header as well
+        let mut plain = s.clone();
+        plain.gateway_key = None;
+        match check(&mut slot, &plain, &p) {
+            Err(code) => assert_eq!(code, mining::REJECT_HIGH_HASH),
+            Ok(v) => assert_ne!(v.hash, first.hash),
+        }
+    }
+
+    #[test]
+    fn a_key_kept_across_blocks_is_seen_and_the_book_stays_small() {
+        let (a, b) = ([1u8; 32], [2u8; 32]);
+        let (prev, next) = ([3u8; 32], [4u8; 32]);
+        let mut book = KeyBook::default();
+        assert!(!book.reused(&a, &prev), "nothing noted yet");
+        book.note(&a, &prev);
+        assert!(!book.reused(&a, &prev), "the same block: a template's jobs share a key");
+        assert!(book.reused(&a, &next));
+        assert!(!book.reused(&b, &next), "another key");
+        for i in 0..200u8 {
+            book.note(&[i; 32], &prev);
+            book.note(&[i; 32], &prev);
+        }
+        assert!(book.keys.len() <= KEY_BOOK_ENTRIES);
     }
 
     #[test]

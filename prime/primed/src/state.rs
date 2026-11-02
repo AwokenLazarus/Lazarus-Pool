@@ -147,6 +147,10 @@ fn easier_than_4x(nbits: u32, tip_bits: u32) -> bool {
     t.iter().rev().cmp(cap.iter().rev()) == std::cmp::Ordering::Greater
 }
 
+fn is_zero(n: &u64) -> bool {
+    *n == 0
+}
+
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ClientInfo {
     pub id: u64,
@@ -162,6 +166,12 @@ pub struct ClientInfo {
     pub accepted: u64,
     pub rejected: u64,
     pub work: u64,
+    /// Accepted shares on jobs blinded with this gateway's own key, and their window work.
+    /// Prime cannot read a win on them, so blocks shown set against this work is the audit.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub gateway_key_shares: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub gateway_key_work: u64,
     pub last_share_ts: u64,
     pub coinbasers: u64,
     pub block_candidates: u64,
@@ -248,6 +258,14 @@ pub struct Totals {
     /// Accepted shares whose difficulty was not part of what they hashed, credited by hash
     /// alone (`Policy::uncommitted_pot`).
     pub uncommitted_shares: AtomicU64,
+    /// Accepted shares on jobs blinded with the gateway's own key, the window work among them,
+    /// the blocks those gateways showed us, shares that showed a key and were no block, and
+    /// shares refused over their key.
+    pub gateway_key_shares: AtomicU64,
+    pub gateway_key_work: AtomicU64,
+    pub gateway_key_blocks: AtomicU64,
+    pub gateway_key_false_blocks: AtomicU64,
+    pub gateway_key_refused: AtomicU64,
     /// Accepted shares whose coinbase paid only the pool script.
     pub pool_only_shares: AtomicU64,
     /// Of those, the ones on a job that carried transactions — the kind that should be zero.
@@ -513,6 +531,8 @@ pub struct Shared {
     pub parents: crate::validity::ParentBook,
     /// Gateways whose templates our node found invalid; their shares earn nothing until one passes.
     pub faults: crate::validity::Faults,
+    /// Gateway keys blocks have shown, which no later share may use; see `keys.rs`.
+    pub revealed: crate::keys::RevealedKeys,
     /// Carry reached `class-budget-carry-ceiling` and has not yet fallen back far enough: no
     /// reply is held to a class budget. See [`Shared::class_budget_open`].
     pub class_budget_held_off: AtomicBool,
@@ -854,6 +874,7 @@ mod tests {
             gateway_payouts: Mutex::new(Default::default()),
             pinned_scripts: Mutex::new(Default::default()),
             parents: Default::default(),
+            revealed: Default::default(),
             faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
             class_budget_held_off: AtomicBool::new(false),
             cfg,

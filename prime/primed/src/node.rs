@@ -14,6 +14,8 @@ pub async fn run(shared: Arc<Shared>) {
     // The tip this loop last ran the per-block work for. A session can publish a new tip before
     // the poller sees it (`refresh_ahead`), so "the tip moved" is judged here, not in `refresh`.
     let mut scanned: Option<String> = None;
+    let mut keys_backfilled = false;
+    let mut keys_warned = false;
     loop {
         match refresh(&shared).await {
             Ok((height, difficulty)) => {
@@ -39,6 +41,28 @@ pub async fn run(shared: Arc<Shared>) {
                 if moved || confirm_at <= Instant::now() {
                     confirm_at = Instant::now() + Duration::from_secs(30);
                     confirm_blocks(&shared, height).await;
+                }
+                // keys the new blocks showed, within one poll of the tip moving. The first read
+                // after a start goes further back, since nothing here was kept, and it is done
+                // again on every poll until one finishes: a read the node broke off is not cut
+                // to the follow depth
+                if moved || !keys_backfilled {
+                    if let Some(h) = &hash {
+                        let depth =
+                            if keys_backfilled { crate::keys::FOLLOW_BLOCKS } else { crate::keys::BACKFILL_BLOCKS };
+                        if crate::keys::scan(&shared, h, height, depth).await {
+                            if keys_warned && !keys_backfilled {
+                                log::info!("xor_keys: the start-up read of block headers finished");
+                            }
+                            keys_backfilled = true;
+                        } else if !keys_backfilled && !keys_warned {
+                            log::warn!(
+                                "xor_keys: the start-up read of block headers did not finish (node rpc); \
+                                 it is done again on every poll until it does"
+                            );
+                            keys_warned = true;
+                        }
+                    }
                 }
                 if moved {
                     scanned = hash;
