@@ -18,6 +18,11 @@
   };
 
   const num = (n) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toLocaleString(loc()));
+  // Heights for miner.mgLongMaturity: the #419 window and Knots 29.4.3's 180-day rule after it.
+  const lmVars = (m) => {
+    const rolling = Number(m.rolling_maturity_start) || 979919;
+    return { start: num(m.long_maturity_start), windowEnd: num(rolling - 1), rolling: num(rolling) };
+  };
   const bigNum = (n) => {
     const x = Number(n);
     if (!Number.isFinite(x)) return "\u2014";
@@ -521,7 +526,7 @@
     return `
         <div${panelAttr("makegoodTable")}>
           <p class="kicker table-label">${pend.length ? t("miner.mgLabelPending", { n: pend.length, amt: satsExact(pendSats) }) : t("miner.mgLabel")}</p>
-          <p class="note">${t("miner.mgHelp", { need: num(m.maturity_confs || 100) })}${m.makegood_long_maturity ? " " + t("miner.mgLongMaturity", { start: num(m.long_maturity_start), release: num(m.long_maturity_release) }) : ""}</p>
+          <p class="note">${t("miner.mgHelp", { need: num(m.maturity_confs || 100) })}${m.makegood_long_maturity ? " " + t("miner.mgLongMaturity", lmVars(m)) : ""}</p>
           <div class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th>${t("miner.thKind")}</th><th class="num">${t("miner.thPayableAt")}</th><th>${t("miner.thLands")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thTx")}</th></tr></thead><tbody>${body}</tbody></table></div>
         </div>`;
   }
@@ -643,7 +648,6 @@
     ["window", "miner.dtWindow", "figure"],
     ["payoutWin", "miner.dtPayoutWin", "figure"],
     ["est", "miner.dtEst", "figure"],
-    ["bonus", "miner.bonus", "figure"],
     ["earned", "miner.earned24", "figure"],
     ["next", "miner.dtNext", "figure"],
     ["carry", "miner.carry", "figure"],
@@ -848,7 +852,7 @@
       else if (mgPend.length) sub = mgLeft ? t("miner.mgCellSub", { n: mgPend.length, height: num(mgNextAt), left: num(mgLeft) }) : t("miner.mgCellNow", { n: mgPend.length });
       else if (Number(m.makegood_failed_blocks) > 0) sub = t("miner.mgCellFailed");
       else sub = t("miner.mgCellAllPaid", { amt: satsExact(Math.round(mgPaidBtc * 1e8)) });
-      const lm = m.makegood_long_maturity ? `<br>${t("miner.mgLongMaturity", { start: num(m.long_maturity_start), release: num(m.long_maturity_release) })}` : "";
+      const lm = m.makegood_long_maturity ? `<br>${t("miner.mgLongMaturity", lmVars(m))}` : "";
       if (Number(m.makegood_custody_fee_sats) > 0) sub += t("miner.mgCustodyTotal", { amt: satsExact(m.makegood_custody_fee_sats) });
       return panelBox("makegood", `<dt>${t("miner.makegood")}</dt><dd title="${amtExact(mgPendBtc)}">${amt(mgPendBtc)}${money(mgPendBtc)}<small>${sub}${lm}</small></dd>`);
     };
@@ -867,24 +871,11 @@
       const note = t("miner.earned24Note", { need: num(m.maturity_confs || 100), a: `<a data-mtab="payouts" href="${esc(payoutsHref)}">`, enda: "</a>" });
       return panelBox("earned", `<dt>${t("miner.earned24")}</dt><dd title="${esc(t("miner.earned24Since", { amt: amtExact(total), when: when(e.since_ts) }))}">${amt(total)}${money(total)}<small>${t("miner.earned24Split", { n: Number(e.blocks) || 0, blocks: amtSats(e.block_sats), mg: amtSats(e.makegood_sats) })}${failed}<br>${note}</small></dd>`);
     };
-    // The DATUM bonus for this address, while the rebate is on: on the gateway path it is money
-    // already accruing, so it gets a ticker cell. A stratum address gets a callout with what its
-    // own DATUM gateway would pay at 0% (the bonus ended on 2026-10-24; the callout stays).
+    // A stratum address gets a callout with what its own DATUM gateway would pay at 0%.
     const onStratum = String(m.fee_path || "").toLowerCase() === "stratum";
-    const upliftPct = Number(m.datum_uplift_percent) || 0;
-    const rebatePct = Number(m.datum_rebate_percent) || 0;
     const datumDay = Number(m.est_datum_btc_day) || 0;
-    const bonusCell =
-      rebatePct > 0 && !onStratum && (Number(m.rebate_btc) > 0 || upliftPct > 0)
-        ? panelBox("bonus", `<dt>${t("miner.bonus")}</dt><dd title="${amtExact(m.rebate_btc)}">${amt(m.rebate_btc)}${money(m.rebate_btc)}<small>${t("miner.bonusSub", { uplift: upliftPct > 0 ? t("miner.bonusUplift", { pct: pctSmart(upliftPct) }) : "" })}</small></dd>`)
-        : "";
-    // A gateway miner's daily estimate includes the bonus while it is on; a stratum miner's
-    // does not, and the pitch below says what the 0% path would pay.
-    const withBonus = rebatePct > 0 && !onStratum && upliftPct > 0 && datumDay > 0;
-    const estDay = withBonus ? datumDay : Number(m.est_btc_day) || 0;
-    const estDayNote = withBonus
-      ? t("miner.estBonus", { fee: feePct(billedFee), uplift: pctSmart(upliftPct) })
-      : t("miner.estPlain", { fee: feePct(billedFee) });
+    const estDay = Number(m.est_btc_day) || 0;
+    const estDayNote = t("miner.estPlain", { fee: feePct(billedFee) });
     const switchPitch =
       onStratum && datumDay > (Number(m.est_btc_day) || 0)
         ? `<p class="note callout rebate-callout">${t("miner.pitch", { fee: feePct(billedFee), datum: amt(datumDay), datumUsd: money(datumDay), now: amt(m.est_btc_day), nowUsd: money(m.est_btc_day) })}</p>`
@@ -928,7 +919,6 @@
           ${panelBox("window", `<dt>${t("miner.dtWindow")}</dt><dd>${winShareCell(m)}<small>${Number(m.window_shares) > 0 ? t("miner.winWork", { n: num(m.window_work) }) : t("miner.winNone")}</small></dd>`)}
           ${panelBox("payoutWin", `<dt>${t("miner.dtPayoutWin")}</dt><dd>${pctSmart(wp)}<small>${t("miner.winPay", { n: num(m.window_work) })}</small></dd>`)}
           ${panelBox("est", `<dt>${t("miner.dtEst")}</dt><dd title="${amtExact(estDay)}">${amt(estDay)}${money(estDay)}<small>${estDayNote}</small></dd>`)}
-          ${bonusCell}
           ${earnedCell()}
           ${panelBox("next", `<dt>${t("miner.dtNext")}</dt><dd title="${amtExact(m.block_payout_btc)}">${amt(m.block_payout_btc)}${money(m.block_payout_btc)}<small>${nextBlockNote(m)}</small></dd>`)}
           ${carryCell(m)}
@@ -958,7 +948,7 @@
           ${makegoodCell()}
           ${panelBox("paid", `<dt>${t("miner.dtPaid")}</dt><dd title="${amtExact(m.paid_btc)}">${amt(m.paid_btc)}${money(m.paid_btc)}<small>${t("miner.paidMatured", { n: nPaid })}</small></dd>`)}
           ${panelBox("next", `<dt>${t("miner.dtNext")}</dt><dd title="${amtExact(m.block_payout_btc)}">${amt(m.block_payout_btc)}${money(m.block_payout_btc)}<small>${t("miner.nextWin", { wp: pctSmart(wp), carry: Number(m.carry_btc) > 0 ? t("miner.plusCarry") : "" })}</small></dd>`)}
-          ${panelBox("est", `<dt>${t("miner.dtEst")}</dt><dd title="${amtExact(estDay)}">${amt(estDay)}${money(estDay)}<small>${withBonus ? t("miner.estFeeBonus", { fee: feePct(billedFee), uplift: pctSmart(upliftPct) }) : t("miner.estFee", { fee: feePct(billedFee) })}</small></dd>`)}
+          ${panelBox("est", `<dt>${t("miner.dtEst")}</dt><dd title="${amtExact(estDay)}">${amt(estDay)}${money(estDay)}<small>${t("miner.estFee", { fee: feePct(billedFee) })}</small></dd>`)}
         </dl>
         <p class="note callout">${t("miner.noBalance", { n: num(m.maturity_confs || 100), carry: Number(m.carry_btc) > 0 ? t("miner.carryNote", { amt: amt(m.carry_btc) }) : "" })}${mgPend.length ? t("miner.mgNote", { amt: satsExact(mgPendSats), n: mgPend.length, height: num(mgNextAt) }) : ""}</p>
         ${payoutTables(m, ctx)}

@@ -150,13 +150,13 @@
     <div class="btn-row"><a class="btn" href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Mine XBT with Lazarus Pool</a><a class="btn ghost" href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">Which ASICs mine XBT</a></div>
 
     <h2 id="softfork">The long coinbase maturity soft fork</h2>
-    <p>From block <strong>973,440</strong> until block <strong>979,920</strong> (about 5 November 2026), Bitcoin Knots 29.4.2 requires newly mined coins to wait <strong>6,480 blocks</strong> before they can be spent, instead of the usual 100. It is temporary, and its purpose is to make hit-and-run mining — arriving for a difficulty dip, dumping the reward, leaving — unprofitable, while miners who stay are unaffected.</p>
+    <p>From block <strong>973,440</strong> to block <strong>979,918</strong>, Bitcoin Knots 29.4.2 requires newly mined coins to wait <strong>6,480 blocks</strong> (about 45 days) before they can be spent, instead of the usual 100. From block <strong>979,919</strong> (about 1 November 2026), Bitcoin Knots 29.4.3 raises that to <strong>25,920 blocks</strong> (about 180 days), until the RDTS expiry in September 2027. Each coin's wait counts from its own block. It is temporary, and its purpose is to make hit-and-run mining — arriving for a difficulty dip, dumping the reward, leaving — unprofitable, while miners who stay are unaffected.</p>
     <dl>
-      <dt>If you mine</dt><dd>Payouts arrive in the coinbase exactly as before and are yours on chain immediately; they simply cannot be spent until they reach 6,481 confirmations.</dd>
-      <dt>If you run a node</dt><dd>Upgrade to 29.4.2 or later. An older node accepts blocks the network rejects, follows dead chains, and if it builds your templates, everything it mines is wasted.</dd>
-      <dt>After block 979,920</dt><dd>The rule lapses and maturity returns to 100 blocks. Coins mined inside the window unlock as they reach 6,481 confirmations.</dd>
+      <dt>If you mine</dt><dd>Payouts arrive in the coinbase exactly as before and are yours on chain immediately; they simply cannot be spent until they are 6,480 blocks deep (mined before block 979,919) or 25,920 blocks deep (mined from block 979,919).</dd>
+      <dt>If you run a node</dt><dd>Upgrade to 29.4.3 before block 979,919. An older node accepts blocks the network rejects, follows dead chains, and if it builds your templates, everything it mines is wasted.</dd>
+      <dt>Coins from the first window</dt><dd>Consensus releases them at block 979,920, but Knots nodes do not relay a spend of any coinbase mined before block 979,919 until it is 6,480 blocks deep, so in practice each unlocks about 45 days after its own block, not all at once.</dd>
     </dl>
-    <p class="note">Two further steps have been discussed publicly by the Knots authors: longer maturity still, and withholding rewards for blocks produced by pool stratum rather than by a miner's own node. Neither is in force. <a href="https://github.com/bitcoinknots/bitcoin/pull/419" rel="noopener">Read the proposal</a>.</p>
+    <p class="note">The longer maturity is now in force (Knots 29.4.3, <a href="https://github.com/bitcoinknots/bitcoin/pull/468" rel="noopener">#468</a>). Withholding rewards for blocks produced by pool stratum rather than by a miner's own node has been discussed publicly by the Knots authors and is not in force. <a href="https://github.com/bitcoinknots/bitcoin/pull/419" rel="noopener">Read the original proposal</a>.</p>
 
     <h2 id="wallets">Holding XBT</h2>
     <p>Two practical options today:</p>
@@ -176,7 +176,7 @@
       <dt>Prime</dt><dd>The pool-side server a gateway talks to; each pool runs its own.</dd>
       <dt>TIDES</dt><dd>A payout scheme built on a rolling window of accepted work, paid in each block's coinbase.</dd>
       <dt>Window share</dt><dd>Your fraction of the work in the current window — what the next block would pay you, which is not the same as your hashrate.</dd>
-      <dt>Maturity</dt><dd>How long a coinbase output must wait before it can be spent: normally 100 blocks, currently 6,480 under the soft fork.</dd>
+      <dt>Maturity</dt><dd>How long a coinbase output must wait before it can be spent: normally 100 blocks; 6,480 for coins mined from block 973,440 to 979,918 and 25,920 (about 180 days) from block 979,919 under the soft forks.</dd>
     </dl>
   </div>
 </section>

@@ -73,7 +73,8 @@ let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ antialias: !lowPower, powerPreference: "high-performance" });
 } catch (e) {
-  fail("This map needs WebGL, which this browser or device does not provide. The data is at /map/data.json.");
+  // crawl.js sees the throw and takes the crawl down, so this is what the visitor is left with
+  fail("This map needs WebGL, which this browser or device does not provide (turn on hardware acceleration, or try another browser). The same pools and gateways are in plain tables at /map/table/.");
   throw e;
 }
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, lowPower ? 1.25 : 1.75));
@@ -1209,10 +1210,15 @@ function endCrawl() {
   $("chart-toggle").focus({ preventScroll: true });
   introFlight();
 }
-$("engage").addEventListener("click", endCrawl);
-$("skip").addEventListener("click", endCrawl);
-const showCrawl = !reduced && (store.get("xbtg-crawl") !== "seen" || new URLSearchParams(location.search).has("crawl"));
-if (!showCrawl) $("crawl").remove();
+// crawl.js dismisses the crawl on its own until this point (a click while app.js was still loading)
+window.__xbtgEndCrawl = endCrawl;
+const crawlUp = $("crawl") && !$("crawl").classList.contains("gone");
+if (crawlUp) {
+  $("engage").addEventListener("click", endCrawl);
+  $("skip").addEventListener("click", endCrawl);
+}
+const showCrawl = crawlUp && !reduced && (store.get("xbtg-crawl") !== "seen" || new URLSearchParams(location.search).has("crawl"));
+if (!showCrawl) $("crawl")?.remove();
 else {
   for (const x of behindCrawl()) x.setAttribute("inert", "");
   $("engage").focus({ preventScroll: true });
@@ -1220,7 +1226,8 @@ else {
 }
 let introDone = false;
 function introFlight() {
-  if (introDone) return; introDone = true;
+  // Engage before data.json arrived: the end of the start-up runs this again once it has
+  if (introDone || !DATA) return; introDone = true;
   camera.position.set(0, 2600, 5200); controls.target.set(0, 0, 0);
   flyTo(new THREE.Vector3(0, 0, 0), 1750, 4.2);
   // the latest real blocks light up as we arrive
@@ -1327,5 +1334,5 @@ addEventListener("resize", () => {
     zoom(d, dy = 0) { const t = controls.target.clone(); t.y += dy; flyTo(t, d); },
   };
   $("loading").classList.add("done"); setTimeout(() => $("loading").remove(), 900);
-  if (!document.getElementById("crawl")) introFlight();
+  if (!$("crawl") || $("crawl").classList.contains("gone")) introFlight();
 })();

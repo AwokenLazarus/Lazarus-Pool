@@ -974,7 +974,8 @@ def makegood_status(height, blockhash, tip, jobs=None, settlements=None):
     owed      primed has booked the debt; the fee wallet has not signed a payment yet
               (it normally does within a minute of the block).
     queued    signed and waiting: a coinbase output cannot be spent before it matures, and the
-              network will not relay the spend before payable_height() (100 confirmations; blocks 973440..979919 wait for height 979920, Knots #419).
+              network will not relay the spend before payable_height() (6,480 blocks after the block for
+              blocks before 979919, Knots #419; 25,920 from block 979919 on, Knots 29.4.3 #468).
     broadcast sent to the network, not yet in a block.
     paid      confirmed on chain.
     failed    the node refused the transaction; needs an operator."""
@@ -3093,30 +3094,53 @@ MATURITY_CONFS = 100
 # needs 6,480 blocks on top before it can be spent, and a 29.4.2 node will not relay or mine a
 # spend of any younger coinbase. Shown as confirmations counting the coinbase's own block, so
 # 6,481: spendable once the chain reaches height + 6,480. Coinbases from before the window keep
-# 100, and so do those from LONG_MATURITY_RELEASE on, when the rule lapses.
+# 100 under consensus. Consensus releases the window at LONG_MATURITY_RELEASE, but 29.4.3's relay
+# policy still asks every coinbase below ROLLING_MATURITY_START for 6,480, so in practice each
+# window coin unlocks 6,480 blocks after its own block, not all at the release height.
 LONG_MATURITY_START = int(CONF.get("long_maturity_start", 973440))
 LONG_MATURITY_RELEASE = int(CONF.get("long_maturity_release", 979920))
 LONG_MATURITY_CONFS = int(CONF.get("long_maturity_confs", 6481))
+# Knots 29.4.3 (#468): a coinbase created from ROLLING_MATURITY_START needs 25,920 blocks (180
+# days) on top, under consensus and relay alike, each counted from its own block. 25,921 in the
+# same own-block convention as LONG_MATURITY_CONFS.
+# TODO: the rule covers coinbases until RDTS expires (parent median time past 2027-09-01 00:00
+# UTC); coinbases after that go back to 100. Not modelled by time here; set
+# rolling_maturity_end in the config once the expiry height is known.
+ROLLING_MATURITY_START = int(CONF.get("rolling_maturity_start", 979919))
+ROLLING_MATURITY_CONFS = int(CONF.get("rolling_maturity_confs", 25921))
+ROLLING_MATURITY_END = int(CONF.get("rolling_maturity_end", 0)) or None
+
+
+def rolling_maturity(height):
+    height = int(height)
+    return height >= ROLLING_MATURITY_START and (ROLLING_MATURITY_END is None or height < ROLLING_MATURITY_END)
 
 
 def long_maturity(height):
-    return LONG_MATURITY_START <= int(height) < LONG_MATURITY_RELEASE
+    return LONG_MATURITY_START <= int(height) < min(LONG_MATURITY_RELEASE, ROLLING_MATURITY_START)
 
 
 def maturity_confs(height):
     """Confirmations the coinbase of the block at `height` needs before it can be spent."""
+    if rolling_maturity(height):
+        return ROLLING_MATURITY_CONFS
     return LONG_MATURITY_CONFS if long_maturity(height) else MATURITY_CONFS
 
 
 def current_maturity_confs(tip):
-    """What a coinbase maturing now needs: the long figure until the last window block matures."""
+    """What a coinbase earned now needs: the 180-day figure once blocks are mined under it, and
+    before that the long figure until the last window block matures."""
     tip = int(tip or 0)
+    if rolling_maturity(tip + 1):
+        return ROLLING_MATURITY_CONFS
     return LONG_MATURITY_CONFS if LONG_MATURITY_START <= tip < LONG_MATURITY_RELEASE + LONG_MATURITY_CONFS else MATURITY_CONFS
 
 
 def mature_height(height):
     """Height at which consensus allows this block's coinbase to be spent."""
     height = int(height)
+    if rolling_maturity(height):
+        return height + ROLLING_MATURITY_CONFS - 1
     if long_maturity(height):
         return height + LONG_MATURITY_CONFS - 1
     return height + MATURITY_CONFS
@@ -3127,8 +3151,15 @@ def mature_height(height):
 # LONG_MATURITY_CONFS - 1 confirmations to be accepted or relayed, whatever height it was mined
 # at, and that call is not gated on the deployment being active. Observed on the hub: make-goods
 # for blocks 973362-973407, well past 100 confirmations and below the window's start height, come
-# back bad-txns-premature-spend-of-coinbase on every retry.
+# back bad-txns-premature-spend-of-coinbase on every retry. 29.4.3 keeps that 6,480 for every
+# coinbase below ROLLING_MATURITY_START (validation.cpp passes CoinbaseMaturityBeforeRolling()),
+# and asks the 180-day figure from there on.
 RELAY_MATURITY_CONFS = LONG_MATURITY_CONFS
+
+
+def relay_maturity_confs(height):
+    """Confirmations a Knots 29.4.3 mempool asks before it relays a spend of this coinbase."""
+    return ROLLING_MATURITY_CONFS if rolling_maturity(height) else RELAY_MATURITY_CONFS
 
 
 def payable_height(height):
@@ -3138,7 +3169,7 @@ def payable_height(height):
     own spend can go at mature_height; anything that has to travel the network waits for this.
     """
     height = int(height)
-    return max(mature_height(height), height + RELAY_MATURITY_CONFS - 1)
+    return max(mature_height(height), height + relay_maturity_confs(height) - 1)
 
 
 def payout_status_for_height(height, tip):
@@ -3362,22 +3393,32 @@ def gateway_names_by_address():
         ident = str(r["identity"] or "").strip()
         if ident:
             tags[ident] = (str(r["gateway"]), str(r["tag"] or "").strip())
+    # One payout address can sit behind several gateway keys at once, and primed keeps the
+    # sessions it has seen go offline. `gateways` holds each key's own name and state so a
+    # worker keeps the gateway it hashes through (issue #109); the address-level fields
+    # describe a live session when there is one, never an offline record marked connected.
     out = {}
-    live = set()
     for c in meta.get("clients") or []:
         ident = str(c.get("identity") or "").strip()
         if not ident or _is_own_gateway(c):
             continue
         gw = str(c.get("gateway") or "")
-        live.add(ident)
+        online = not c.get("offline")
         live_tag = str(c.get("secondary_tag") or c.get("name") or "").strip()[:40]
         db_gw, db_tag = tags.get(ident, ("", ""))
         # Same payout address is the same operator even if they rotated the gateway key.
         name = live_tag or db_tag
-        out[ident] = {"name": name, "gateway": gw or db_gw, "connected": True}
+        entry = out.setdefault(ident, {"name": "", "gateway": "", "connected": False, "gateways": {}})
+        if gw:
+            known = entry["gateways"].get(gw)
+            if known is None or (online and not known["connected"]):
+                entry["gateways"][gw] = {"name": name, "connected": online}
+        if not entry["gateway"] or (online and not entry["connected"]):
+            entry.update(name=name, gateway=gw or db_gw, connected=online)
     for ident, (gw, tag) in tags.items():
-        if ident not in live:
-            out[ident] = {"name": tag, "gateway": gw, "connected": False}
+        if ident not in out:
+            out[ident] = {"name": tag, "gateway": gw, "connected": False,
+                          "gateways": {gw: {"name": tag, "connected": False}} if gw else {}}
     return out
 
 
@@ -3480,11 +3521,21 @@ def gateway_outdated_for(address, makegoods=(), clients=None, now=None):
 
 
 def stamp_gateway_names(rows, names=None):
-    """Attach `gateway_name` / `gateway` from `gateway_names_by_address` onto miner dicts."""
+    """Attach `gateway_name` / `gateway` / `gateway_connected` from `gateway_names_by_address`.
+
+    A row that already names its gateway (a worker from `prime_worker_records`) keeps it and gets
+    that gateway's own name and state; only rows without one take the address-level entry.
+    """
     names = names if names is not None else gateway_names_by_address()
     for rec in rows or []:
         who = names.get(rec.get("address") or "")
         if not who:
+            continue
+        own = rec.get("gateway") or ""
+        if own:
+            g = (who.get("gateways") or {}).get(own)
+            rec["gateway_name"] = (g or {}).get("name") or rec.get("gateway_name") or who.get("name") or ""
+            rec["gateway_connected"] = bool(g["connected"]) if g else bool(rec.get("online"))
             continue
         rec["gateway_name"] = who.get("name") or ""
         rec["gateway"] = who.get("gateway") or ""
@@ -4815,8 +4866,6 @@ def pool_payload():
     else:
         fee_clause = f"{datum_fee:g}% fee through your own DATUM gateway, {stratum_fee:g}% on the public stratum"
         fee_clause = _append_stratum_grace(fee_clause, stratum_fee, prime)
-        if rebate_pct > 0:
-            fee_clause += f"; {rebate_pct:g} point{'s' if rebate_pct != 1 else ''} of the stratum fee is credited to DATUM miners"
     payout = (
         f"A found block pays the TIDES window in its coinbase ({fee_clause}): "
         f"{nblocks} network-blocks of accepted work, currently {fill:.0f}% full. "
@@ -4845,11 +4894,6 @@ def pool_payload():
             "datum_miners": int(prime.get("datum_miners") or 0),
             "note": (
                 "The fee is taken per miner from that miner's window share, by the path the work arrived on. Switching paths keeps the accepted work."
-                + (
-                    f" {rebate_pct:g}% of stratum work's value is credited to DATUM miners on every block, pro rata by DATUM work, and paid with their next output."
-                    if rebate_pct > 0
-                    else ""
-                )
                 + (
                     " The public stratum is a donation, validation and fallback endpoint"
                     + _append_stratum_grace("", stratum_fee, prime)
@@ -4905,6 +4949,9 @@ def pool_payload():
         "ttf_seconds": ttf_s,
         "block_interval_seconds": interval,
         "blocks_found": nfound,
+        # The newest of them: the "block found" popup names this, not the tip, which may already be
+        # the block after it by the time the scanner has recorded the find.
+        "last_found_height": (db("SELECT MAX(height) AS h FROM found_blocks", one=True) or {"h": None})["h"],
         "blocks_found_explorer": explorer_n,
         "blocks_found_checked_at": explorer_at,
         "blocks_expected": expected,
@@ -5363,11 +5410,13 @@ def miner_payload(address, payouts_offset=0, payouts_limit=PAYOUTS_PAGE):
         "makegood_pending_btc": sum(r["net_sats"] for r in mg_pending) / 1e8,
         "makegood_pending_blocks": len(mg_pending),
         "makegood_next_payable_at": min((r["payable_at"] for r in mg_pending), default=0),
-        # Knots #419: a pending make-good on a block in the long-maturity window pays at the
-        # release height, not 100 blocks on; the page explains that next to the number.
-        "makegood_long_maturity": any(int(r.get("height") or 0) >= LONG_MATURITY_START and int(r.get("payable_at") or 0) >= LONG_MATURITY_RELEASE for r in mg_pending),
+        # Knots #419 / 29.4.3: a pending make-good on a block from the long-maturity window on
+        # pays 6,480 or 25,920 blocks after its block, not 100; the page explains that next to it.
+        "makegood_long_maturity": any(int(r.get("height") or 0) >= LONG_MATURITY_START for r in mg_pending),
         "long_maturity_start": LONG_MATURITY_START,
         "long_maturity_release": LONG_MATURITY_RELEASE,
+        "rolling_maturity_start": ROLLING_MATURITY_START,
+        "rolling_maturity_confs": ROLLING_MATURITY_CONFS,
         "makegood_paid_btc": sum(r["net_sats"] for r in makegoods if r["status"] == "paid") / 1e8,
         "makegood_failed_blocks": sum(1 for r in makegoods if r["status"] == "failed"),
         # Custody fee on this address's pending and paid make-goods, and the fee's settings
@@ -5619,8 +5668,7 @@ _SEO_PAGES = {
             "title": "Lazarus Pool — 用 Siacoin BLAKE2b 矿机挖比特币（XBT / BTCB2）的矿池",
             "description": (
                 "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。"
-                "本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池，也是第一家"
-                "用自有 stratum 算力补贴 DATUM 矿工的矿池。"
+                "本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池。"
             ),
             "scroll": "",
         },
@@ -5664,12 +5712,12 @@ _SEO_PAGES = {
     "/ratum": {
         "en": {
             "title": "Mine at Lazarus with a Ratum Gateway (ratum-gateway) | Lazarus Pool",
-            "description": "Run iohzrd's Rust DATUM gateway against Lazarus: install, a full config for datum.lazarus-xbt.xyz:28915, Knots 29.4.2, pointing ASICs, checking it is connected, and fixes. Tested per release.",
+            "description": "Run iohzrd's Rust DATUM gateway against Lazarus: install, a full config for datum.lazarus-xbt.xyz:28915, Knots 29.4.3, pointing ASICs, checking it is connected, and fixes. Tested per release.",
             "scroll": "connect",
         },
         "zh": {
             "title": "用 Ratum 网关（ratum-gateway）在 Lazarus 挖矿 — Lazarus Pool",
-            "description": "把 iohzrd 用 Rust 写的 DATUM 网关接入 Lazarus：安装、指向 datum.lazarus-xbt.xyz:28915 的完整配置、Knots 29.4.2、矿机设置、确认连接与故障排查。每个版本都实测。",
+            "description": "把 iohzrd 用 Rust 写的 DATUM 网关接入 Lazarus：安装、指向 datum.lazarus-xbt.xyz:28915 的完整配置、Knots 29.4.3、矿机设置、确认连接与故障排查。每个版本都实测。",
             "scroll": "connect",
         },
     },
@@ -5699,21 +5747,6 @@ _SEO_PAGES = {
                 "TIDES、DATUM，并在 coinbase 内直接支付。"
             ),
             "scroll": "how",
-        },
-    },
-    "/datum-subsidy": {
-        "en": {
-            "title": "The DATUM Bonus Has Ended | Lazarus Pool",
-            "description": "The DATUM bonus on Lazarus Pool ended on 24 October 2026. Bonus already credited is still paid with your next output, and your own DATUM gateway still pays a 0% fee.",
-            "scroll": "connect",
-        },
-        "zh": {
-            "title": "DATUM 奖励已结束 | Lazarus Pool",
-            "description": (
-                "Lazarus Pool 的 DATUM 奖励已于 2026 年 10 月 24 日结束。已记入的奖励仍会随你的下一笔输出支付，"
-                "自建 DATUM 网关仍然是 0% 手续费。"
-            ),
-            "scroll": "connect",
         },
     },
     "/flytheelephant": {
@@ -5879,6 +5912,7 @@ API_CATALOG = (
         (
             ApiField("name", "string", "", "Pool name.", "矿池名称。"),
             ApiField("blocks_found", "integer", "count", "Blocks this pool has recorded. Not rewritten from the explorer.", "本矿池自己记下的区块数。不会按浏览器的数字改写。"),
+            ApiField("last_found_height", "integer", "blocks", "Height of the newest block this pool has recorded.", "本矿池记下的最新区块的高度。", nullable=True),
             ApiField("blocks_found_explorer", "integer", "count", "The explorer's block count for this pool at the last successful check.", "上次核对成功时，浏览器给本矿池的区块数。", nullable=True),
             ApiField("blocks_found_checked_at", "integer", "unix seconds", "When that check succeeded.", "那次核对成功的时间。", nullable=True),
             ApiField("pool_hr_ghs", "number", "GH/s", "Credited pool hashrate.", "记入账的矿池算力。"),
@@ -6290,8 +6324,8 @@ _API_TABLE_ZH = api_reference_html("zh")
 # forks. Version-specific claims were measured on regtest against this Prime (XBT-082, ratum-compat.sh)
 # and on the live Prime's own counters; re-run that script before changing one. pool.js refreshes the
 # config's pool host, port and pubkey from /api/pool. zh: translated by the XBT-082 worker, for native review.
-_RATUM_INTRO_EN = ('Mine at Lazarus with a Ratum gateway', ['<p><code>ratum-gateway</code> is <a href="https://github.com/iohzrd/ratum" target="_blank" rel="noreferrer">iohzrd\'s Rust rewrite of the DATUM gateway</a>: one static binary, the same <code>datum_gateway_config.json</code> as the C gateway, and a status page of its own. Lazarus takes it as it is. No patch, no special setting, no approval. It is your own DATUM gateway like any other here: 0% fee. On 27 September 2026, 19 of the gateways connected to Lazarus ran it, versions 0.1.23 to 0.1.53.</p>', 'We run every published line of it against our Prime on a test chain before we say it works. What that shows, version by version, is in the table at the end. The short answer: use the newest release, which is the build this guide installs.', '<h2>1. What you need</h2>', '<ul><li><b>Bitcoin Knots 29.4.2</b> for this chain, fully synced, with <code>server=1</code>. It builds your block templates, and 29.4.2 is the first release that knows the long coinbase maturity rule (consensus from block 973,440). An older node builds blocks the chain rejects. See <a href="https://lazarus-xbt.xyz/learn/">the chain explained</a>.</li><li>A machine that stays on: Linux, macOS or Windows, 64-bit, x86 or ARM. The gateway itself is small; the node wants about 20 GB pruned.</li><li>An address on this chain to be paid to, from a wallet you use only here.</li><li>BLAKE2b ASICs (any Siacoin miner) on the same network as the gateway.</li></ul>', '<h2>2. Install ratum-gateway</h2>', 'Download the release for your machine from <a href="https://github.com/iohzrd/ratum/releases" target="_blank" rel="noreferrer">github.com/iohzrd/ratum/releases</a> and check its checksum. On 64-bit Linux:', '<pre class="cfg">V=0.1.53\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\nsha256sum -c ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\ntar -xzf ratum-gateway-$V-x86_64-linux-musl.tar.gz\nsudo install -m0755 ratum-gateway-$V-x86_64-linux-musl/ratum-gateway /usr/local/bin/\nratum-gateway --version</pre>', 'ARM Linux (a Raspberry Pi 5, say) is the <code>aarch64-linux-musl</code> file, a Mac the <code>macos</code> ones, Windows the <code>x86_64-windows.zip</code>. To build from source instead: <code>git clone https://github.com/iohzrd/ratum &amp;&amp; cd ratum &amp;&amp; git checkout v0.1.53 &amp;&amp; cargo build --release --bin ratum-gateway</code>.', '<h2>3. Tell the gateway about new blocks</h2>', "Add this line to your node's <code>bitcoin.conf</code> and restart the node, so the gateway switches to a new block within milliseconds instead of on its next poll:", '<pre class="cfg">blocknotify=curl -fsS -o /dev/null http://127.0.0.1:7152/NOTIFY</pre>', "<p><code>7152</code> is the gateway's <code>api.listen_port</code> below. <code>kill -USR1 &lt;pid&gt;</code> does the same, if you prefer.</p>", '<p><b>Keep data spam out of your blocks.</b> Your node chooses the transactions, and stock Knots 29.4.2 mines the large fake-multisig data transactions that have been filling blocks. This line in <code>bitcoin.conf</code> refuses them:</p>', '<pre class="cfg">maxscriptsize=589</pre>', '<p>Ordinary payments are untouched. It also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. It is your node and your choice.</p>', '<h2>4. The config</h2>', "Save this as <code>datum_gateway_config.json</code>. It is the C gateway's file, so an existing one works as it stands once the <code>datum</code> section points here. The pubkey is ours, live from the pool.", '<pre class="cfg" id="ratum-config">{\n  &quot;bitcoind&quot;: {\n    &quot;rpcurl&quot;: &quot;http://127.0.0.1:8332&quot;,\n    &quot;rpccookiefile&quot;: &quot;/home/YOU/.bitcoin/.cookie&quot;,\n    &quot;work_update_seconds&quot;: 40,\n    &quot;notify_fallback&quot;: true\n  },\n  &quot;stratum&quot;: {\n    &quot;listen_addr&quot;: &quot;0.0.0.0&quot;,\n    &quot;listen_port&quot;: 23334,\n    &quot;vardiff_min&quot;: 4096,\n    &quot;require_address_username&quot;: true\n  },\n  &quot;mining&quot;: {\n    &quot;pool_address&quot;: &quot;YOUR_XBT_ADDRESS&quot;,\n    &quot;coinbase_tag_primary&quot;: &quot;Lazarus&quot;,\n    &quot;coinbase_tag_secondary&quot;: &quot;YOUR_GATEWAY_NAME&quot;\n  },\n  &quot;api&quot;: {\n    &quot;listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;listen_port&quot;: 7152,\n    &quot;admin_password&quot;: &quot;CHANGE_ME&quot;,\n    &quot;miner_listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;miner_listen_port&quot;: 8000\n  },\n  &quot;datum&quot;: {\n    &quot;pool_host&quot;: &quot;datum.lazarus-xbt.xyz&quot;,\n    &quot;pool_port&quot;: 28915,\n    &quot;pool_pubkey&quot;: &quot;29120606bbbfdeb0dcb259d13ed1fba9e6ff198ff6a0152cffb7608dc1c266bd17532393738aee7edf9aa0c9ec93b835256971f186da878f77fb3ed273dff30a&quot;,\n    &quot;pool_url&quot;: &quot;https://pool.lazarus-xbt.xyz&quot;,\n    &quot;pool_pass_workers&quot;: true,\n    &quot;pool_pass_full_users&quot;: true,\n    &quot;pooled_mining_only&quot;: true\n  }\n}</pre>', '<ul><li><code>datum</code>: our host, port and pool pubkey. The pubkey pins the connection: a gateway given the wrong one gets no session and serves no work, which we checked. <code>pool_url</code> only puts a link to our site on the gateway\'s status page.</li><li><code>mining.pool_address</code>: <b>your</b> address. While the gateway is connected, every coinbase it builds pays our split and our pool output, whatever this says, so it never changes what you earn. It is only paid on work mined while the gateway has lost the pool, see step 7.</li><li><code>coinbase_tag_secondary</code>: your gateway\'s name. It is what our <a href="#gateways">Gateways</a> table shows. <code>coinbase_tag_primary</code> is used only when the pool is unreachable; while connected, the gateway writes our tag.</li><li><code>pool_pass_full_users: true</code>: each miner behind the gateway is paid at the address in its own username. Several people can share one gateway.</li><li><code>require_address_username: true</code>: the gateway refuses a worker whose username does not start with an address, instead of mining for a name nobody can pay.</li><li><code>vardiff_min: 4096</code>: where new sessions start. Faster machines climb from there.</li><li><code>admin_password</code> guards the status and settings pages on port 7152. They use plain HTTP Basic auth, so keep <code>listen_addr</code> on <code>127.0.0.1</code> or a private network.</li></ul>', '<h2>5. Start it, and point your ASICs at it</h2>', '<p><code>ratum-gateway -c datum_gateway_config.json</code>. The log says <code>DATUM pool configuration: … tag "Lazarus"</code> within a second or two, then <code>Stratum job … ready (full): … coinbaser outputs, pooled</code>. To keep it running, a systemd unit:</p>', '<pre class="cfg">[Unit]\nDescription=ratum-gateway (DATUM gateway for Lazarus Pool)\nAfter=network-online.target bitcoind.service\n\n[Service]\nUser=YOU\nExecStart=/usr/local/bin/ratum-gateway -c /home/YOU/ratum/datum_gateway_config.json\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target</pre>', 'On each ASIC: pool URL <code>stratum+tcp://GATEWAY-LAN-IP:23334</code> (the machine running the gateway, not our host), username <code>bc1…youraddress.worker</code>, password <code>x</code>. Our DATUM port, 28915, talks only to gateways; an ASIC pointed there gets nothing.', '<h2>6. Check that we see it</h2>', '<ul><li>Our <a href="#gateways">Gateways</a> table lists it within a minute as <b>Ratum gateway</b> with its version and commit, under your secondary tag. The state turns to <i>hashing</i> after the first accepted share.</li><li>Your address appears under <a href="#miners">Miners</a> and in the <a href="#payout">next payout</a> once its work is in the window. Look it up at <code>pool.lazarus-xbt.xyz/#bc1…</code>.</li><li><code>/api/gateways</code> carries the same row, with <code>software: {"name": "ratum-gateway", …}</code>, and the <a href="https://mcp.lazarus-xbt.xyz" target="_blank" rel="noreferrer">Lazarus MCP</a> tool <code>gateway_status</code> answers "is my gateway connected" by name.</li><li>The gateway\'s own page, <code>http://127.0.0.1:7152/</code>, shows the pool connection, the split it holds and every connected miner.</li></ul>', '<h2>7. When the pool is unreachable</h2>', "Every Ratum release we tested does the same thing when it loses the pool, whether the Prime restarts or the network drops: for the first 12 to 26 seconds it keeps your miners busy on work it builds alone, a coinbase paying <code>mining.pool_address</code> and nobody else. Then it disconnects them, and they reconnect by themselves once the pool is back. A block found in that gap is not a pool block: we never see it, so nobody in the window is paid from it. That is why <code>pool_address</code> should be <b>your</b> address. Then such a block pays you, which is fair, since it was your work. Point it at ours and it would land in the pool's wallet with nobody's name on it. We restart the Prime rarely and right after a block, and we have reported the gap to Ratum's author.", '<h2>8. Troubleshooting</h2>', "<ul><li><code>connecting to DATUM pool datum-beta1.mine.ocean.xyz</code><br>The <code>datum</code> section is missing or misspelled, so Ratum fell back to its built-in default (OCEAN). Set <code>pool_host</code>, <code>pool_port</code> and <code>pool_pubkey</code> exactly as above.</li><li><code>DATUM connection ended</code> straight after connecting, and no gateway row on our site<br>Wrong <code>pool_pubkey</code>. The handshake is sealed to our key, so a key from another pool (or an old copy) is refused before any work flows. Copy the key from the Connect section again.</li><li><code>no work is served until it connects</code> / <code>disconnecting stratum clients</code><br><code>pooled_mining_only</code> is on (keep it on) and the gateway cannot reach <code>datum.lazarus-xbt.xyz:28915</code>. Check outbound TCP 28915 and DNS. Miners reconnect by themselves once it is back.</li><li>Miners connect but never get a job<br>The node is still syncing, or it is not a BLAKE2b Knots: Ratum serves nothing until the node's template lists the <code>!blake2b</code> rule. Run Bitcoin Knots 29.4.2 for this chain and wait for it to catch up.</li><li><code>Address already in use</code> at start<br>Something else holds a port. Ratum also opens a miner lookup port, <code>api.miner_listen_port</code>, 8000 by default; move it or the API port.</li><li>Authorization refused for a worker<br><code>require_address_username</code> is doing its job: the part before the first <code>.</code> is not an address. Use <code>bc1…youraddress.worker</code>. Without that check the share is accepted and credited to a name nobody can be paid for.</li><li>A few <code>bad-coinbase-outputs</code> or stale rejects on our Gateways table<br>Normal right after the Prime restarts or the tip moves: jobs from before carry an older split. They clear in seconds and no credit is lost.</li><li>Blocks the chain rejects, or your gateway refused with a note about #419<br>Your node is older than Knots 29.4.2 and does not know the long coinbase maturity rule. Upgrade the node and reconnect; the refusal lifts on its own.</li></ul>", '<h2>9. Switching to Ratum, or to Lazarus</h2>', '<p><b>From the stock C gateway</b> (CONVOY, iohzrd, FlyTheElephant or StartOS): stop <code>datum_gateway</code>, start <code>ratum-gateway -c</code> with the same file, and add <code>api.miner_listen_port</code> if something already uses 8000. Your earnings follow your address, not the gateway, so the work already in the window stays yours. The new gateway has a new key, so it shows as a new row on our Gateways table and the old one goes offline.</p>', "<p><b>From another pool's Ratum config</b> (Omega, B2Pool, P2Block, AlphaPool): change only the <code>datum</code> section to the host, port and pubkey above, and <code>pool_url</code> if you set it. A secondary tag that names another pool's public gateway means nothing here and can stay or go. P2Block's fork has a solo mode: set <code>mining.solo</code> to <code>false</code>, or the gateway never talks to a pool. AlphaPool's port 28916 and its key do not work here; ours is 28915.</p>", '<p><b>Back again</b> is the same edit in reverse. Nothing is locked in: the work you did here is paid by the blocks we find while it is in the window.</p>', '<h2>What we measured</h2>', '<div class="seo-table"><table>\n        <caption>ratum-gateway against Lazarus Prime: regtest, 27 September 2026 (XBT-082), and the live Prime\'s own counters</caption>\n        <thead><tr><th scope="col">Build</th><th scope="col">Blocks, payees</th><th scope="col">Pool-only full work</th><th scope="col">Pool lost</th></tr></thead>\n        <tbody>\n        <tr><th scope="row">iohzrd 0.1.28</th><td>5 of 5 <code>split</code>, 13–14 payees</td><td>4 ms of 222 s<br>live 0.020%</td><td>unpooled 18 s</td></tr>\n        <tr><th scope="row">iohzrd 0.1.39</th><td>10 of 10 <code>split</code>, 13–15 payees</td><td>0 ms of 230 s<br>live 0.030%</td><td>unpooled 26 s</td></tr>\n        <tr><th scope="row">iohzrd 0.1.53 (latest release)</th><td>7 of 7 <code>split</code>, 13–15 payees</td><td>3 ms of 229 s<br>live 0.084% (few shares yet)</td><td>unpooled 17 s</td></tr>\n        <tr><th scope="row">iohzrd master 0.1.54</th><td>9 of 9 <code>split</code>, 13–15 payees</td><td>6 ms of 227 s<br>live —</td><td>unpooled 19 s</td></tr>\n        <tr><th scope="row">B2Pool fork (ocminer) 0.1.25</th><td>9 of 9 <code>split</code>, 13–15 payees</td><td>9 ms of 227 s<br>live 0.000% (few shares)</td><td>unpooled 19 s</td></tr>\n        <tr><th scope="row">P2Block fork 0.1.29</th><td>7 of 7 <code>split</code>, 13–15 payees</td><td>6 ms of 232 s<br>live —</td><td>unpooled 20 s</td></tr>\n        </tbody>\n      </table></div>', 'How: a Bitcoin Knots 29.4.2 regtest chain with BLAKE2b and the long coinbase maturity rule, a copy of our Prime (the build the pool runs), each gateway build and two CPU miners, about eight minutes per build with transactions in every template and a rival finding a block every 15 seconds. Checked: the pubkey pins the connection, each block booked <code>split</code> pays on chain exactly what its record says, the DATUM fee path and bonus, <code>address.worker</code> and <code>address~tag.worker</code> usernames, a restart of the Prime, and no refusal of any kind. "Live" is the share of accepted shares on a full job paying only the pool, from our Prime\'s own counters over every connected gateway of that version. The iohzrd C gateway sits at 0.018% on the same count. We re-run the same test on each Ratum release and update this table.'])
-_RATUM_INTRO_ZH = ('用 Ratum 网关在 Lazarus 挖矿', ['<p><code>ratum-gateway</code> 是 <a href="https://github.com/iohzrd/ratum" target="_blank" rel="noreferrer">iohzrd 用 Rust 重写的 DATUM 网关</a>：一个静态二进制文件，与 C 版网关用同一个 <code>datum_gateway_config.json</code>，并自带状态页。Lazarus 直接接受它，不需要补丁、特殊设置或审批。它和本站其他自建 DATUM 网关一样：0% 手续费。2026 年 9 月 27 日，连接 Lazarus 的网关中有 19 个在跑它，版本从 0.1.23 到 0.1.53。</p>', '每一条已发布的版本线，我们都先在测试链上对接自家 Prime 实测过，才说它能用。逐个版本的结果见文末表格。简短结论：用最新的正式版，也就是本指南安装的版本。', '<h2>1. 你需要</h2>', '<ul><li>本链的 <b>Bitcoin Knots 29.4.2</b>，完全同步，开启 <code>server=1</code>。它负责构建你的区块模板；29.4.2 是第一个认识长 coinbase 成熟期规则（自区块 973,440 起为共识）的版本，更旧的节点会构建被全网拒绝的区块。见<a href="https://lazarus-xbt.xyz/learn/">本链说明</a>。</li><li>一台常开的机器：Linux、macOS 或 Windows，64 位，x86 或 ARM。网关本身很小；节点裁剪后约需 20 GB。</li><li>一个本链收款地址，来自只在本链使用的钱包。</li><li>与网关在同一网络中的 BLAKE2b 矿机（任何 Siacoin 矿机）。</li></ul>', '<h2>2. 安装 ratum-gateway</h2>', '从 <a href="https://github.com/iohzrd/ratum/releases" target="_blank" rel="noreferrer">github.com/iohzrd/ratum/releases</a> 下载适合你机器的版本并核对校验和。64 位 Linux：', '<pre class="cfg">V=0.1.53\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\nsha256sum -c ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\ntar -xzf ratum-gateway-$V-x86_64-linux-musl.tar.gz\nsudo install -m0755 ratum-gateway-$V-x86_64-linux-musl/ratum-gateway /usr/local/bin/\nratum-gateway --version</pre>', 'ARM Linux（例如树莓派 5）用 <code>aarch64-linux-musl</code> 文件，Mac 用 <code>macos</code> 文件，Windows 用 <code>x86_64-windows.zip</code>。也可以从源码编译：<code>git clone https://github.com/iohzrd/ratum &amp;&amp; cd ratum &amp;&amp; git checkout v0.1.53 &amp;&amp; cargo build --release --bin ratum-gateway</code>。', '<h2>3. 让网关及时知道新区块</h2>', '在节点的 <code>bitcoin.conf</code> 里加上这一行并重启节点，这样出新块时网关几毫秒内就切换，而不是等下一次轮询：', '<pre class="cfg">blocknotify=curl -fsS -o /dev/null http://127.0.0.1:7152/NOTIFY</pre>', '<p><code>7152</code> 是下面配置里网关的 <code>api.listen_port</code>。也可以用 <code>kill -USR1 &lt;pid&gt;</code>，效果相同。</p>', '<p><b>把垃圾数据挡在你的区块之外。</b>选交易的是你的节点，而原版 Knots 29.4.2 会打包近来占满区块的大型伪多签数据交易。在 <code>bitcoin.conf</code> 里加上这一行即可拒绝它们：</p>', '<pre class="cfg">maxscriptsize=589</pre>', '<p>正常转账不受影响。这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。节点是你的，由你决定。</p>', '<h2>4. 配置文件</h2>', '保存为 <code>datum_gateway_config.json</code>。它就是 C 版网关的配置文件，所以已有的文件只要把 <code>datum</code> 段指向这里就能直接用。公钥是本矿池的，来自矿池实时数据。', '<pre class="cfg" id="ratum-config">{\n  &quot;bitcoind&quot;: {\n    &quot;rpcurl&quot;: &quot;http://127.0.0.1:8332&quot;,\n    &quot;rpccookiefile&quot;: &quot;/home/YOU/.bitcoin/.cookie&quot;,\n    &quot;work_update_seconds&quot;: 40,\n    &quot;notify_fallback&quot;: true\n  },\n  &quot;stratum&quot;: {\n    &quot;listen_addr&quot;: &quot;0.0.0.0&quot;,\n    &quot;listen_port&quot;: 23334,\n    &quot;vardiff_min&quot;: 4096,\n    &quot;require_address_username&quot;: true\n  },\n  &quot;mining&quot;: {\n    &quot;pool_address&quot;: &quot;YOUR_XBT_ADDRESS&quot;,\n    &quot;coinbase_tag_primary&quot;: &quot;Lazarus&quot;,\n    &quot;coinbase_tag_secondary&quot;: &quot;YOUR_GATEWAY_NAME&quot;\n  },\n  &quot;api&quot;: {\n    &quot;listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;listen_port&quot;: 7152,\n    &quot;admin_password&quot;: &quot;CHANGE_ME&quot;,\n    &quot;miner_listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;miner_listen_port&quot;: 8000\n  },\n  &quot;datum&quot;: {\n    &quot;pool_host&quot;: &quot;datum.lazarus-xbt.xyz&quot;,\n    &quot;pool_port&quot;: 28915,\n    &quot;pool_pubkey&quot;: &quot;29120606bbbfdeb0dcb259d13ed1fba9e6ff198ff6a0152cffb7608dc1c266bd17532393738aee7edf9aa0c9ec93b835256971f186da878f77fb3ed273dff30a&quot;,\n    &quot;pool_url&quot;: &quot;https://pool.lazarus-xbt.xyz&quot;,\n    &quot;pool_pass_workers&quot;: true,\n    &quot;pool_pass_full_users&quot;: true,\n    &quot;pooled_mining_only&quot;: true\n  }\n}</pre>', '<ul><li><code>datum</code>：我们的主机、端口和矿池公钥。公钥锁定这条连接：填错公钥的网关拿不到会话，也不下发任何工作——我们实测过。<code>pool_url</code> 只是在网关状态页上放一个指向本站的链接。</li><li><code>mining.pool_address</code>：填<b>你自己</b>的地址。网关与矿池连接期间，它构建的每个 coinbase 都支付我们的分配和矿池输出，与这里填什么无关，所以不影响你的收入。只有在网关与矿池失联期间挖出的工作才会付到这里，见第 7 步。</li><li><code>coinbase_tag_secondary</code>：你的网关名称，也就是本站<a href="#gateways">网关</a>表显示的名字。<code>coinbase_tag_primary</code> 只在连不上矿池时使用；连接期间网关写入的是我们的标签。</li><li><code>pool_pass_full_users: true</code>：网关后面的每台矿机按它自己用户名里的地址收款，多人可以共用一个网关。</li><li><code>require_address_username: true</code>：用户名不以地址开头的矿工会被网关拒绝，而不是替一个谁也收不到钱的名字挖矿。</li><li><code>vardiff_min: 4096</code>：新会话的起始难度，更快的机器会从这里往上调。</li><li><code>admin_password</code> 保护 7152 端口上的状态页和设置页。它们用的是普通 HTTP Basic 认证，所以请把 <code>listen_addr</code> 保持在 <code>127.0.0.1</code> 或内网。</li></ul>', '<h2>5. 启动网关，把矿机指向它</h2>', '<p><code>ratum-gateway -c datum_gateway_config.json</code>。一两秒内日志会出现 <code>DATUM pool configuration: … tag "Lazarus"</code>，接着是 <code>Stratum job … ready (full): … coinbaser outputs, pooled</code>。要让它常驻，可以用 systemd：</p>', '<pre class="cfg">[Unit]\nDescription=ratum-gateway (DATUM gateway for Lazarus Pool)\nAfter=network-online.target bitcoind.service\n\n[Service]\nUser=YOU\nExecStart=/usr/local/bin/ratum-gateway -c /home/YOU/ratum/datum_gateway_config.json\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target</pre>', '每台矿机：矿池地址 <code>stratum+tcp://网关局域网IP:23334</code>（运行网关的那台机器，不是我们的主机），用户名 <code>bc1…你的地址.矿工名</code>，密码 <code>x</code>。我们的 DATUM 端口 28915 只和网关通信，矿机指向那里什么也拿不到。', '<h2>6. 确认我们看到了它</h2>', '<ul><li>一分钟内，本站<a href="#gateways">网关</a>表会以 <b>Ratum 网关</b> 列出它，带版本号和提交号，名称是你的 secondary 标签。第一个份额被接受后，状态变为「在算」。</li><li>工作进入窗口后，你的地址会出现在<a href="#miners">矿工</a>和<a href="#payout">下次付款</a>里。可以在 <code>pool.lazarus-xbt.xyz/#bc1…</code> 查询。</li><li><code>/api/gateways</code> 里有同一行数据，带 <code>software: {"name": "ratum-gateway", …}</code>；<a href="https://mcp.lazarus-xbt.xyz" target="_blank" rel="noreferrer">Lazarus MCP</a> 的 <code>gateway_status</code> 工具可以按名称回答「我的网关连上了吗」。</li><li>网关自己的页面 <code>http://127.0.0.1:7152/</code> 显示矿池连接、它手里的分配，以及每台已连接的矿机。</li></ul>', '<h2>7. 连不上矿池时</h2>', '我们测试过的每个 Ratum 版本，在与矿池失联时（无论是 Prime 重启还是网络中断）行为都一样：最初 12 到 26 秒里，它继续让你的矿机算它自己构建的工作，coinbase 只付给 <code>mining.pool_address</code>。之后才断开矿机，矿池恢复后矿机会自动重连。在这段空档里找到的区块不是矿池区块：我们看不到它，窗口里的任何人都不会从中得到付款。所以 <code>pool_address</code> 应该填<b>你自己</b>的地址：这样的区块付给你，这很公平，因为那是你的工作。如果填我们的地址，它会落进矿池钱包，却记不到任何人名下。我们很少重启 Prime，而且只在出块之后立刻重启；这个空档也已报告给 Ratum 的作者。', '<h2>8. 故障排查</h2>', '<ul><li><code>connecting to DATUM pool datum-beta1.mine.ocean.xyz</code><br><code>datum</code> 段缺失或拼错，Ratum 退回了内置默认值（OCEAN）。按上面的配置填好 <code>pool_host</code>、<code>pool_port</code> 与 <code>pool_pubkey</code>。</li><li>刚连上就 <code>DATUM connection ended</code>，本站也看不到你的网关<br><code>pool_pubkey</code> 不对。握手是用我们的公钥加密的，别家矿池的公钥（或旧的副本）在任何工作开始之前就会被拒绝。请从“接入”一节重新复制公钥。</li><li><code>no work is served until it connects</code> / <code>disconnecting stratum clients</code><br>开着 <code>pooled_mining_only</code>（请保持开启），而网关连不上 <code>datum.lazarus-xbt.xyz:28915</code>。检查出站 TCP 28915 和 DNS。恢复后矿机会自动重连。</li><li>矿机能连上，但一直收不到任务<br>节点还在同步，或者不是 BLAKE2b 版 Knots：节点模板里没有 <code>!blake2b</code> 规则之前，Ratum 不下发任何工作。请为本链运行 Bitcoin Knots 29.4.2 并等它同步完成。</li><li>启动时 <code>Address already in use</code><br>有别的程序占了端口。Ratum 还会开一个矿工查询端口 <code>api.miner_listen_port</code>（默认 8000）；改掉它或 API 端口即可。</li><li>某个矿工的授权被拒<br>这是 <code>require_address_username</code> 在起作用：第一个 <code>.</code> 之前的部分不是地址。请用 <code>bc1…你的地址.矿工名</code>。不开这个检查的话，份额会被接受，但记在一个谁也收不到钱的名字上。</li><li>本站网关表上有少量 <code>bad-coinbase-outputs</code> 或过期拒绝<br>Prime 刚重启或链上出了新块之后属正常：之前的任务带的是旧的分配。几秒内消失，不会损失任何记账。</li><li>链拒绝你的区块，或网关因 #419 被拒<br>你的节点早于 Knots 29.4.2，不认识长 coinbase 成熟期规则。升级节点后重连，拒绝会自动解除。</li></ul>', '<h2>9. 换用 Ratum，或换到 Lazarus</h2>', '<p><b>从 C 版网关</b>（CONVOY、iohzrd、FlyTheElephant 或 StartOS）：停掉 <code>datum_gateway</code>，用同一个文件启动 <code>ratum-gateway -c</code>；如果 8000 端口已被占用，再加上 <code>api.miner_listen_port</code>。收益跟着地址走，不跟着网关走，所以已在窗口里的工作仍然是你的。新网关有新的密钥，会在本站网关表上显示为新的一行，旧的那行变为离线。</p>', '<p><b>从别家矿池的 Ratum 配置</b>（Omega、B2Pool、P2Block、AlphaPool）：只改 <code>datum</code> 段，换成上面的主机、端口和公钥；如果设置了 <code>pool_url</code> 也一并改掉。指向别家公共网关的 secondary 标签在这里没有意义，留着或删掉都行。P2Block 的分支有 solo 模式：把 <code>mining.solo</code> 设为 <code>false</code>，否则网关根本不连矿池。AlphaPool 的 28916 端口和它的公钥在这里无效，我们的是 28915。</p>', '<p><b>换回去</b>就是反过来改。没有任何锁定：你在这里做的工作，只要还在窗口里，就由我们找到的区块支付。</p>', '<h2>我们实测了什么</h2>', '<div class="seo-table"><table>\n        <caption>ratum-gateway 对接 Lazarus Prime：regtest 实测（2026 年 9 月 27 日，XBT-082）与线上 Prime 的计数</caption>\n        <thead><tr><th scope="col">版本</th><th scope="col">区块、收款人</th><th scope="col">只付矿池的完整工作</th><th scope="col">失联时</th></tr></thead>\n        <tbody>\n        <tr><th scope="row">iohzrd 0.1.28</th><td>5 / 5 记为 <code>split</code>，13–14 个收款人</td><td>4 毫秒 / 222 秒<br>线上 0.020%</td><td>不经矿池 18 秒</td></tr>\n        <tr><th scope="row">iohzrd 0.1.39</th><td>10 / 10 记为 <code>split</code>，13–15 个收款人</td><td>0 毫秒 / 230 秒<br>线上 0.030%</td><td>不经矿池 26 秒</td></tr>\n        <tr><th scope="row">iohzrd 0.1.53（最新正式版）</th><td>7 / 7 记为 <code>split</code>，13–15 个收款人</td><td>3 毫秒 / 229 秒<br>线上 0.084% (份额尚少)</td><td>不经矿池 17 秒</td></tr>\n        <tr><th scope="row">iohzrd master 0.1.54</th><td>9 / 9 记为 <code>split</code>，13–15 个收款人</td><td>6 毫秒 / 227 秒<br>线上 —</td><td>不经矿池 19 秒</td></tr>\n        <tr><th scope="row">B2Pool 分支（ocminer）0.1.25</th><td>9 / 9 记为 <code>split</code>，13–15 个收款人</td><td>9 毫秒 / 227 秒<br>线上 0.000% (份额尚少)</td><td>不经矿池 19 秒</td></tr>\n        <tr><th scope="row">P2Block 分支 0.1.29</th><td>7 / 7 记为 <code>split</code>，13–15 个收款人</td><td>6 毫秒 / 232 秒<br>线上 —</td><td>不经矿池 20 秒</td></tr>\n        </tbody>\n      </table></div>', '方法：一条启用 BLAKE2b 与长 coinbase 成熟期规则的 Bitcoin Knots 29.4.2 regtest 链、一份我们的 Prime（与矿池运行的版本相同）、每个网关版本，以及两台 CPU 矿机；每个版本约八分钟，每个模板都带交易，另有对手每 15 秒出一个块。检查项：公钥锁定连接；每个记为 <code>split</code> 的区块在链上的支付与记录完全一致；DATUM 费率路径与奖励；<code>地址.矿工名</code> 与 <code>地址~标签.矿工名</code> 用户名；Prime 重启；以及没有任何拒绝。「线上」是在只付给矿池的完整任务上被接受的份额所占比例，取自我们 Prime 对该版本所有已连接网关的计数。iohzrd C 版网关按同一口径为 0.018%。每个 Ratum 新版本我们都会重跑同一套测试并更新此表。'])
+_RATUM_INTRO_EN = ('Mine at Lazarus with a Ratum gateway', ['<p><code>ratum-gateway</code> is <a href="https://github.com/iohzrd/ratum" target="_blank" rel="noreferrer">iohzrd\'s Rust rewrite of the DATUM gateway</a>: one static binary, the same <code>datum_gateway_config.json</code> as the C gateway, and a status page of its own. Lazarus takes it as it is. No patch, no special setting, no approval. It is your own DATUM gateway like any other here: 0% fee. On 27 September 2026, 19 of the gateways connected to Lazarus ran it, versions 0.1.23 to 0.1.53.</p>', 'We run every published line of it against our Prime on a test chain before we say it works. What that shows, version by version, is in the table at the end. The short answer: use the newest release, which is the build this guide installs.', '<h2>1. What you need</h2>', '<ul><li><b>Bitcoin Knots 29.4.2</b> for this chain, fully synced, with <code>server=1</code>. It builds your block templates, and 29.4.2 is the first release that knows the long coinbase maturity rule (consensus from block 973,440). An older node builds blocks the chain rejects. See <a href="https://lazarus-xbt.xyz/learn/">the chain explained</a>.</li><li>A machine that stays on: Linux, macOS or Windows, 64-bit, x86 or ARM. The gateway itself is small; the node wants about 20 GB pruned.</li><li>An address on this chain to be paid to, from a wallet you use only here.</li><li>BLAKE2b ASICs (any Siacoin miner) on the same network as the gateway.</li></ul>', '<h2>2. Install ratum-gateway</h2>', 'Download the release for your machine from <a href="https://github.com/iohzrd/ratum/releases" target="_blank" rel="noreferrer">github.com/iohzrd/ratum/releases</a> and check its checksum. On 64-bit Linux:', '<pre class="cfg">V=0.1.53\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\nsha256sum -c ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\ntar -xzf ratum-gateway-$V-x86_64-linux-musl.tar.gz\nsudo install -m0755 ratum-gateway-$V-x86_64-linux-musl/ratum-gateway /usr/local/bin/\nratum-gateway --version</pre>', 'ARM Linux (a Raspberry Pi 5, say) is the <code>aarch64-linux-musl</code> file, a Mac the <code>macos</code> ones, Windows the <code>x86_64-windows.zip</code>. To build from source instead: <code>git clone https://github.com/iohzrd/ratum &amp;&amp; cd ratum &amp;&amp; git checkout v0.1.53 &amp;&amp; cargo build --release --bin ratum-gateway</code>.', '<h2>3. Tell the gateway about new blocks</h2>', "Add this line to your node's <code>bitcoin.conf</code> and restart the node, so the gateway switches to a new block within milliseconds instead of on its next poll:", '<pre class="cfg">blocknotify=curl -fsS -o /dev/null http://127.0.0.1:7152/NOTIFY</pre>', "<p><code>7152</code> is the gateway's <code>api.listen_port</code> below. <code>kill -USR1 &lt;pid&gt;</code> does the same, if you prefer.</p>", '<p><b>Keep data spam out of your blocks.</b> Your node chooses the transactions, and stock Knots 29.4.2 mines the large fake-multisig data transactions that have been filling blocks. This line in <code>bitcoin.conf</code> refuses them:</p>', '<pre class="cfg">maxscriptsize=589</pre>', '<p>Ordinary payments are untouched. It also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. It is your node and your choice.</p>', '<h2>4. The config</h2>', "Save this as <code>datum_gateway_config.json</code>. It is the C gateway's file, so an existing one works as it stands once the <code>datum</code> section points here. The pubkey is ours, live from the pool.", '<pre class="cfg" id="ratum-config">{\n  &quot;bitcoind&quot;: {\n    &quot;rpcurl&quot;: &quot;http://127.0.0.1:8332&quot;,\n    &quot;rpccookiefile&quot;: &quot;/home/YOU/.bitcoin/.cookie&quot;,\n    &quot;work_update_seconds&quot;: 40,\n    &quot;notify_fallback&quot;: true\n  },\n  &quot;stratum&quot;: {\n    &quot;listen_addr&quot;: &quot;0.0.0.0&quot;,\n    &quot;listen_port&quot;: 23334,\n    &quot;vardiff_min&quot;: 4096,\n    &quot;require_address_username&quot;: true\n  },\n  &quot;mining&quot;: {\n    &quot;pool_address&quot;: &quot;YOUR_XBT_ADDRESS&quot;,\n    &quot;coinbase_tag_primary&quot;: &quot;Lazarus&quot;,\n    &quot;coinbase_tag_secondary&quot;: &quot;YOUR_GATEWAY_NAME&quot;\n  },\n  &quot;api&quot;: {\n    &quot;listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;listen_port&quot;: 7152,\n    &quot;admin_password&quot;: &quot;CHANGE_ME&quot;,\n    &quot;miner_listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;miner_listen_port&quot;: 8000\n  },\n  &quot;datum&quot;: {\n    &quot;pool_host&quot;: &quot;datum.lazarus-xbt.xyz&quot;,\n    &quot;pool_port&quot;: 28915,\n    &quot;pool_pubkey&quot;: &quot;29120606bbbfdeb0dcb259d13ed1fba9e6ff198ff6a0152cffb7608dc1c266bd17532393738aee7edf9aa0c9ec93b835256971f186da878f77fb3ed273dff30a&quot;,\n    &quot;pool_url&quot;: &quot;https://pool.lazarus-xbt.xyz&quot;,\n    &quot;pool_pass_workers&quot;: true,\n    &quot;pool_pass_full_users&quot;: true,\n    &quot;pooled_mining_only&quot;: true\n  }\n}</pre>', '<ul><li><code>datum</code>: our host, port and pool pubkey. The pubkey pins the connection: a gateway given the wrong one gets no session and serves no work, which we checked. <code>pool_url</code> only puts a link to our site on the gateway\'s status page.</li><li><code>mining.pool_address</code>: <b>your</b> address. While the gateway is connected, every coinbase it builds pays our split and our pool output, whatever this says, so it never changes what you earn. It is only paid on work mined while the gateway has lost the pool, see step 7.</li><li><code>coinbase_tag_secondary</code>: your gateway\'s name. It is what our <a href="#gateways">Gateways</a> table shows. <code>coinbase_tag_primary</code> is used only when the pool is unreachable; while connected, the gateway writes our tag.</li><li><code>pool_pass_full_users: true</code>: each miner behind the gateway is paid at the address in its own username. Several people can share one gateway.</li><li><code>require_address_username: true</code>: the gateway refuses a worker whose username does not start with an address, instead of mining for a name nobody can pay.</li><li><code>vardiff_min: 4096</code>: where new sessions start. Faster machines climb from there.</li><li><code>admin_password</code> guards the status and settings pages on port 7152. They use plain HTTP Basic auth, so keep <code>listen_addr</code> on <code>127.0.0.1</code> or a private network.</li></ul>', '<h2>5. Start it, and point your ASICs at it</h2>', '<p><code>ratum-gateway -c datum_gateway_config.json</code>. The log says <code>DATUM pool configuration: … tag "Lazarus"</code> within a second or two, then <code>Stratum job … ready (full): … coinbaser outputs, pooled</code>. To keep it running, a systemd unit:</p>', '<pre class="cfg">[Unit]\nDescription=ratum-gateway (DATUM gateway for Lazarus Pool)\nAfter=network-online.target bitcoind.service\n\n[Service]\nUser=YOU\nExecStart=/usr/local/bin/ratum-gateway -c /home/YOU/ratum/datum_gateway_config.json\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target</pre>', 'On each ASIC: pool URL <code>stratum+tcp://GATEWAY-LAN-IP:23334</code> (the machine running the gateway, not our host), username <code>bc1…youraddress.worker</code>, password <code>x</code>. Our DATUM port, 28915, talks only to gateways; an ASIC pointed there gets nothing.', '<h2>6. Check that we see it</h2>', '<ul><li>Our <a href="#gateways">Gateways</a> table lists it within a minute as <b>Ratum gateway</b> with its version and commit, under your secondary tag. The state turns to <i>hashing</i> after the first accepted share.</li><li>Your address appears under <a href="#miners">Miners</a> and in the <a href="#payout">next payout</a> once its work is in the window. Look it up at <code>pool.lazarus-xbt.xyz/#bc1…</code>.</li><li><code>/api/gateways</code> carries the same row, with <code>software: {"name": "ratum-gateway", …}</code>, and the <a href="https://mcp.lazarus-xbt.xyz" target="_blank" rel="noreferrer">Lazarus MCP</a> tool <code>gateway_status</code> answers "is my gateway connected" by name.</li><li>The gateway\'s own page, <code>http://127.0.0.1:7152/</code>, shows the pool connection, the split it holds and every connected miner.</li></ul>', '<h2>7. When the pool is unreachable</h2>', "Every Ratum release we tested does the same thing when it loses the pool, whether the Prime restarts or the network drops: for the first 12 to 26 seconds it keeps your miners busy on work it builds alone, a coinbase paying <code>mining.pool_address</code> and nobody else. Then it disconnects them, and they reconnect by themselves once the pool is back. A block found in that gap is not a pool block: we never see it, so nobody in the window is paid from it. That is why <code>pool_address</code> should be <b>your</b> address. Then such a block pays you, which is fair, since it was your work. Point it at ours and it would land in the pool's wallet with nobody's name on it. We restart the Prime rarely and right after a block, and we have reported the gap to Ratum's author.", '<h2>8. Troubleshooting</h2>', "<ul><li><code>connecting to DATUM pool datum-beta1.mine.ocean.xyz</code><br>The <code>datum</code> section is missing or misspelled, so Ratum fell back to its built-in default (OCEAN). Set <code>pool_host</code>, <code>pool_port</code> and <code>pool_pubkey</code> exactly as above.</li><li><code>DATUM connection ended</code> straight after connecting, and no gateway row on our site<br>Wrong <code>pool_pubkey</code>. The handshake is sealed to our key, so a key from another pool (or an old copy) is refused before any work flows. Copy the key from the Connect section again.</li><li><code>no work is served until it connects</code> / <code>disconnecting stratum clients</code><br><code>pooled_mining_only</code> is on (keep it on) and the gateway cannot reach <code>datum.lazarus-xbt.xyz:28915</code>. Check outbound TCP 28915 and DNS. Miners reconnect by themselves once it is back.</li><li>Miners connect but never get a job<br>The node is still syncing, or it is not a BLAKE2b Knots: Ratum serves nothing until the node's template lists the <code>!blake2b</code> rule. Run Bitcoin Knots 29.4.2 for this chain and wait for it to catch up.</li><li><code>Address already in use</code> at start<br>Something else holds a port. Ratum also opens a miner lookup port, <code>api.miner_listen_port</code>, 8000 by default; move it or the API port.</li><li>Authorization refused for a worker<br><code>require_address_username</code> is doing its job: the part before the first <code>.</code> is not an address. Use <code>bc1…youraddress.worker</code>. Without that check the share is accepted and credited to a name nobody can be paid for.</li><li>A few <code>bad-coinbase-outputs</code> or stale rejects on our Gateways table<br>Normal right after the Prime restarts or the tip moves: jobs from before carry an older split. They clear in seconds and no credit is lost.</li><li>Blocks the chain rejects, or your gateway refused with a note about #419<br>Your node is older than Knots 29.4.2 and does not know the long coinbase maturity rule. Upgrade the node and reconnect; the refusal lifts on its own.</li></ul>", '<h2>9. Switching to Ratum, or to Lazarus</h2>', '<p><b>From the stock C gateway</b> (CONVOY, iohzrd, FlyTheElephant or StartOS): stop <code>datum_gateway</code>, start <code>ratum-gateway -c</code> with the same file, and add <code>api.miner_listen_port</code> if something already uses 8000. Your earnings follow your address, not the gateway, so the work already in the window stays yours. The new gateway has a new key, so it shows as a new row on our Gateways table and the old one goes offline.</p>', "<p><b>From another pool's Ratum config</b> (Omega, B2Pool, P2Block, AlphaPool): change only the <code>datum</code> section to the host, port and pubkey above, and <code>pool_url</code> if you set it. A secondary tag that names another pool's public gateway means nothing here and can stay or go. P2Block's fork has a solo mode: set <code>mining.solo</code> to <code>false</code>, or the gateway never talks to a pool. AlphaPool's port 28916 and its key do not work here; ours is 28915.</p>", '<p><b>Back again</b> is the same edit in reverse. Nothing is locked in: the work you did here is paid by the blocks we find while it is in the window.</p>', '<h2>What we measured</h2>', '<div class="seo-table"><table>\n        <caption>ratum-gateway against Lazarus Prime: regtest, 27 September 2026 (XBT-082), and the live Prime\'s own counters</caption>\n        <thead><tr><th scope="col">Build</th><th scope="col">Blocks, payees</th><th scope="col">Pool-only full work</th><th scope="col">Pool lost</th></tr></thead>\n        <tbody>\n        <tr><th scope="row">iohzrd 0.1.28</th><td>5 of 5 <code>split</code>, 13–14 payees</td><td>4 ms of 222 s<br>live 0.020%</td><td>unpooled 18 s</td></tr>\n        <tr><th scope="row">iohzrd 0.1.39</th><td>10 of 10 <code>split</code>, 13–15 payees</td><td>0 ms of 230 s<br>live 0.030%</td><td>unpooled 26 s</td></tr>\n        <tr><th scope="row">iohzrd 0.1.53 (latest release)</th><td>7 of 7 <code>split</code>, 13–15 payees</td><td>3 ms of 229 s<br>live 0.084% (few shares yet)</td><td>unpooled 17 s</td></tr>\n        <tr><th scope="row">iohzrd master 0.1.54</th><td>9 of 9 <code>split</code>, 13–15 payees</td><td>6 ms of 227 s<br>live —</td><td>unpooled 19 s</td></tr>\n        <tr><th scope="row">B2Pool fork (ocminer) 0.1.25</th><td>9 of 9 <code>split</code>, 13–15 payees</td><td>9 ms of 227 s<br>live 0.000% (few shares)</td><td>unpooled 19 s</td></tr>\n        <tr><th scope="row">P2Block fork 0.1.29</th><td>7 of 7 <code>split</code>, 13–15 payees</td><td>6 ms of 232 s<br>live —</td><td>unpooled 20 s</td></tr>\n        </tbody>\n      </table></div>', 'How: a Bitcoin Knots 29.4.2 regtest chain with BLAKE2b and the long coinbase maturity rule, a copy of our Prime (the build the pool runs), each gateway build and two CPU miners, about eight minutes per build with transactions in every template and a rival finding a block every 15 seconds. Checked: the pubkey pins the connection, each block booked <code>split</code> pays on chain exactly what its record says, the DATUM fee path, <code>address.worker</code> and <code>address~tag.worker</code> usernames, a restart of the Prime, and no refusal of any kind. "Live" is the share of accepted shares on a full job paying only the pool, from our Prime\'s own counters over every connected gateway of that version. The iohzrd C gateway sits at 0.018% on the same count. We re-run the same test on each Ratum release and update this table.'])
+_RATUM_INTRO_ZH = ('用 Ratum 网关在 Lazarus 挖矿', ['<p><code>ratum-gateway</code> 是 <a href="https://github.com/iohzrd/ratum" target="_blank" rel="noreferrer">iohzrd 用 Rust 重写的 DATUM 网关</a>：一个静态二进制文件，与 C 版网关用同一个 <code>datum_gateway_config.json</code>，并自带状态页。Lazarus 直接接受它，不需要补丁、特殊设置或审批。它和本站其他自建 DATUM 网关一样：0% 手续费。2026 年 9 月 27 日，连接 Lazarus 的网关中有 19 个在跑它，版本从 0.1.23 到 0.1.53。</p>', '每一条已发布的版本线，我们都先在测试链上对接自家 Prime 实测过，才说它能用。逐个版本的结果见文末表格。简短结论：用最新的正式版，也就是本指南安装的版本。', '<h2>1. 你需要</h2>', '<ul><li>本链的 <b>Bitcoin Knots 29.4.2</b>，完全同步，开启 <code>server=1</code>。它负责构建你的区块模板；29.4.2 是第一个认识长 coinbase 成熟期规则（自区块 973,440 起为共识）的版本，更旧的节点会构建被全网拒绝的区块。见<a href="https://lazarus-xbt.xyz/learn/">本链说明</a>。</li><li>一台常开的机器：Linux、macOS 或 Windows，64 位，x86 或 ARM。网关本身很小；节点裁剪后约需 20 GB。</li><li>一个本链收款地址，来自只在本链使用的钱包。</li><li>与网关在同一网络中的 BLAKE2b 矿机（任何 Siacoin 矿机）。</li></ul>', '<h2>2. 安装 ratum-gateway</h2>', '从 <a href="https://github.com/iohzrd/ratum/releases" target="_blank" rel="noreferrer">github.com/iohzrd/ratum/releases</a> 下载适合你机器的版本并核对校验和。64 位 Linux：', '<pre class="cfg">V=0.1.53\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz\ncurl -fsSLO https://github.com/iohzrd/ratum/releases/download/v$V/ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\nsha256sum -c ratum-gateway-$V-x86_64-linux-musl.tar.gz.sha256\ntar -xzf ratum-gateway-$V-x86_64-linux-musl.tar.gz\nsudo install -m0755 ratum-gateway-$V-x86_64-linux-musl/ratum-gateway /usr/local/bin/\nratum-gateway --version</pre>', 'ARM Linux（例如树莓派 5）用 <code>aarch64-linux-musl</code> 文件，Mac 用 <code>macos</code> 文件，Windows 用 <code>x86_64-windows.zip</code>。也可以从源码编译：<code>git clone https://github.com/iohzrd/ratum &amp;&amp; cd ratum &amp;&amp; git checkout v0.1.53 &amp;&amp; cargo build --release --bin ratum-gateway</code>。', '<h2>3. 让网关及时知道新区块</h2>', '在节点的 <code>bitcoin.conf</code> 里加上这一行并重启节点，这样出新块时网关几毫秒内就切换，而不是等下一次轮询：', '<pre class="cfg">blocknotify=curl -fsS -o /dev/null http://127.0.0.1:7152/NOTIFY</pre>', '<p><code>7152</code> 是下面配置里网关的 <code>api.listen_port</code>。也可以用 <code>kill -USR1 &lt;pid&gt;</code>，效果相同。</p>', '<p><b>把垃圾数据挡在你的区块之外。</b>选交易的是你的节点，而原版 Knots 29.4.2 会打包近来占满区块的大型伪多签数据交易。在 <code>bitcoin.conf</code> 里加上这一行即可拒绝它们：</p>', '<pre class="cfg">maxscriptsize=589</pre>', '<p>正常转账不受影响。这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。节点是你的，由你决定。</p>', '<h2>4. 配置文件</h2>', '保存为 <code>datum_gateway_config.json</code>。它就是 C 版网关的配置文件，所以已有的文件只要把 <code>datum</code> 段指向这里就能直接用。公钥是本矿池的，来自矿池实时数据。', '<pre class="cfg" id="ratum-config">{\n  &quot;bitcoind&quot;: {\n    &quot;rpcurl&quot;: &quot;http://127.0.0.1:8332&quot;,\n    &quot;rpccookiefile&quot;: &quot;/home/YOU/.bitcoin/.cookie&quot;,\n    &quot;work_update_seconds&quot;: 40,\n    &quot;notify_fallback&quot;: true\n  },\n  &quot;stratum&quot;: {\n    &quot;listen_addr&quot;: &quot;0.0.0.0&quot;,\n    &quot;listen_port&quot;: 23334,\n    &quot;vardiff_min&quot;: 4096,\n    &quot;require_address_username&quot;: true\n  },\n  &quot;mining&quot;: {\n    &quot;pool_address&quot;: &quot;YOUR_XBT_ADDRESS&quot;,\n    &quot;coinbase_tag_primary&quot;: &quot;Lazarus&quot;,\n    &quot;coinbase_tag_secondary&quot;: &quot;YOUR_GATEWAY_NAME&quot;\n  },\n  &quot;api&quot;: {\n    &quot;listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;listen_port&quot;: 7152,\n    &quot;admin_password&quot;: &quot;CHANGE_ME&quot;,\n    &quot;miner_listen_addr&quot;: &quot;127.0.0.1&quot;,\n    &quot;miner_listen_port&quot;: 8000\n  },\n  &quot;datum&quot;: {\n    &quot;pool_host&quot;: &quot;datum.lazarus-xbt.xyz&quot;,\n    &quot;pool_port&quot;: 28915,\n    &quot;pool_pubkey&quot;: &quot;29120606bbbfdeb0dcb259d13ed1fba9e6ff198ff6a0152cffb7608dc1c266bd17532393738aee7edf9aa0c9ec93b835256971f186da878f77fb3ed273dff30a&quot;,\n    &quot;pool_url&quot;: &quot;https://pool.lazarus-xbt.xyz&quot;,\n    &quot;pool_pass_workers&quot;: true,\n    &quot;pool_pass_full_users&quot;: true,\n    &quot;pooled_mining_only&quot;: true\n  }\n}</pre>', '<ul><li><code>datum</code>：我们的主机、端口和矿池公钥。公钥锁定这条连接：填错公钥的网关拿不到会话，也不下发任何工作——我们实测过。<code>pool_url</code> 只是在网关状态页上放一个指向本站的链接。</li><li><code>mining.pool_address</code>：填<b>你自己</b>的地址。网关与矿池连接期间，它构建的每个 coinbase 都支付我们的分配和矿池输出，与这里填什么无关，所以不影响你的收入。只有在网关与矿池失联期间挖出的工作才会付到这里，见第 7 步。</li><li><code>coinbase_tag_secondary</code>：你的网关名称，也就是本站<a href="#gateways">网关</a>表显示的名字。<code>coinbase_tag_primary</code> 只在连不上矿池时使用；连接期间网关写入的是我们的标签。</li><li><code>pool_pass_full_users: true</code>：网关后面的每台矿机按它自己用户名里的地址收款，多人可以共用一个网关。</li><li><code>require_address_username: true</code>：用户名不以地址开头的矿工会被网关拒绝，而不是替一个谁也收不到钱的名字挖矿。</li><li><code>vardiff_min: 4096</code>：新会话的起始难度，更快的机器会从这里往上调。</li><li><code>admin_password</code> 保护 7152 端口上的状态页和设置页。它们用的是普通 HTTP Basic 认证，所以请把 <code>listen_addr</code> 保持在 <code>127.0.0.1</code> 或内网。</li></ul>', '<h2>5. 启动网关，把矿机指向它</h2>', '<p><code>ratum-gateway -c datum_gateway_config.json</code>。一两秒内日志会出现 <code>DATUM pool configuration: … tag "Lazarus"</code>，接着是 <code>Stratum job … ready (full): … coinbaser outputs, pooled</code>。要让它常驻，可以用 systemd：</p>', '<pre class="cfg">[Unit]\nDescription=ratum-gateway (DATUM gateway for Lazarus Pool)\nAfter=network-online.target bitcoind.service\n\n[Service]\nUser=YOU\nExecStart=/usr/local/bin/ratum-gateway -c /home/YOU/ratum/datum_gateway_config.json\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target</pre>', '每台矿机：矿池地址 <code>stratum+tcp://网关局域网IP:23334</code>（运行网关的那台机器，不是我们的主机），用户名 <code>bc1…你的地址.矿工名</code>，密码 <code>x</code>。我们的 DATUM 端口 28915 只和网关通信，矿机指向那里什么也拿不到。', '<h2>6. 确认我们看到了它</h2>', '<ul><li>一分钟内，本站<a href="#gateways">网关</a>表会以 <b>Ratum 网关</b> 列出它，带版本号和提交号，名称是你的 secondary 标签。第一个份额被接受后，状态变为「在算」。</li><li>工作进入窗口后，你的地址会出现在<a href="#miners">矿工</a>和<a href="#payout">下次付款</a>里。可以在 <code>pool.lazarus-xbt.xyz/#bc1…</code> 查询。</li><li><code>/api/gateways</code> 里有同一行数据，带 <code>software: {"name": "ratum-gateway", …}</code>；<a href="https://mcp.lazarus-xbt.xyz" target="_blank" rel="noreferrer">Lazarus MCP</a> 的 <code>gateway_status</code> 工具可以按名称回答「我的网关连上了吗」。</li><li>网关自己的页面 <code>http://127.0.0.1:7152/</code> 显示矿池连接、它手里的分配，以及每台已连接的矿机。</li></ul>', '<h2>7. 连不上矿池时</h2>', '我们测试过的每个 Ratum 版本，在与矿池失联时（无论是 Prime 重启还是网络中断）行为都一样：最初 12 到 26 秒里，它继续让你的矿机算它自己构建的工作，coinbase 只付给 <code>mining.pool_address</code>。之后才断开矿机，矿池恢复后矿机会自动重连。在这段空档里找到的区块不是矿池区块：我们看不到它，窗口里的任何人都不会从中得到付款。所以 <code>pool_address</code> 应该填<b>你自己</b>的地址：这样的区块付给你，这很公平，因为那是你的工作。如果填我们的地址，它会落进矿池钱包，却记不到任何人名下。我们很少重启 Prime，而且只在出块之后立刻重启；这个空档也已报告给 Ratum 的作者。', '<h2>8. 故障排查</h2>', '<ul><li><code>connecting to DATUM pool datum-beta1.mine.ocean.xyz</code><br><code>datum</code> 段缺失或拼错，Ratum 退回了内置默认值（OCEAN）。按上面的配置填好 <code>pool_host</code>、<code>pool_port</code> 与 <code>pool_pubkey</code>。</li><li>刚连上就 <code>DATUM connection ended</code>，本站也看不到你的网关<br><code>pool_pubkey</code> 不对。握手是用我们的公钥加密的，别家矿池的公钥（或旧的副本）在任何工作开始之前就会被拒绝。请从“接入”一节重新复制公钥。</li><li><code>no work is served until it connects</code> / <code>disconnecting stratum clients</code><br>开着 <code>pooled_mining_only</code>（请保持开启），而网关连不上 <code>datum.lazarus-xbt.xyz:28915</code>。检查出站 TCP 28915 和 DNS。恢复后矿机会自动重连。</li><li>矿机能连上，但一直收不到任务<br>节点还在同步，或者不是 BLAKE2b 版 Knots：节点模板里没有 <code>!blake2b</code> 规则之前，Ratum 不下发任何工作。请为本链运行 Bitcoin Knots 29.4.2 并等它同步完成。</li><li>启动时 <code>Address already in use</code><br>有别的程序占了端口。Ratum 还会开一个矿工查询端口 <code>api.miner_listen_port</code>（默认 8000）；改掉它或 API 端口即可。</li><li>某个矿工的授权被拒<br>这是 <code>require_address_username</code> 在起作用：第一个 <code>.</code> 之前的部分不是地址。请用 <code>bc1…你的地址.矿工名</code>。不开这个检查的话，份额会被接受，但记在一个谁也收不到钱的名字上。</li><li>本站网关表上有少量 <code>bad-coinbase-outputs</code> 或过期拒绝<br>Prime 刚重启或链上出了新块之后属正常：之前的任务带的是旧的分配。几秒内消失，不会损失任何记账。</li><li>链拒绝你的区块，或网关因 #419 被拒<br>你的节点早于 Knots 29.4.2，不认识长 coinbase 成熟期规则。升级节点后重连，拒绝会自动解除。</li></ul>', '<h2>9. 换用 Ratum，或换到 Lazarus</h2>', '<p><b>从 C 版网关</b>（CONVOY、iohzrd、FlyTheElephant 或 StartOS）：停掉 <code>datum_gateway</code>，用同一个文件启动 <code>ratum-gateway -c</code>；如果 8000 端口已被占用，再加上 <code>api.miner_listen_port</code>。收益跟着地址走，不跟着网关走，所以已在窗口里的工作仍然是你的。新网关有新的密钥，会在本站网关表上显示为新的一行，旧的那行变为离线。</p>', '<p><b>从别家矿池的 Ratum 配置</b>（Omega、B2Pool、P2Block、AlphaPool）：只改 <code>datum</code> 段，换成上面的主机、端口和公钥；如果设置了 <code>pool_url</code> 也一并改掉。指向别家公共网关的 secondary 标签在这里没有意义，留着或删掉都行。P2Block 的分支有 solo 模式：把 <code>mining.solo</code> 设为 <code>false</code>，否则网关根本不连矿池。AlphaPool 的 28916 端口和它的公钥在这里无效，我们的是 28915。</p>', '<p><b>换回去</b>就是反过来改。没有任何锁定：你在这里做的工作，只要还在窗口里，就由我们找到的区块支付。</p>', '<h2>我们实测了什么</h2>', '<div class="seo-table"><table>\n        <caption>ratum-gateway 对接 Lazarus Prime：regtest 实测（2026 年 9 月 27 日，XBT-082）与线上 Prime 的计数</caption>\n        <thead><tr><th scope="col">版本</th><th scope="col">区块、收款人</th><th scope="col">只付矿池的完整工作</th><th scope="col">失联时</th></tr></thead>\n        <tbody>\n        <tr><th scope="row">iohzrd 0.1.28</th><td>5 / 5 记为 <code>split</code>，13–14 个收款人</td><td>4 毫秒 / 222 秒<br>线上 0.020%</td><td>不经矿池 18 秒</td></tr>\n        <tr><th scope="row">iohzrd 0.1.39</th><td>10 / 10 记为 <code>split</code>，13–15 个收款人</td><td>0 毫秒 / 230 秒<br>线上 0.030%</td><td>不经矿池 26 秒</td></tr>\n        <tr><th scope="row">iohzrd 0.1.53（最新正式版）</th><td>7 / 7 记为 <code>split</code>，13–15 个收款人</td><td>3 毫秒 / 229 秒<br>线上 0.084% (份额尚少)</td><td>不经矿池 17 秒</td></tr>\n        <tr><th scope="row">iohzrd master 0.1.54</th><td>9 / 9 记为 <code>split</code>，13–15 个收款人</td><td>6 毫秒 / 227 秒<br>线上 —</td><td>不经矿池 19 秒</td></tr>\n        <tr><th scope="row">B2Pool 分支（ocminer）0.1.25</th><td>9 / 9 记为 <code>split</code>，13–15 个收款人</td><td>9 毫秒 / 227 秒<br>线上 0.000% (份额尚少)</td><td>不经矿池 19 秒</td></tr>\n        <tr><th scope="row">P2Block 分支 0.1.29</th><td>7 / 7 记为 <code>split</code>，13–15 个收款人</td><td>6 毫秒 / 232 秒<br>线上 —</td><td>不经矿池 20 秒</td></tr>\n        </tbody>\n      </table></div>', '方法：一条启用 BLAKE2b 与长 coinbase 成熟期规则的 Bitcoin Knots 29.4.2 regtest 链、一份我们的 Prime（与矿池运行的版本相同）、每个网关版本，以及两台 CPU 矿机；每个版本约八分钟，每个模板都带交易，另有对手每 15 秒出一个块。检查项：公钥锁定连接；每个记为 <code>split</code> 的区块在链上的支付与记录完全一致；DATUM 费率路径；<code>地址.矿工名</code> 与 <code>地址~标签.矿工名</code> 用户名；Prime 重启；以及没有任何拒绝。「线上」是在只付给矿池的完整任务上被接受的份额所占比例，取自我们 Prime 对该版本所有已连接网关的计数。iohzrd C 版网关按同一口径为 0.018%。每个 Ratum 新版本我们都会重跑同一套测试并更新此表。'])
 
 _SEO_INTRO = {
     # Chinese only. The English homepage keeps the hero as its <h1>; /zh/ needs Chinese copy in the
@@ -6314,18 +6348,6 @@ _SEO_INTRO = {
             "BIP-110 是一项比特币提案，主张在一年内限制交易中的非金融数据。它需要 55% 的算力表态支持，最高只到约 2.6%；运行它的节点从 2026 年 8 月 8 日、961,632 高度起开始拒绝不表态的区块——那一刻链就分开了。本链是 BIP-110 这一支，多数链继续用 SHA-256d，未受影响。",
             "改工作量证明是这一支后来的另一个决定。2026 年 8 月 30 日，它从 SHA-256d 换成了 BLAKE2b（Sia 风格区块头）：961,639 是最后一个 SHA-256d 区块，961,640 是第一个 BLAKE2b 区块。其余部分仍是比特币——2100 万上限、减半周期、脚本、地址，以及分叉前的全部历史。",
             "所以「BIP-110」是大家对这条链的称呼，但真正决定你用什么硬件的是 BLAKE2b。任何为 Siacoin 而造的 ASIC 用原厂固件就能在这里挖矿；SHA-256 机器根本产不出有效份额。由于分叉前的历史与比特币共享，请为本链另生成新地址，SHA-256 的私钥务必远离。Lazarus Pool 用 <a href=\"/how\">TIDES 在 coinbase 内支付</a>，自建 DATUM 网关手续费 0%。",
-        ]),
-    },
-    "/datum-subsidy": {
-        "en": ("The DATUM bonus has ended", [
-            "The DATUM bonus ended on 24 October 2026. Until then, 50 points of the public stratum's 100% fee (12.5 points of the 25% grace fee) were credited to miners running their own DATUM gateway, pro rata by DATUM work. The pool now keeps the whole stratum fee.",
-            "Nothing you are owed is lost. Bonus already credited to your balance is still paid with your next output, as before.",
-            "Your own DATUM gateway still pays a 0% fee. You build the block template against your own Bitcoin Knots node and choose its transactions; the pool only supplies the coinbase split and verifies your shares. The public stratum's terms are unchanged: 25% for the first 24 h (96 h if the address had DATUM work on Lazarus in the prior 30 days), then 100%. <a href=\"/connect\">Gateway setup and the config to copy.</a>",
-        ]),
-        "zh": ("DATUM 奖励已结束", [
-            "DATUM 奖励已于 2026 年 10 月 24 日结束。此前，公共 stratum 100% 手续费中的 50 个点（25% 宽限费率中的 12.5 个点）按 DATUM 工作量比例记给自建 DATUM 网关的矿工。现在 stratum 手续费全部归矿池。",
-            "欠你的不会丢。已经记入你余额的奖励，仍会像以前一样随你的下一笔输出支付。",
-            "自建 DATUM 网关仍是 0% 手续费。区块模板由你用自己的 Bitcoin Knots 节点构建、交易由你挑选；矿池只提供 coinbase 拆分并校验你的份额。公共 stratum 的条款不变：前 24 小时（若该地址在过去 30 天内在 Lazarus 有 DATUM 工作则为 96 小时）为 25%，之后为 100%。<a href=\"/connect\">网关配置与可直接复制的 config。</a>",
         ]),
     },
     "/hardware": {
@@ -6366,7 +6388,7 @@ _SEO_INTRO = {
     "/flytheelephant": {
         "en": ('Mine at Lazarus with the FlyTheElephant gateway', [
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> is a DATUM gateway for this chain: CONVOY\'s BLAKE2b code plus FlyTheElephant\'s own work. Its <code>master</code> gives every miner the pool\'s whole payout split (the 16&nbsp;KB coinbase) and fits that coinbase to the block\'s weight and sigop limits, so a full split can never make your block invalid. It connects to Lazarus with no patch. FlyTheElephant also helps miners set up in our Discord <code>#support</code>. Thank you.</p>',
-            '<p><b>1. Your node.</b> Bitcoin Knots <b>29.4.2</b> (older builds reject the long coinbase maturity rule and their blocks are invalid), fully synced on this chain. In <code>bitcoin.conf</code>:</p>',
+            '<p><b>1. Your node.</b> Bitcoin Knots <b>29.4.3</b> (older builds do not know the 180-day coinbase maturity rule from block 979,919 and can build blocks the network rejects), fully synced on this chain. In <code>bitcoin.conf</code>:</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
             '<p><code>blockmaxweight</code> leaves room for the split coinbase. <code>maxscriptsize=589</code> keeps the large fake-multisig data transactions out of your blocks; stock Knots mines them by default. It is your node and your choice: the setting also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. Knots\' default DNS seeds point at SHA-256 peers, so add a few <code>addnode=</code> lines from a current list for this chain (<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>, or <a href="https://convoy.xyz/getstarted" target="_blank" rel="noreferrer">CONVOY\'s guide</a>); a list pasted weeks ago rots. <code>maxtipage</code> only mattered during the slow weeks after the fork and you can leave it out once you are synced.</p>',
             "<p><b>2. Build the gateway.</b> On Debian or Ubuntu (other systems: the repo's README):</p>",
@@ -6382,7 +6404,7 @@ _SEO_INTRO = {
         ]),
         "zh": ('用 FlyTheElephant 网关在 Lazarus 挖矿', [
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> 是这条链上的一个 DATUM 网关：基于 CONVOY 的 BLAKE2b 代码，加上 FlyTheElephant 自己的改进。它的 <code>master</code> 让每台矿机都拿到矿池完整的分账（16&nbsp;KB coinbase），并按区块的 weight 和 sigop 上限裁剪这个 coinbase，所以完整分账永远不会让你的区块无效。无需任何补丁即可连接 Lazarus。FlyTheElephant 也在我们 Discord 的 <code>#support</code> 频道帮矿工配置，谢谢他。</p>',
-            '<p><b>1. 节点。</b>Bitcoin Knots <b>29.4.2</b>（旧版本不认长 coinbase 成熟期规则，它们出的块无效），在这条链上完全同步。<code>bitcoin.conf</code> 中：</p>',
+            '<p><b>1. 节点。</b>Bitcoin Knots <b>29.4.3</b>（旧版本不认从区块 979,919 开始的 180 天 coinbase 成熟期规则，可能出网络拒绝的块），在这条链上完全同步。<code>bitcoin.conf</code> 中：</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
             '<p><code>blockmaxweight</code> 为分账 coinbase 留出空间。<code>maxscriptsize=589</code> 把大型伪多签数据交易挡在你的区块之外；原版 Knots 默认会打包它们。节点是你的，由你决定：这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。Knots 默认的 DNS 种子指向 SHA-256 节点，所以请从这条链的最新列表加几行 <code>addnode=</code>（<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>，或 <a href="https://convoy.xyz/getstarted?lang=zh" target="_blank" rel="noreferrer">CONVOY 的指南</a>）；几周前复制的列表会失效。<code>maxtipage</code> 只在分叉后同步缓慢的那几周有用，同步完成后可以不设。</p>',
             '<p><b>2. 编译网关。</b>Debian 或 Ubuntu 下（其他系统见仓库 README）：</p>',
@@ -6495,6 +6517,8 @@ _SEO_ALIASES["/mine-btcb2"] = "/connect"
 _SEO_ALIASES["/mine-xbt"] = "/connect"
 _SEO_ALIASES["/tides"] = "/how"
 _SEO_ALIASES["/profitability"] = "/calculator"
+# The DATUM bonus ended on 2026-10-24 and its page went with it; old links land on the DATUM setup page.
+_SEO_ALIASES["/datum-subsidy"] = "/connect"
 
 # A plain-markdown protocol reference. Nobody else documents how a BLAKE2b share on this chain is
 # actually derived, so this is the page a developer or a model looking for it should land on, and
@@ -6598,7 +6622,6 @@ _LLMS_TXT = """# Lazarus Pool
 - Is it profitable: {site}/calculator
 - The BIP-110 fork: {site}/bip110
 - TIDES payouts: {site}/how
-- DATUM bonus (ended 24 October 2026): {site}/datum-subsidy
 - Mine with a Ratum gateway (ratum-gateway): {site}/ratum
 - Mine with the FlyTheElephant gateway: {site}/flytheelephant
 - Pools on this chain, compared: {site}/pools
@@ -6608,7 +6631,7 @@ _LLMS_TXT = """# Lazarus Pool
 - Public API reference: {site}/api
 - Explorer: https://mempool.lazarus-xbt.xyz
 - Public stratum: a donation, validation and fallback endpoint at 100%, all kept by the pool, with a 24 h grace at 25%, or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. Point a miner at stratum+tcp://stratum.lazarus-xbt.xyz:23334 to confirm it connects and submits shares while your own node and DATUM gateway are still coming online, or as a fallback if your own gateway goes down. Bitcoin Knots has announced a rule to invalidate coinbase payouts to addresses that hash through any pool's stratum (SV1); moving to another pool does not avoid it. Run your own DATUM gateway.
-- Coinbase maturity: Knots 29.4.2 (#419) holds coinbases mined from block 973,440 until block 979,920 (about 5 Nov 2026) for 6,480 blocks instead of 100, so a payout from block N is spendable at about block N + 6,480. DATUM gateway nodes must run Knots 29.4.2 or later.
+- Coinbase maturity: Knots 29.4.2 (#419) holds coinbases mined from block 973,440 to 979,918 for 6,480 blocks instead of 100, so a payout from block N in that range is spendable at about block N + 6,480 (about 45 days). Knots 29.4.3 (#468) holds coinbases mined from block 979,919 on for 25,920 blocks (about 180 days), each counted from its own block, so a payout from block N is spendable at about block N + 25,920. DATUM gateway nodes must run Knots 29.4.3 or later.
 - MCP server for AI assistants (read-only, no login, Streamable HTTP): https://mcp.lazarus-xbt.xyz/mcp (guide: https://mcp.lazarus-xbt.xyz)
 - GitHub: https://github.com/AwokenLazarus/Lazarus-Pool
 - Discord: https://discord.gg/fD33dJXnzz
@@ -6645,7 +6668,6 @@ GATEWAYSPLACEHOLDER
 
 - Own DATUM gateway: 0%
 - Public stratum: donation, validation and fallback endpoint at 100%, kept by the pool, with a 24 h / 96 h grace at 25%, then 100%
-- DATUM bonus: ended on 24 October 2026. Bonus already credited to a miner's balance is still paid with their next output
 - Solo stratum: closed
 CUSTODYPLACEHOLDER
 
@@ -6992,7 +7014,6 @@ _SEO_KEEP = {
     "/calculator": ("hardware",),
     "/connect": ("connect",),
     "/ratum": (),
-    "/datum-subsidy": ("learn",),
     "/flytheelephant": ("gateways",),
     "/how": ("how",),
     "/non-custodial": ("payout",),
@@ -7004,7 +7025,7 @@ _SEO_KEEP = {
 }
 # The operator notice stays on the dashboard and the gateway pages; on every other article it was
 # the first thing a crawler read, identical across 30 URLs.
-_NOTICE_PAGES = {"/connect", "/ratum", "/flytheelephant", "/datum-subsidy"}
+_NOTICE_PAGES = {"/connect", "/ratum", "/flytheelephant"}
 # Hash targets that stand for a section without being its id (mirrors ALIAS in app.js).
 _HASH_ALIAS = {"top": "fees", "datum": "connect", "ratum": "connect", "mine": "connect", "window": "payout", "payouts": "dashboard"}
 _TOP_SECTION = re.compile(r'\n  <section\b[^>]*\bid="([^"]+)"[^>]*>.*?\n  </section>', re.S)
@@ -7014,27 +7035,26 @@ _ORG_ID = "https://lazarus-xbt.xyz/#org"
 # a page's modified date only when its words change, never per deploy. /blocks and /calculator are
 # live data and a tool, so they stay plain WebPages.
 _SEO_ARTICLE = {
-    "/hardware": ("Article", "2026-09-13", "2026-10-24"),
-    "/rentals": ("Article", "2026-10-08", "2026-10-24"),
-    "/pools": ("Article", "2026-09-13", "2026-10-24"),
-    "/self-cap": ("Article", "2026-09-13", "2026-10-24"),
-    "/non-custodial": ("Article", "2026-09-13", "2026-10-24"),
-    "/bip110": ("Article", "2026-09-13", "2026-10-24"),
-    "/how": ("Article", "2026-09-13", "2026-10-24"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-10-24"),
-    "/ratum": ("TechArticle", "2026-09-28", "2026-10-24"),
-    "/datum-subsidy": ("TechArticle", "2026-09-13", "2026-10-24"),
-    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-24"),
-    "/api": ("TechArticle", "2026-09-13", "2026-10-24"),
+    "/hardware": ("Article", "2026-09-13", "2026-10-29"),
+    "/rentals": ("Article", "2026-10-08", "2026-10-29"),
+    "/pools": ("Article", "2026-09-13", "2026-10-29"),
+    "/self-cap": ("Article", "2026-09-13", "2026-10-29"),
+    "/non-custodial": ("Article", "2026-09-13", "2026-10-29"),
+    "/bip110": ("Article", "2026-09-13", "2026-10-29"),
+    "/how": ("Article", "2026-09-13", "2026-10-29"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-10-29"),
+    "/ratum": ("TechArticle", "2026-09-28", "2026-10-29"),
+    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-29"),
+    "/api": ("TechArticle", "2026-09-13", "2026-10-30"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
 # rule as _SEO_ARTICLE: bump a date in the commit that changes that page's words, never per deploy.
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-10-24",
-    "/calculator": "2026-10-24",
-    "/blocks": "2026-10-24",
+    "/": "2026-10-29",
+    "/calculator": "2026-10-29",
+    "/blocks": "2026-10-29",
 }
 _OG_IMAGE = "https://pool.lazarus-xbt.xyz/static/og-pool.png"
 
@@ -7056,7 +7076,7 @@ def _keyword_page(raw, meta):
     # scripts, and on /zh/ the summary was English.
     raw = re.sub(r'<noscript id="nojs-summary">.*?</noscript>\n?', "", raw, count=1, flags=re.S)
     if meta["path"] not in _NOTICE_PAGES:
-        raw = re.sub(r'<aside class="softfork urgent" id="gatewaynotice".*?</aside>\n', "", raw, count=1, flags=re.S)
+        raw = re.sub(r'<aside class="softfork urgent" id="(?:forknotice|gatewaynotice)".*?</aside>\n', "", raw, count=2, flags=re.S)
     home = "/zh/" if meta["lang"] == "zh-CN" else "/"
 
     def relink(m):
@@ -7179,7 +7199,6 @@ _SITEMAP_ORDER = (
     ("/pools", "weekly", "0.9"),
     ("/connect", "weekly", "0.9"),
     ("/ratum", "weekly", "0.8"),
-    ("/datum-subsidy", "weekly", "0.8"),
     ("/flytheelephant", "weekly", "0.8"),
     ("/self-cap", "weekly", "0.8"),
     ("/non-custodial", "weekly", "0.8"),

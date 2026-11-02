@@ -30,8 +30,7 @@
   // at the top of <main> by the server. The article belongs to the view its topic lives in, and
   // that view is what the URL opens.
   const PATH_VIEW = {
-    "/how": "learn", "/bip110": "learn", "/non-custodial": "learn", "/self-cap": "learn", "/pools": "learn",
-    "/datum-subsidy": "learn", "/api": "learn",
+    "/how": "learn", "/bip110": "learn", "/non-custodial": "learn", "/self-cap": "learn", "/pools": "learn", "/api": "learn",
     "/connect": "mine", "/ratum": "mine", "/flytheelephant": "mine", "/hardware": "mine", "/rentals": "mine", "/calculator": "mine",
     "/blocks": "payouts",
   };
@@ -306,7 +305,7 @@
     const p = e.detail || {};
     const n = Number(p.blocks_found);
     if (Number.isFinite(n)) {
-      if (lastFound != null && n > lastFound) toast(T("toast.block", { h: Number(p.height || 0).toLocaleString() }), "#blocks");
+      if (lastFound != null && n > lastFound) toast(T("toast.block", { h: Number(p.last_found_height || p.height || 0).toLocaleString() }), "#blocks");
       lastFound = n;
     }
   });

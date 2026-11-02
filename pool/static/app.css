@@ -319,7 +319,7 @@ html.app { scroll-padding-top: calc(var(--mast-full, 7.5rem) + 14px); }
 .app .hero-grid > .hx-card { grid-column: 1 / -1; margin-top: 0.4rem; }
 .hx-range:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* On a phone the sticky mast must stay small: the bonus banner keeps its headline and its button. */
+/* On a phone the sticky mast must stay small: a promo strip keeps its headline and its button. */
 @media (max-width: 900px) {
   .app .promo #promo-text { display: none; }
   .app .promo-row { gap: 0.5rem 0.7rem; padding-block: 0.55rem; }

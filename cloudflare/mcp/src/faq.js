@@ -6,7 +6,7 @@
 // security findings). Figures that move (fees, minimum output) are given with the date they
 // were true and a pointer to the live tool, so an assistant never presents them as permanent.
 
-export const FAQ_VERSION = "2026-10-24.2";
+export const FAQ_VERSION = "2026-10-29.1";
 
 const S = "https://pool.lazarus-xbt.xyz";
 const E = "https://mempool.lazarus-xbt.xyz";
@@ -17,22 +17,13 @@ export const FAQ = [
     title: "Fees on each path (own DATUM gateway, public stratum, solo)",
     keywords: ["fee", "fees", "cost", "percent", "charge", "cheap", "expensive", "100", "50", "25", "grace", "donation", "15", "price", "take", "custody", "10"],
     answer:
-      "Own DATUM gateway: 0% fee. Public stratum is a donation, validation and fallback endpoint at 100% since 2026-10-07 05:00 UTC, all kept by the pool since the DATUM bonus ended on 2026-10-24 (see 'datum-bonus'), with a 24 h grace at 25%, or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. " +
+      "Own DATUM gateway: 0% fee. Public stratum is a donation, validation and fallback endpoint at 100% since 2026-10-07 05:00 UTC, all kept by the pool, with a 24 h grace at 25%, or 96 h if the address mined through a DATUM gateway on Lazarus in the prior 30 days, then 100%. " +
       "Point a miner at it to confirm it connects and submits shares while your own node and DATUM gateway are still coming online, or as a fallback if your own gateway goes down. Solo stratum is closed. The fee is applied when a block is paid, to the work in the window. " +
       "Custody fee: from block 977,665, a make-good for a pool-only or partial coinbase pays 10% less to a miner whose own DATUM gateway is producing such coinbases (an out-of-date build); miners on current gateways are paid in full (see 'makegoods'). " +
       "These are the values as of this knowledge base's version; for the live numbers call pool_status or connection_info, which read them from the pool.",
-    links: [`${S}/pools`, `${S}/datum-subsidy`],
+    links: [`${S}/pools`, `${S}/connect`],
   },
-  {
-    id: "datum-bonus",
-    title: "The DATUM bonus (rebate): ended on 2026-10-24",
-    keywords: ["bonus", "rebate", "subsidy", "uplift", "datum", "extra", "credited", "ended", "stopped"],
-    answer:
-      "The DATUM bonus ended on 2026-10-24. Until then, when a block was found, 50 points of the public stratum's 100% fee (12.5 points of the 25% grace fee) on that block's stratum work were credited to the addresses mining through their own DATUM gateway, in proportion to their DATUM work in the window. " +
-      "From 2026-10-24 the pool keeps the whole stratum fee. Nothing else changed: your own DATUM gateway still pays 0%, and the stratum fee and grace are as before (see 'fees'). " +
-      "Bonus already credited was booked as carry (see 'carry') and is still paid with that address's next coinbase output that clears the minimum; miner_overview and miner_audit show it as datum_bonus_earned_xbt.",
-    links: [`${S}/datum-subsidy`],
-  },
+
   {
     id: "datum-vs-stratum",
     title: "DATUM gateway or public stratum: which to use",
@@ -49,7 +40,7 @@ export const FAQ = [
     keywords: ["connect", "setup", "set", "up", "url", "port", "username", "password", "pubkey", "host", "config", "configure", "start", "how", "point"],
     answer:
       "Public stratum: stratum+tcp://stratum.lazarus-xbt.xyz:23334, username = your XBT payout address optionally followed by .workername, password x. Algorithm: BLAKE2b with a Sia-style header (any Siacoin ASIC; SHA-256 machines will not work). " +
-      "DATUM: run Bitcoin Knots 29.4.2 (or later) for this chain, build a DATUM gateway, and put the pool's DATUM host (datum.lazarus-xbt.xyz), port (28915) and pool pubkey in its datum section; set mining.pool_address to your payout address and point your machines at your gateway. " +
+      "DATUM: run Bitcoin Knots 29.4.3 (or later) for this chain, build a DATUM gateway, and put the pool's DATUM host (datum.lazarus-xbt.xyz), port (28915) and pool pubkey in its datum section; set mining.pool_address to your payout address and point your machines at your gateway. " +
       "connection_info returns the exact values including the pubkey. After connecting, check miner_overview with your address or gateway_status with your gateway's name.",
     links: [`${S}/connect`, "https://convoy.xyz/getstarted"],
   },
@@ -73,7 +64,7 @@ export const FAQ = [
       "Several gateway builds connect to Lazarus with no patch. The pool ranks them by what it measures against its own Prime (whether a found block pays the whole window, and how often a gateway hands miners a job whose coinbase pays only the pool); " +
       "the ranked list, best first, is connection_info.gateway_builds and the 'Which DATUM gateway' list on the Connect page. CONVOY's build is the recommended one, then FlyTheElephant's (see 'flytheelephant'). Run CONVOY's v0.5.0beta release (69c61a9, 10 Oct 2026); v0.4.1-beta builds are out of date and gateway_status flags them. Updating makes a gateway's blocks come out partial less often, but no build is at zero yet: any gateway can occasionally mine a partial coinbase, and the miners it leaves out are repaid by a make-good (see 'makegoods'). " +
       "CONVOY 971af86 and FlyTheElephant 280cf54 give every miner the whole split: on regtest, blocks found by an Antminer A3 and by a generic miner each paid all 60 miners in the window. Keep whichever build you run up to date. " +
-      "ratum-gateway, iohzrd's Rust gateway, is also on the list (see 'ratum'). Whatever the build, run it against Bitcoin Knots 29.4.2 (see 'node-version').",
+      "ratum-gateway, iohzrd's Rust gateway, is also on the list (see 'ratum'). Whatever the build, run it against Bitcoin Knots 29.4.3 (see 'node-version').",
     links: [`${S}/connect`, `${S}/flytheelephant`, `${S}/ratum`],
   },
   {
@@ -89,10 +80,10 @@ export const FAQ = [
   },
   {
     id: "node-version",
-    title: "Which node version a DATUM gateway needs (Knots 29.4.2) and what goes wrong on an old one",
-    keywords: ["upgrade", "version", "29.4.2", "29.4.1", "knots", "node", "old", "outdated", "invalid", "rejected", "premature"],
+    title: "Which node version a DATUM gateway needs (Knots 29.4.3) and what goes wrong on an old one",
+    keywords: ["upgrade", "version", "29.4.3", "29.4.2", "29.4.1", "knots", "node", "old", "outdated", "invalid", "rejected", "premature"],
     answer:
-      "Gateways must run Bitcoin Knots 29.4.2 or later. Its long-coinbase-maturity rule (see 'coinbase-maturity') is consensus from block 973,440; an older node can build a block that spends a coinbase too young under the new rule, and the chain rejects that block. " +
+      "Gateways must run Bitcoin Knots 29.4.3 or later, before block 979,919. Its 180-day coinbase maturity (see 'coinbase-maturity') is consensus from block 979,919; an older node can build a block that spends a coinbase too young under the new rule, and the chain rejects that block. From 979,919 Lazarus refuses a gateway whose found block the network rejects for that reason, or whose work builds on a chain the upgraded network rejects. " +
       "A rejected block pays nobody, so it costs every miner in the TIDES window, not only the gateway that built it. gateway_status shows a gateway's build and any flags.",
     links: [`${S}/connect`],
   },
@@ -112,7 +103,7 @@ export const FAQ = [
     keywords: ["carry", "carried", "unpaid", "small", "floor", "minimum", "under", "dust", "forward", "accumulate", "why", "not", "paid"],
     answer:
       "Each coinbase output must be at least the pool's minimum output (0.005 XBT as of 26 Sep 2026; miner_audit shows the live figure). If your share of a block is below it, or the coinbase is already full, your earned value is not lost: it is added to your carry. " +
-      "Carry is paid, on top of your share, in the first later coinbase where share plus carry clears the minimum. DATUM bonus credited before it ended on 2026-10-24 is held as carry too. " +
+      "Carry is paid, on top of your share, in the first later coinbase where share plus carry clears the minimum. DATUM credits booked before 2026-10-24 are held as carry too. " +
       "miner_audit reports your carry, whether you are in the coinbase being built right now, and the reason if not.",
     links: [`${S}/how`],
   },
@@ -127,13 +118,13 @@ export const FAQ = [
   },
   {
     id: "coinbase-maturity",
-    title: "Coinbase maturity (Knots #419): why mined coins wait about 45 days, and when they unlock",
-    keywords: ["maturity", "mature", "immature", "419", "6480", "6,480", "6481", "locked", "lock", "spend", "spendable", "unlock", "wait", "confirmations", "relay", "policy", "november", "45", "35"],
+    title: "Coinbase maturity (Knots #419 and 29.4.3): why mined coins wait about 45 or 180 days, and when they unlock",
+    keywords: ["maturity", "mature", "immature", "419", "6480", "6,480", "6481", "locked", "lock", "spend", "spendable", "unlock", "wait", "confirmations", "relay", "policy", "november", "45", "35", "180", "25920", "25,920", "468", "29.4.3", "979919"],
     answer:
-      "Coinbase outputs normally become spendable after 100 confirmations. Bitcoin Knots #419 (in 29.4.2) made coinbases mined from block 973,440 up to 979,919 need 6,480 confirmations under consensus; the rule releases at block 979,920 (around 5 Nov 2026). " +
-      "Separately, Knots 29.4.2's relay policy applies the 6,480-confirmation wait to every coinbase spend, including older coinbases, so nodes will not relay a spend younger than that even where consensus would allow it. " +
+      "Coinbase outputs normally become spendable after 100 confirmations. Bitcoin Knots #419 (in 29.4.2) made coinbases mined from block 973,440 to 979,918 need 6,480 confirmations under consensus until block 979,920, and Knots relay policy (29.4.2 and 29.4.3) applies the same 6,480 to every coinbase below block 979,919, older ones included, so in practice each of those unlocks about 45 days after its own block, not all at once. " +
+      "Knots 29.4.3 (#468) makes coinbases mined from block 979,919 on need 25,920 confirmations (about 180 days) under consensus and relay alike, each counted from its own block, until the RDTS expiry (September 2027). " +
       "A wallet that counts 100 confirmations may call a payout mature that still cannot move. The pool reports the later of the two (consensus and relay), so its unlock heights are the conservative ones; miner_immature lists yours with estimated dates. Nothing is lost: the coins are yours on chain from the moment the block is found.",
-    links: [`${S}/non-custodial`, "https://github.com/bitcoinknots/bitcoin/pull/419"],
+    links: [`${S}/non-custodial`, "https://github.com/bitcoinknots/bitcoin/pull/419", "https://github.com/bitcoinknots/bitcoin/pull/468"],
   },
   {
     id: "makegoods",
@@ -198,7 +189,7 @@ export const FAQ = [
     keywords: ["audit", "read", "explain", "report", "fields", "meaning", "understand", "estimate", "estimated", "numbers"],
     answer:
       "paid: coinbase outputs to you that have matured and been counted as paid. immature: outputs already on chain but still inside the maturity wait, with the next unlock heights. carry: earned value waiting for an output (see 'carry'). " +
-      "make_goods: amounts the pool owes you from partial or pool-only blocks, split into queued (waiting for a height), paid and failed. bonus: DATUM bonus credited before it ended on 2026-10-24. window: your share of the current TIDES window and what the next block would pay you. " +
+      "make_goods: amounts the pool owes you from partial or pool-only blocks, split into queued (waiting for a height), paid and failed. window: your share of the current TIDES window and what the next block would pay you. " +
       "Figures marked estimate (earnings per day, unlock dates) depend on luck and on how fast blocks come; heights are exact, dates are not. Every amount can be checked with verify_payout.",
     links: [`${S}/how`],
   },

@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lightning Stream: How It Works</title>
+<meta name="description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<link rel="canonical" href="https://lazarus-xbt.xyz/stream/how-it-works/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Lazarus · Bitcoin BLAKE2b">
+<meta property="og:title" content="Lightning Stream: how it works">
+<meta property="og:description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<meta property="og:url" content="https://lazarus-xbt.xyz/stream/how-it-works/">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lazarus XBT, lazarus-xbt.xyz">
+<meta name="twitter:site" content="@LazarusPoolXBT">
+<meta name="twitter:title" content="Lightning Stream: how it works">
+<meta name="twitter:description" content="How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.">
+<meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
+<meta name="theme-color" content="#1a1712">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="stylesheet" href="/assets/hub.css?v=7">
+<link rel="stylesheet" href="/stream/stream.css?v=4">
+<script src="/assets/js.js"></script>
+<script src="/assets/analytics.js?v=1" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "@id": "https://lazarus-xbt.xyz/stream/how-it-works/#article",
+ "headline": "Lightning Stream: how it works",
+ "description": "How Lightning Stream connects everything: buyers and sellers over encrypted iroh links and relays, payments over XBT Lightning between their own nodes, and discovery on Nostr, for web apps, AI, hashrate and VPN exits.",
+ "url": "https://lazarus-xbt.xyz/stream/how-it-works/",
+ "image": "https://lazarus-xbt.xyz/assets/og.png",
+ "dateModified": "2026-10-27",
+ "inLanguage": "en",
+ "author": {
+  "@type": "Organization",
+  "name": "Lightning Stream",
+  "url": "https://github.com/AwokenLazarus/Lightning-Stream"
+ },
+ "publisher": {
+  "@id": "https://lazarus-xbt.xyz/#org"
+ },
+ "isPartOf": {
+  "@id": "https://lazarus-xbt.xyz/stream/#article"
+ },
+ "about": [
+  "Lightning Network",
+  "hold invoices",
+  "x402",
+  "AI agents",
+  "streaming payments",
+  "probabilistic payments",
+  "XBT"
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="topbar wrap">
+    <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <a href="/learn/">The chain</a><a href="/ecosystem/">Ecosystem</a><a href="/map/">Galaxy map</a><a href="/naughtylist/">Naughty list</a><a href="/key/">Lazarus Key</a><a href="/faq/">FAQ</a>
+      <a class="btn small" href="https://pool.lazarus-xbt.xyz" rel="noopener">Lazarus Pool</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero wrap">
+  <h1><span class="kicker">Lightning Stream · How it works</span>How Stream <em>connects</em> everything</h1>
+  <p class="lede">Lightning Stream at a glance: your app, their app, an encrypted link between them, money over Lightning, and shops found on Nostr.</p>
+  <p class="note">Updated 29 October 2026. <a href="/stream/">Back to the whitepaper</a>.</p>
+  <nav class="toc" aria-label="On this page">
+    <p class="category">On this page</p>
+    <a href="#map">The map</a><a href="#money">How the money works</a>
+  </nav>
+  <nav class="toc" aria-label="More pages">
+    <p class="category">The whitepaper and its pages</p>
+    <a href="/stream/">The whitepaper</a><a href="/stream/how-it-works/">How it works</a><a href="/stream/start/">Try it</a><a href="/stream/design/">Design details</a><a href="/stream/tests/">Tests and numbers</a><a href="/stream/progress/">Progress and status</a><a href="/stream/uses/">Uses</a><a href="/stream/changelog/">Changelog</a>
+  </nav>
+</section>
+
+<section class="section wrap">
+  <figure class="hiw" id="map">
+<svg class="hiw-desk" viewBox="0 0 1200 720" role="img" aria-label="How Lightning Stream works: your devices use your own Stream app; it reaches the seller's Stream app over an encrypted link, directly or through a relay; money moves separately over Lightning from your node to theirs as you use the service; shops are found on Nostr.">
+<rect class="band" x="200" y="24" width="800" height="76" rx="38"/>
+<path class="ic" d="M455 52a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4h-14l-8 6v-6h0a4 4 0 0 1-4-4z"/><circle class="ic-dot" cx="464" cy="59" r="2"/><circle class="ic-dot" cx="470" cy="59" r="2"/><circle class="ic-dot" cx="476" cy="59" r="2"/>
+<text class="i-band" x="520" y="68" text-anchor="start">Nostr</text>
+<text class="i-sub" x="520" y="86" text-anchor="start">shops are found here</text>
+<g class="st-d">
+<rect class="ic" x="750" y="52" width="20" height="20" rx="3"/><path class="ic" d="M755 52v-5M765 52v-5M755 72v5M765 72v5M750 57h-5M750 67h-5M770 57h5M770 67h5"/>
+<text class="i-lab" x="785" y="68" text-anchor="start">AI sellers</text>
+</g>
+<polyline class="fl-disc" points="380,100 380,330 232,330"/>
+<polygon class="ah-disc" points="226,330 240,323 240,337"/>
+<polyline class="fl-disc" points="934,330 820,330 820,106"/>
+<polygon class="ah-disc" points="820,100 813,114 827,114"/>
+<text class="i-sub" x="392" y="170" text-anchor="start">find shops</text>
+<text class="i-sub" x="808" y="170" text-anchor="end">list</text>
+<text class="i-head" x="150" y="150" text-anchor="middle">YOU</text>
+<g class="st-r">
+<rect class="tile" x="42.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="56" y="199" width="28" height="18" rx="2"/><path class="ic" d="M51 221h38"/>
+<text class="i-lab" x="70" y="256.0" text-anchor="middle">Laptop</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="122.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="141" y="195" width="18" height="30" rx="3"/><path class="ic" d="M147 220h6"/>
+<text class="i-lab" x="150" y="256.0" text-anchor="middle">Phone</text>
+</g>
+<g class="st-d">
+<rect class="tile" x="202.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="214" y="198" width="32" height="20" rx="2"/><path class="ic" d="M224 224h12M230 218v6"/>
+<text class="i-lab" x="230" y="256.0" text-anchor="middle">TV</text>
+</g>
+<polyline class="fl-local" points="150,262 150,300"/>
+<polygon class="ah" points="150,306 143,292 157,292"/>
+<rect class="appbox" x="80" y="312" width="140" height="96" rx="22"/>
+<path class="ic-brass" d="M153 335L142 352h8l-3 13L159 347h-8z"/>
+<text class="i-lab" x="150" y="392" text-anchor="middle">Your app</text>
+<text class="i-head" x="1050" y="150" text-anchor="middle">SELLER</text>
+<g class="st-p">
+<rect class="tile tile-p" x="832.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="844" y="198" width="32" height="24" rx="3"/><path class="ic" d="M844 205h32"/><circle class="ic-dot" cx="848" cy="201.5" r="1.3"/><circle class="ic-dot" cx="852" cy="201.5" r="1.3"/>
+<circle class="badge" cx="882.0" cy="188.0" r="5"/>
+<text class="i-lab" x="860" y="256.0" text-anchor="middle">Web apps</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="907.0" y="182.0" width="56" height="56" rx="14"/>
+<path class="ic" d="M935 195C937 206 939 208 950 210C939 212 937 214 935 225C933 214 931 212 920 210C931 208 933 206 935 195z"/>
+<text class="i-lab" x="935" y="256.0" text-anchor="middle">AI</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="982.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="994" y="198" width="32" height="24" rx="3"/><path class="ic-fill" d="M1006 204v12l10-6z"/>
+<text class="i-lab" x="1010" y="256.0" text-anchor="middle">Media</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="1057.0" y="182.0" width="56" height="56" rx="14"/>
+<rect class="ic" x="1069" y="199" width="32" height="22" rx="3"/><circle class="ic" cx="1080" cy="210" r="6"/><path class="ic" d="M1080 204v12M1074 210h12M1091 205h6M1091 210h6M1091 215h6"/>
+<text class="i-lab" x="1085" y="256.0" text-anchor="middle">Hashrate</text>
+</g>
+<g class="st-p">
+<rect class="tile tile-p" x="1132.0" y="182.0" width="56" height="56" rx="14"/>
+<circle class="ic" cx="1160" cy="210" r="15"/><ellipse class="ic" cx="1160" cy="210" rx="6.5" ry="15"/><path class="ic" d="M1145 210h30M1148 202h24M1148 218h24"/>
+<circle class="badge" cx="1182.0" cy="188.0" r="5"/>
+<text class="i-lab" x="1160" y="256.0" text-anchor="middle">VPN exit</text>
+</g>
+<polyline class="fl-local" points="1010,306 1010,262"/>
+<polygon class="ah" points="1010,256 1003,270 1017,270"/>
+<rect class="appbox" x="940" y="312" width="140" height="96" rx="22"/>
+<path class="ic-brass" d="M1013 335L1002 352h8l-3 13L1019 347h-8z"/>
+<text class="i-lab" x="1010" y="392" text-anchor="middle">Their app</text>
+<polyline class="fl-data" points="220,360 940,360"/>
+<polygon class="ah-data" points="940,360 926,353 926,367"/>
+<polygon class="ah-data" points="220,360 234,353 234,367"/>
+<rect class="lockpad" x="572" y="336" width="56" height="48" rx="12"/>
+<rect class="lock" x="591" y="359" width="18" height="14" rx="2"/><path class="ic" d="M595 359v-4a5 5 0 0 1 10 0v4"/>
+<text class="i-lab" x="600" y="320" text-anchor="middle">Encrypted link</text>
+<g class="st-p">
+<polyline class="fl-data-alt" points="400,360 400,470 540,470"/>
+<polyline class="fl-data-alt" points="660,470 800,470 800,360"/>
+<rect class="tile tile-p" x="540" y="436" width="120" height="68" rx="14"/>
+<path class="ic" d="M600 464L592 486M600 464L608 486M595 478h10"/><circle class="ic-fill" cx="600" cy="462" r="2.5"/><path class="ic" d="M592 454a11 11 0 0 0 0 16M608 454a11 11 0 0 1 0 16M587 450a17 17 0 0 0 0 24M613 450a17 17 0 0 1 0 24"/>
+<circle class="badge" cx="654" cy="442" r="5"/>
+<text class="i-lab" x="600" y="524" text-anchor="middle">Relay</text>
+</g>
+<text class="i-sub" x="388" y="420" text-anchor="end">or</text>
+<rect class="tile" x="118" y="452" width="64" height="64" rx="32"/>
+<circle class="ic" cx="150" cy="484" r="15"/>
+<path class="ic-brass" d="M153 469L142 486h8l-3 13L159 481h-8z"/>
+<text class="i-lab" x="150" y="534" text-anchor="middle">Your node</text>
+<g class="st-d">
+<rect class="ic" x="225" y="474" width="30" height="22" rx="3"/><path class="ic" d="M244 483h11v8h-11a4 4 0 0 1 0-8z"/>
+<text class="i-lab" x="240" y="534" text-anchor="middle">or a wallet</text>
+</g>
+<polyline class="fl-local" points="150,408 150,446"/>
+<polygon class="ah" points="150,452 143,438 157,438"/>
+<rect class="tile" x="978" y="452" width="64" height="64" rx="32"/>
+<circle class="ic" cx="1010" cy="484" r="15"/>
+<path class="ic-brass" d="M1013 469L1002 486h8l-3 13L1019 481h-8z"/>
+<text class="i-lab" x="1010" y="534" text-anchor="middle">Their node</text>
+<rect class="band band-brass" x="200" y="600" width="800" height="76" rx="38"/>
+<path class="ic-brass" d="M503 623L492 640h8l-3 13L509 635h-8z"/>
+<text class="i-band" x="525" y="644" text-anchor="start">Lightning</text>
+<text class="i-sub" x="525" y="662" text-anchor="start">sats, as you use it</text>
+<polyline class="fl-money" points="150,546 150,638 200,638"/>
+<polygon class="ah-money" points="206,638 192,631 192,645"/>
+<polyline class="fl-money" points="1000,638 1010,638 1010,552"/>
+<polygon class="ah-money" points="1010,546 1003,560 1017,560"/>
+<circle class="coin" cx="320" cy="638" r="11"/><path class="coin-mark" d="M322 631L315 639h5l-2 7L325 637h-5z"/>
+<circle class="coin" cx="380" cy="638" r="11"/><path class="coin-mark" d="M382 631L375 639h5l-2 7L385 637h-5z"/>
+<circle class="coin" cx="820" cy="638" r="11"/><path class="coin-mark" d="M822 631L815 639h5l-2 7L825 637h-5z"/>
+<circle class="coin" cx="880" cy="638" r="11"/><path class="coin-mark" d="M882 631L875 639h5l-2 7L885 637h-5z"/>
+</svg>
+<svg class="hiw-mob" viewBox="0 0 400 1060" role="img" aria-label="How Lightning Stream works, stacked for phones: Nostr where shops are found; you and your app; an encrypted link, direct or through a relay; the seller's app and services; money over Lightning from your node to theirs.">
+<rect class="band" x="40" y="16" width="320" height="64" rx="32"/>
+<path class="ic" d="M105 38a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4h-14l-8 6v-6h0a4 4 0 0 1-4-4z"/><circle class="ic-dot" cx="114" cy="45" r="2"/><circle class="ic-dot" cx="120" cy="45" r="2"/><circle class="ic-dot" cx="126" cy="45" r="2"/>
+<text class="i-band" x="150" y="54" text-anchor="start">Nostr</text>
+<text class="i-sub" x="150" y="70" text-anchor="start">shops are found here</text>
+<polyline class="fl-disc" points="200,80 200,112"/>
+<polygon class="ah-disc" points="200,118 193,104 207,104"/>
+<text class="i-head" x="200" y="146" text-anchor="middle">YOU</text>
+<g class="st-r">
+<rect class="tile" x="84.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="96" y="185" width="28" height="18" rx="2"/><path class="ic" d="M91 207h38"/>
+<text class="i-lab" x="110" y="240.0" text-anchor="middle">Laptop</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="174.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="191" y="181" width="18" height="30" rx="3"/><path class="ic" d="M197 206h6"/>
+<text class="i-lab" x="200" y="240.0" text-anchor="middle">Phone</text>
+</g>
+<g class="st-d">
+<rect class="tile" x="264.0" y="170.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="274" y="184" width="32" height="20" rx="2"/><path class="ic" d="M284 210h12M290 204v6"/>
+<text class="i-lab" x="290" y="240.0" text-anchor="middle">TV</text>
+</g>
+<polyline class="fl-local" points="200,244 200,266"/>
+<polygon class="ah" points="200,272 193,258 207,258"/>
+<rect class="appbox" x="130" y="278" width="140" height="84" rx="22"/>
+<path class="ic-brass" d="M203 295L192 312h8l-3 13L209 307h-8z"/>
+<text class="i-lab" x="200" y="350" text-anchor="middle">Your app</text>
+<polyline class="fl-data" points="200,362 200,520"/>
+<polygon class="ah-data" points="200,526 193,512 207,512"/>
+<polygon class="ah-data" points="200,362 193,376 207,376"/>
+<rect class="lockpad" x="176" y="414" width="48" height="44" rx="12"/>
+<rect class="lock" x="191" y="435" width="18" height="14" rx="2"/><path class="ic" d="M195 435v-4a5 5 0 0 1 10 0v4"/>
+<text class="i-lab" x="240" y="442" text-anchor="start">Encrypted link</text>
+<g class="st-p">
+<rect class="tile tile-p" x="56" y="406" width="76" height="60" rx="14"/>
+<path class="ic" d="M94 430L86 452M94 430L102 452M89 444h10"/><circle class="ic-fill" cx="94" cy="428" r="2.5"/><path class="ic" d="M86 420a11 11 0 0 0 0 16M102 420a11 11 0 0 1 0 16M81 416a17 17 0 0 0 0 24M107 416a17 17 0 0 1 0 24"/>
+<circle class="badge" cx="126" cy="412" r="5"/>
+<text class="i-lab" x="94" y="486" text-anchor="middle">or a relay</text>
+</g>
+<rect class="appbox" x="130" y="532" width="140" height="84" rx="22"/>
+<path class="ic-brass" d="M203 549L192 566h8l-3 13L209 561h-8z"/>
+<text class="i-lab" x="200" y="604" text-anchor="middle">Their app</text>
+<polyline class="fl-local" points="200,616 200,646"/>
+<polygon class="ah" points="200,652 193,638 207,638"/>
+<text class="i-head" x="200" y="674" text-anchor="middle">SELLER</text>
+<g class="st-p">
+<rect class="tile tile-p" x="54.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="64" y="708" width="32" height="24" rx="3"/><path class="ic" d="M64 715h32"/><circle class="ic-dot" cx="68" cy="711.5" r="1.3"/><circle class="ic-dot" cx="72" cy="711.5" r="1.3"/>
+<circle class="badge" cx="100.0" cy="700.0" r="5"/>
+<text class="i-lab" x="80" y="764.0" text-anchor="middle">Web apps</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="134.0" y="694.0" width="52" height="52" rx="14"/>
+<path class="ic" d="M160 705C162 716 164 718 175 720C164 722 162 724 160 735C158 724 156 722 145 720C156 718 158 716 160 705z"/>
+<text class="i-lab" x="160" y="764.0" text-anchor="middle">AI</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="214.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="224" y="708" width="32" height="24" rx="3"/><path class="ic-fill" d="M236 714v12l10-6z"/>
+<text class="i-lab" x="240" y="764.0" text-anchor="middle">Media</text>
+</g>
+<g class="st-r">
+<rect class="tile" x="294.0" y="694.0" width="52" height="52" rx="14"/>
+<rect class="ic" x="304" y="709" width="32" height="22" rx="3"/><circle class="ic" cx="315" cy="720" r="6"/><path class="ic" d="M315 714v12M309 720h12M326 715h6M326 720h6M326 725h6"/>
+<text class="i-lab" x="320" y="764.0" text-anchor="middle">Hashrate</text>
+</g>
+<g class="st-p">
+<rect class="tile tile-p" x="174.0" y="778.0" width="52" height="52" rx="14"/>
+<circle class="ic" cx="200" cy="804" r="15"/><ellipse class="ic" cx="200" cy="804" rx="6.5" ry="15"/><path class="ic" d="M185 804h30M188 796h24M188 812h24"/>
+<circle class="badge" cx="220.0" cy="784.0" r="5"/>
+<text class="i-lab" x="200" y="848.0" text-anchor="middle">VPN exit</text>
+</g>
+<rect class="band band-brass" x="40" y="880" width="320" height="64" rx="32"/>
+<path class="ic-brass" d="M113 897L102 914h8l-3 13L119 909h-8z"/>
+<text class="i-band" x="135" y="918" text-anchor="start">Lightning</text>
+<text class="i-sub" x="135" y="934" text-anchor="start">sats, as you use it</text>
+<circle class="coin" cx="300" cy="912" r="11"/><path class="coin-mark" d="M302 905L295 913h5l-2 7L305 911h-5z"/>
+<text class="i-lab" x="200" y="984" text-anchor="middle">Your node pays their node</text>
+<text class="i-sub" x="200" y="1004" text-anchor="middle">directly, over Lightning</text>
+</svg>
+<div class="hiw-legend" aria-label="Legend">
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-data" d="M2 5h36"/></svg>data, encrypted</span>
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-money" d="M2 5h36"/></svg>money (sats)</span>
+  <span><svg viewBox="0 0 40 10" aria-hidden="true"><path class="fl-disc" d="M2 5h36"/></svg>discovery</span>
+  <span><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="badge" cx="7" cy="7" r="5"/></svg>in progress</span>
+  <span class="ghost"><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="tile" x="1" y="1" width="12" height="12" rx="3"/></svg>designed, not yet built</span>
+</div>
+  </figure>
+
+
+  <section class="hiw" id="money" aria-labelledby="money-h">
+    <h2 id="money-h">How the money works</h2>
+    <p class="note">Not one Lightning payment per thing bought: small tickets, used up as you go.</p>
+    <div class="hiw-money">
+      <figure><h3>1 · Tickets, paid as you use</h3><svg viewBox="0 0 480 300" role="img" aria-label="Tickets, paid as you use: a small ticket paid over Lightning becomes credit at the seller, drawn down as you use the service; the next ticket is paid just before it runs out; every answer gets a signed receipt; at most one ticket is at risk.">
+<circle class="tile" cx="50" cy="70" r="26"/>
+<circle class="ic" cx="50" cy="70" r="15"/>
+<path class="ic-brass" transform="translate(50 70) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="116" text-anchor="middle">You</text>
+<polyline class="fl-money" points="78,70 150,70"/>
+<polygon class="ah-money" points="156,70 144,64 144,76"/>
+<circle class="coin" cx="118" cy="48" r="13"/>
+<path class="coin-mark" transform="translate(118 48) scale(0.8125)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-sub" x="118" y="30" text-anchor="middle">900 sats</text>
+<rect class="bar-track2" x="170" y="52" width="250" height="36" rx="8"/>
+<rect class="bar-fill" x="170" y="52" width="160" height="36" rx="8"/>
+<text class="p-sub" x="295" y="44" text-anchor="middle">credit at the seller</text>
+<polyline class="fl-data2" points="420,104 330,104"/>
+<polygon class="ah-data" points="324,104 334,99 334,109"/>
+<text class="p-sub" x="375" y="124" text-anchor="middle">drawn down as you use</text>
+<rect class="refill" x="205" y="48" width="3" height="44" rx="1"/>
+<text class="p-sub" x="206" y="140" text-anchor="middle">next ticket paid here,</text>
+<text class="p-sub" x="206" y="158" text-anchor="middle">before it runs out</text>
+<polyline class="fl-local2" points="206,92 206,126"/>
+<rect class="chip" x="273" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="300" y="194" text-anchor="middle">bytes</text>
+<rect class="chip" x="335" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="362" y="194" text-anchor="middle">tokens</text>
+<rect class="chip" x="397" y="176" width="54" height="26" rx="13"/>
+<text class="p-sub" x="424" y="194" text-anchor="middle">slices</text>
+<path class="ic" d="M61 188h18v24l-3-2-3 2-3-2-3 2-3-2-3 2z"/><path class="ic" d="M65 195h10M65 200h10M65 205h6"/>
+<text class="p-sub" x="70" y="236" text-anchor="middle">signed receipt</text>
+<text class="p-sub" x="70" y="254" text-anchor="middle">for every answer</text>
+<rect class="riskpill" x="150" y="248" width="300" height="34" rx="17"/>
+<text class="p-lab" x="300" y="270" text-anchor="middle">at most one ticket at risk</text>
+</svg></figure>
+      <figure><h3>2 · Held tickets</h3><svg viewBox="0 0 480 260" role="img" aria-label="Held tickets: the payment is locked along the route as a hold invoice; the seller cannot take it until your app releases the secret when you use it; an unused ticket comes back.">
+<circle class="tile" cx="50" cy="80" r="26"/>
+<circle class="ic" cx="50" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(50 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="126" text-anchor="middle">You</text>
+<circle class="tile" cx="180" cy="80" r="16"/>
+<circle class="ic-dot" cx="180" cy="80" r="4"/>
+<circle class="tile" cx="300" cy="80" r="16"/>
+<circle class="ic-dot" cx="300" cy="80" r="4"/>
+<circle class="tile" cx="430" cy="80" r="26"/>
+<circle class="ic" cx="430" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(430 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="430" y="126" text-anchor="middle">Seller</text>
+<polyline class="fl-money" points="76,80 164,80"/>
+<polyline class="fl-money" points="196,80 284,80"/>
+<polyline class="fl-money" points="316,80 404,80"/>
+<circle class="coin" cx="120" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(120 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="112" y="58" width="16" height="12" rx="2"/><path class="ic" d="M115.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<circle class="coin" cx="240" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(240 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="232" y="58" width="16" height="12" rx="2"/><path class="ic" d="M235.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<circle class="coin" cx="360" cy="80" r="11"/>
+<path class="coin-mark" transform="translate(360 80) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<rect class="lock" x="352" y="58" width="16" height="12" rx="2"/><path class="ic" d="M355.5 58v-4a4.5 4.5 0 0 1 9 0v4"/>
+<text class="p-lab" x="240" y="30" text-anchor="middle">locked along the route</text>
+<circle class="ic" cx="44" cy="170" r="5.5"/><path class="ic" d="M49 170h13M58 170v5M62 170v4"/>
+<text class="p-sub" x="50" y="200" text-anchor="middle">you keep</text>
+<text class="p-sub" x="50" y="218" text-anchor="middle">the secret</text>
+<polyline class="fl-data2" points="80,170 400,170"/>
+<polygon class="ah-data" points="406,170 396,165 396,175"/>
+<text class="p-sub" x="240" y="160" text-anchor="middle">released when you use it: seller collects</text>
+<polyline class="fl-ret" points="400,230 80,230"/>
+<polygon class="ah-ret" points="74,230 84,225 84,235"/>
+<text class="p-sub" x="240" y="222" text-anchor="middle">not used: it comes back to you</text>
+</svg></figure>
+      <figure><h3>3 · Channels</h3><svg viewBox="0 0 480 220" role="img" aria-label="Channels: ordinary Lightning channels from your node through the network to the seller's node; Stream adds no new channel type.">
+<circle class="tile" cx="50" cy="80" r="26"/>
+<circle class="ic" cx="50" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(50 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="50" y="126" text-anchor="middle">Your node</text>
+<circle class="tile" cx="160" cy="80" r="16"/>
+<circle class="ic-dot" cx="160" cy="80" r="4"/>
+<circle class="tile" cx="240" cy="50" r="16"/>
+<circle class="ic-dot" cx="240" cy="50" r="4"/>
+<circle class="tile" cx="240" cy="110" r="16"/>
+<circle class="ic-dot" cx="240" cy="110" r="4"/>
+<circle class="tile" cx="320" cy="80" r="16"/>
+<circle class="ic-dot" cx="320" cy="80" r="4"/>
+<circle class="tile" cx="430" cy="80" r="26"/>
+<circle class="ic" cx="430" cy="80" r="15"/>
+<path class="ic-brass" transform="translate(430 80) scale(1.0)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="430" y="126" text-anchor="middle">Seller's node</text>
+<polyline class="ch" points="76,80 144,80"/>
+<polyline class="ch" points="174,72 225,55"/>
+<polyline class="ch" points="174,88 225,105"/>
+<polyline class="ch" points="255,55 306,72"/>
+<polyline class="ch" points="255,105 306,88"/>
+<polyline class="ch" points="336,80 404,80"/>
+<text class="p-lab" x="240" y="160" text-anchor="middle">ordinary Lightning channels</text>
+<text class="p-sub" x="240" y="182" text-anchor="middle">Stream adds no new kind of channel</text>
+<text class="p-sub" x="240" y="200" text-anchor="middle">routing, fees and nodes are Lightning's own</text>
+</svg></figure>
+      <figure><h3>4 · The lottery, for tiny pieces</h3><svg viewBox="0 0 480 300" role="img" aria-label="The lottery: for pieces too small to pay one by one, each piece gets a fair roll; the seller's half is fixed before the session and yours after each piece; most rolls pay nothing, a win pays a normal-sized amount; fair on average. A win that pays itself is designed, not yet built.">
+<rect class="chip" x="30" y="20" width="200" height="34" rx="17"/>
+<rect class="lock" x="44" y="32" width="16" height="12" rx="2"/><path class="ic" d="M47.5 32v-4a4.5 4.5 0 0 1 9 0v4"/>
+<text class="p-sub" x="140" y="42" text-anchor="middle">seller's half: sealed first</text>
+<rect class="chip" x="250" y="20" width="200" height="34" rx="17"/>
+<text class="p-sub" x="350" y="42" text-anchor="middle">your half: after each piece</text>
+<rect class="piece" x="27" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="38" cy="91" r="2.4"/>
+<circle class="pip" cx="52" cy="105" r="2.4"/>
+<circle class="pip" cx="45" cy="98" r="2.4"/>
+<text class="p-sub" x="45" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="77" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="88" cy="91" r="2.4"/>
+<circle class="pip" cx="102" cy="105" r="2.4"/>
+<circle class="pip" cx="95" cy="98" r="2.4"/>
+<text class="p-sub" x="95" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="127" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="138" cy="91" r="2.4"/>
+<circle class="pip" cx="152" cy="105" r="2.4"/>
+<circle class="pip" cx="145" cy="98" r="2.4"/>
+<text class="p-sub" x="145" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="177" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="188" cy="91" r="2.4"/>
+<circle class="pip" cx="202" cy="105" r="2.4"/>
+<circle class="pip" cx="195" cy="98" r="2.4"/>
+<text class="p-sub" x="195" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="227" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="238" cy="91" r="2.4"/>
+<circle class="pip" cx="252" cy="105" r="2.4"/>
+<circle class="pip" cx="245" cy="98" r="2.4"/>
+<text class="p-sub" x="245" y="136" text-anchor="middle">0</text>
+<rect class="piece-win" x="277" y="80" width="36" height="36" rx="7"/>
+<circle class="coin" cx="295" cy="98" r="11"/>
+<path class="coin-mark" transform="translate(295 98) scale(0.6875)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-win" x="295" y="136" text-anchor="middle">win</text>
+<rect class="piece" x="327" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="338" cy="91" r="2.4"/>
+<circle class="pip" cx="352" cy="105" r="2.4"/>
+<circle class="pip" cx="345" cy="98" r="2.4"/>
+<text class="p-sub" x="345" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="377" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="388" cy="91" r="2.4"/>
+<circle class="pip" cx="402" cy="105" r="2.4"/>
+<circle class="pip" cx="395" cy="98" r="2.4"/>
+<text class="p-sub" x="395" y="136" text-anchor="middle">0</text>
+<rect class="piece" x="427" y="80" width="36" height="36" rx="7"/>
+<circle class="pip" cx="438" cy="91" r="2.4"/>
+<circle class="pip" cx="452" cy="105" r="2.4"/>
+<circle class="pip" cx="445" cy="98" r="2.4"/>
+<text class="p-sub" x="445" y="136" text-anchor="middle">0</text>
+<text class="p-lab" x="240" y="170" text-anchor="middle">most rolls pay nothing; a win pays a normal amount</text>
+<text class="p-sub" x="240" y="192" text-anchor="middle">e.g. 0.1 sat a piece: 1 piece in 640 wins 64 sats</text>
+<text class="p-sub" x="240" y="214" text-anchor="middle">fair on average; neither side can steer a roll</text>
+<g class="st-d">
+<rect class="chip" x="110" y="244" width="260" height="34" rx="17"/>
+<text class="p-sub" x="240" y="266" text-anchor="middle">a win that pays itself</text>
+</g>
+<text class="p-plan" x="240" y="294" text-anchor="middle">(designed, not yet built)</text>
+</svg></figure>
+      <figure><h3>5 · What Stream adds</h3><svg viewBox="0 0 480 300" role="img" aria-label="What Stream adds on top of Lightning: plain Lightning is one payment per invoice; Stream adds metering, signed receipts, spending rules you sign, automatic refills and a cap per seller.">
+<text class="p-head" x="110" y="30" text-anchor="middle">Lightning alone</text>
+<text class="p-head" x="350" y="30" text-anchor="middle">Stream on Lightning</text>
+<rect class="chip" x="40" y="50" width="140" height="44" rx="10"/>
+<text class="p-lab" x="110" y="77" text-anchor="middle">one invoice</text>
+<polyline class="fl-money" points="110,94 110,124"/>
+<polygon class="ah-money" points="110,130 105,120 115,120"/>
+<circle class="coin" cx="110" cy="148" r="13"/>
+<path class="coin-mark" transform="translate(110 148) scale(0.8125)" d="M3 -15L-8 2h8l-3 13L9 -3h-8z"/>
+<text class="p-lab" x="110" y="184" text-anchor="middle">one payment</text>
+<text class="p-sub" x="110" y="212" text-anchor="middle">for one thing,</text>
+<text class="p-sub" x="110" y="230" text-anchor="middle">paid in full</text>
+<path class="divider" d="M230 20v260"/>
+<circle class="okdot" cx="262" cy="59" r="9"/><path class="okmark" d="M257 59l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="64" text-anchor="start">pay per byte, token, slice</text>
+<circle class="okdot" cx="262" cy="103" r="9"/><path class="okmark" d="M257 103l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="108" text-anchor="start">signed receipts</text>
+<circle class="okdot" cx="262" cy="147" r="9"/><path class="okmark" d="M257 147l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="152" text-anchor="start">rules you sign</text>
+<circle class="okdot" cx="262" cy="191" r="9"/><path class="okmark" d="M257 191l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="196" text-anchor="start">refills in time</text>
+<circle class="okdot" cx="262" cy="235" r="9"/><path class="okmark" d="M257 235l3.5 3.5 6-7"/>
+<text class="p-sub2" x="280" y="240" text-anchor="start">a cap per seller</text>
+</svg></figure>
+    </div>
+  </section>
+
+  <div class="prose paper hiw-more" data-reveal>
+    <details open><summary>What happens when you buy</summary>
+      <p>You find a shop on Nostr and allow it in spending rules you sign. Your app connects to the seller's app and pays small tickets from your own node as you use the service. The seller counts every byte or token and signs a receipt.</p></details>
+    <details><summary>What happens when you sell</summary>
+      <p>You point your Stream app at something you already run on your own network: a web app, an AI model, media, miners. Your app lists it on Nostr, meters every answer, and you are paid into your own node. With the encrypted link <em>(in progress)</em> you need no domain, certificate or port forward.</p></details>
+    <details><summary>What happens when you rent hashrate</summary>
+      <p>A seller's miners work for your own DATUM Gateway, over an encrypted link. You pay for each slice of work after it arrives, counting only the shares your gateway accepted.</p></details>
+    <details><summary>How the money moves</summary>
+      <p>Only over Lightning, from your node to theirs, in small tickets of about 900 sat, refilled just before they run out. At most one ticket is ever at risk, and nobody holds anyone's money. The link and the relays never carry money.</p></details>
+    <details><summary>What the marks mean</summary>
+      <p>A plain icon is in the app today. An amber dot and dashed outline mean in progress: built and in testing, not yet released. A faded icon is designed, not yet built. Details are in the <a href="/stream/changelog/">changelog</a> and <a href="/stream/progress/">progress and status</a>.</p></details>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <a class="wordmark" href="/"><svg class="chi" viewBox="0 0 20.36 32" aria-hidden="true"><path d="M15.96 4.16C15.96 2.91 15.56 2.02 14.61 1.56C14.14 1.33 13.51 1.21 12.71 1.21H9.61L9.69 0H13.65C14.77 0 15.67 0.18 16.36 0.55C17.04 0.91 17.54 1.4 17.86 2.01C18.17 2.63 18.33 3.32 18.33 4.07C18.33 4.84 18.17 5.55 17.84 6.2C17.52 6.84 17.01 7.36 16.32 7.75C15.63 8.13 15.3 8.33 14.01 8.33H9.69L9.61 7.12H13.4C14.39 7.12 15.19 6.66 15.63 5.78C15.85 5.35 15.96 4.81 15.96 4.16ZM11.57 0 11.57 10.83V30.94L13.18 31.55V32H7.2V31.55L8.8 30.94V10.83V1.06L7.2 0.45V0ZM9.8 20.31 3.89 27.07 6.01 27.79V28.32H0V27.79L2.08 27.07L9.02 19.39L9.97 18.7L15.18 12.61L13.05 11.89V11.36H19.07V11.89L16.99 12.61L10.77 19.61ZM14.05 27.07 9.04 20.79 8.6 20.39 2.34 12.63 0.3 11.89V11.36H8.93V11.89L6.61 12.61L10.91 18.05L11.38 18.5L18.32 27.04L20.36 27.79V28.32H11.73V27.79Z"/></svg>Lazarus <em>XBT</em></a>
+      <p class="note" style="margin-top:.8rem;max-width:22rem">A hub for Bitcoin on BLAKE2b proof of work: the chain, the pools, the software and the people building on it.</p>
+      <p class="note faint"><i>Proverbs 11:1</i> — a just weight is his delight.</p>
+    </div>
+    <div class="footer-col">
+      <p class="category">Network</p>
+      <a href="/learn/">What XBT is</a>
+      <a href="/blake2b/">BLAKE2b vs SHA-256</a>
+      <a href="/learn/#softfork">Soft fork status</a>
+      <a href="https://mempool.lazarus-xbt.xyz" rel="noopener">Block explorer</a>
+      <a href="/map/">Galaxy map</a>
+      <a href="/ecosystem/#pools">Pool directory</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Mine</p>
+      <a href="https://pool.lazarus-xbt.xyz" rel="noopener">XBT mining pool</a>
+      <a href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Connect a Siacoin ASIC</a>
+      <a href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">ASICs that mine XBT</a>
+      <a href="https://pool.lazarus-xbt.xyz/how" rel="noopener">How the pool pays</a>
+      <a href="/ecosystem/#pools">Other pools</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Build</p>
+      <a href="https://github.com/AwokenLazarus/Bitcoin" rel="noopener">Source on GitHub</a>
+      <a href="https://github.com/AwokenLazarus/lazarus-key" rel="noopener">Lazarus Key source</a>
+      <a href="/ecosystem/#software">Software</a>
+      <a href="/stream/">Stream whitepaper</a>
+      <a href="https://mcp.lazarus-xbt.xyz" rel="noopener">MCP server</a>
+      <a href="https://mempool.lazarus-xbt.xyz/api" rel="noopener">Explorer API</a>
+    </div>
+    <div class="footer-col">
+      <p class="category">Community</p>
+      <a href="https://discord.gg/fD33dJXnzz" rel="noopener">Discord</a>
+      <a href="https://x.com/Awoken_Lazarus" rel="noopener">X</a>
+      <a href="/faq/">FAQ</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>Lazarus · Bitcoin BLAKE2b (XBT). Public data, no accounts, no custody.</span>
+    <span class="live">live</span>
+  </div>
+</footer>
+<script src="/assets/hub.js?v=2" defer></script>
+</body>
+</html>

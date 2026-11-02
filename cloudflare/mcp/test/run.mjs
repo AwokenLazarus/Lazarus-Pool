@@ -135,7 +135,7 @@ section("miner_audit");
   check("A1 in the coinbase being built", d.carry.next_coinbase.in_coinbase === true);
   check("A1 immature: next unlock is its oldest block + 6480", d.immature.next_unlocks[0].unlock_height === 973583 + 6480, d.immature.next_unlocks[0]);
   check("A1 delays explain #419 and the relay policy", d.delays_explained.some((s) => /#419/.test(s) && /relay policy/.test(s)));
-  check("A1 fee path DATUM 0% + 12.5 points", d.path.path === "own DATUM gateway" && d.path.fee_percent === 0 && d.path.datum_bonus_percent_points === 12.5);
+  check("A1 fee path DATUM 0%", d.path.path === "own DATUM gateway" && d.path.fee_percent === 0 && !("datum_bonus_percent_points" in d.path));
   check("A1 estimate labelled as an estimate", /estimate/i.test(d.estimate.note));
   check("A1 gateway name is sanitised text", d.path.gateway_name === "4Ethos");
 
@@ -250,7 +250,7 @@ section("lazarus_faq");
   const all = JSON.stringify(FAQ);
   check("FAQ has no IP addresses", !/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(all));
   check("FAQ has no operator internals", !/(treasury|bitkey|hot wallet|partner split|failover|ssh|private key|\/opt\/|\/srv\/|\/etc\/|agentlaz|proxmox|seed phrase to|\.config)/i.test(all), all.match(/(treasury|bitkey|hot wallet|partner split|failover|ssh|private key|\/opt\/|\/srv\/|\/etc\/|agentlaz|proxmox|\.config)/i));
-  check("FAQ covers every topic the task lists", ["fees", "datum-bonus", "datum-vs-stratum", "connect", "tides", "carry", "min-payout", "makegoods", "coinbase-maturity", "payout-timing", "self-cap", "solo", "wallets-replay", "read-audit"].every((id) => FAQ.some((f) => f.id === id)));
+  check("FAQ covers every topic the task lists", ["fees", "datum-vs-stratum", "connect", "tides", "carry", "min-payout", "makegoods", "coinbase-maturity", "payout-timing", "self-cap", "solo", "wallets-replay", "read-audit"].every((id) => FAQ.some((f) => f.id === id)));
   r = await call("lazarus_faq", { topic_or_question: "how do I set up ratum-gateway with Lazarus?" });
   check("Ratum question -> ratum", r.data.matches[0]?.id === "ratum", r.data.matches.map((m) => m.id));
   r = await call("lazarus_faq", { topic_or_question: "ratum" });
