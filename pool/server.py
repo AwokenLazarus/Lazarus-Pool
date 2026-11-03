@@ -5794,14 +5794,14 @@ _SEO_PAGES = {
     "/non-custodial": {
         "en": {
             "title": "Non-Custodial XBT Mining Pool: No Balance to Withdraw",
-            "description": "Lazarus Pool never holds your coins. Every payout is an output of the block itself, paid straight to your address: no balance, no withdrawal; an output under 0.005 XBT is carried forward to your next one.",
+            "description": "Lazarus Pool never holds your coins. Every payout is an output of the block itself, paid straight to your address: no balance, no withdrawal; an output under 0.01 XBT is carried forward to your next one.",
             "scroll": "how",
         },
         "zh": {
             "title": "非托管挖矿：没有矿池余额，不用提现 — Lazarus Pool",
             "description": (
                 "Lazarus Pool 从不持有你的币。每一笔支付都是区块本身的一个输出，由 coinbase 直接付到你的地址——"
-                "没有余额、不用提现，低于 0.005 XBT 的输出会结转到你的下一笔；哪怕矿池今晚消失，也不欠任何人。"
+                "没有余额、不用提现，低于 0.01 XBT 的输出会结转到你的下一笔；哪怕矿池今晚消失，也不欠任何人。"
             ),
             "scroll": "how",
         },
@@ -6334,7 +6334,7 @@ _SEO_INTRO = {
         "zh": ("Lazarus Pool：用 Siacoin 矿机挖比特币", [
             "Lazarus Pool 挖的是比特币。XBT 和 BTCB2 是代码，blake2b 是工作量证明，所以 Siacoin 矿机能在这里挖。",
             "任何能挖 Siacoin 的 ASIC 都能挖这条链——同为 BLAKE2b，原厂固件即可，不用换硬件。把矿机指向 <b>stratum+tcp://stratum.lazarus-xbt.xyz:23334</b>，用户名填你的收款地址，密码填 <code>x</code>。没有账户，不用注册。",
-            "支付走 TIDES 拆分 coinbase：矿池找到区块时，窗口内每个地址都成为该区块的一个输出，直接付到你的地址。没有矿池余额、不用提现（低于 0.005 XBT 的输出会结转到下一笔），矿池也从不持有你的币。自建 DATUM 网关 0% 手续费。",
+            "支付走 TIDES 拆分 coinbase：矿池找到区块时，窗口内每个地址都成为该区块的一个输出，直接付到你的地址。没有矿池余额、不用提现（低于 0.01 XBT 的输出会结转到下一笔），矿池也从不持有你的币。自建 DATUM 网关 0% 手续费。",
             "<a href=\"/zh/connect\">如何开始挖</a> · <a href=\"/zh/hardware\">哪些矿机能用</a> · <a href=\"/zh/calculator\">收益计算器</a> · <a href=\"/zh/pools\">各矿池对比</a> · <a href=\"/zh/self-cap\">为什么我们把 stratum 限制在 15%</a>",
         ]),
     },
@@ -6424,13 +6424,13 @@ _SEO_INTRO = {
             "Your miner hashes a plain BLAKE2b header and knows nothing about any of this. Every share it sends is rebuilt into a full header and hashed again by Prime, the pool server; accepted work is credited to the address in your username and enters the TIDES window. The window holds the last eight times network difficulty of accepted work, which is days of pool work rather than a recent average.",
             "When the pool finds a block, every address in that window becomes an output of that block's coinbase, in proportion to its share of the window and less that miner's fee. A new rig starts near zero and ramps up as its work enters the window and older work ages out.",
             "Prime has already handed every gateway the same coinbase output list — the one shown under Next payout — and a share whose coinbase pays anything else is refused. So whoever's machine finds the block, that block pays the whole window. There is no pool balance to withdraw and no operator holding your coins between blocks.",
-            "Lazarus Pool is the first pool confirmed to run a TIDES split coinbase on BLAKE2b Bitcoin mainnet — not on a testnet and not as a proposal, but in blocks you can open in the explorer and read the outputs of. An output under 0.005 XBT is carried forward to your next one. If the pool vanished tonight, nobody would be owed anything. <a href=\"/non-custodial\">Why there is nothing to trust</a> · <a href=\"/connect\">connect a miner</a>.",
+            "Lazarus Pool is the first pool confirmed to run a TIDES split coinbase on BLAKE2b Bitcoin mainnet — not on a testnet and not as a proposal, but in blocks you can open in the explorer and read the outputs of. An output under 0.01 XBT is carried forward to your next one. If the pool vanished tonight, nobody would be owed anything. <a href=\"/non-custodial\">Why there is nothing to trust</a> · <a href=\"/connect\">connect a miner</a>.",
         ]),
         "zh": ("TIDES 如何支付：在区块里直接付给你", [
             "你的矿机只是在算一个普通的 BLAKE2b 区块头，对这一切一无所知。它发出的每个份额都会被矿池服务端 Prime 重建成完整区块头并重新哈希；被接受的工作量记到你用户名里的地址上，并进入 TIDES 窗口。窗口容纳最近相当于全网难度八倍的工作量，那是好几天的矿池工作量，而不是一个近期平均值。",
             "矿池找到区块时，窗口内每个地址都会成为该区块 coinbase 的一个输出，按其窗口占比支付并扣除该矿工的手续费。新机器从接近零开始，随着新工作进入、旧工作老化而逐步爬升。",
             "Prime 早已把同一份 coinbase 输出列表发给了每个网关——就是「下一次支付」里显示的那份——凡是 coinbase 支付其他内容的份额都会被拒绝。所以无论谁的机器出块，那个区块都支付给整个窗口。没有矿池余额需要提现，区块之间也没有谁替你保管币。",
-            "Lazarus Pool 是 BLAKE2b 比特币主网上第一家被确认运行 TIDES 拆分 coinbase 的矿池——不是测试网，也不是提案，而是你可以在浏览器里打开并逐条查看输出的真实区块。低于 0.005 XBT 的输出会结转到你的下一笔。哪怕矿池今晚消失，也不欠任何人。<a href=\"/zh/non-custodial\">为什么没有需要信任的对象</a> · <a href=\"/zh/connect\">接入矿机</a>。",
+            "Lazarus Pool 是 BLAKE2b 比特币主网上第一家被确认运行 TIDES 拆分 coinbase 的矿池——不是测试网，也不是提案，而是你可以在浏览器里打开并逐条查看输出的真实区块。低于 0.01 XBT 的输出会结转到你的下一笔。哪怕矿池今晚消失，也不欠任何人。<a href=\"/zh/non-custodial\">为什么没有需要信任的对象</a> · <a href=\"/zh/connect\">接入矿机</a>。",
         ]),
     },
     "/pools": {
@@ -6444,7 +6444,7 @@ _SEO_INTRO = {
             "手续费是所有人第一个拿来比的数字，也是本链各矿池之间真正有差别的四件事里最不重要的一件。另外三件是：矿池会不会替你保管币、所出区块里的交易费是分给矿工还是留给运营者，以及这家矿池有没有采取任何措施限制自己在全网中的占比。",
             _POOL_TABLE_ZH,
             "如实来看，我们的公共 stratum 是贵的那一个：捐赠、验证与后备端点，费率 100%，并有 24 小时 / 96 小时、费率为 25%、之后为 100% 的宽限期。这是有意为之。Bitcoin Knots 已宣布一项规则：在任何矿池，通过矿池 stratum 出算力的地址所获 coinbase 付款都将被判无效，所以换一家更便宜的矿池并不是出路，在那里用 stratum 出算力同样拿不到付款。这笔手续费由矿池保留。我们真正推荐的那条路（自己的节点和网关）是 0%，拿完整的窗口份额。",
-            "表格剩下的部分，本链目前没有别家能对上。这里区块中的交易费会等比例抬高每一笔支付，而不是留在矿池。任何时候都不代持——由区块本身付到你的地址，因此没有余额、不用提现（低于 0.005 XBT 的输出会结转到下一笔）。而且一旦自家 stratum 超过全网 15% 的算力，本矿池会<a href=\"/self-cap\">把新矿工拒之门外</a>并转交给别家。我们转发到的五家矿池和 Lazarus 列在同一张表里；表中数字为各矿池 2026 年 9 月 18 日自行公布的口径，投入整批机器前请先到各家网站核对。",
+            "表格剩下的部分，本链目前没有别家能对上。这里区块中的交易费会等比例抬高每一笔支付，而不是留在矿池。任何时候都不代持——由区块本身付到你的地址，因此没有余额、不用提现（低于 0.01 XBT 的输出会结转到下一笔）。而且一旦自家 stratum 超过全网 15% 的算力，本矿池会<a href=\"/self-cap\">把新矿工拒之门外</a>并转交给别家。我们转发到的五家矿池和 Lazarus 列在同一张表里；表中数字为各矿池 2026 年 9 月 18 日自行公布的口径，投入整批机器前请先到各家网站核对。",
         ]),
     },
     "/self-cap": {
@@ -6463,12 +6463,12 @@ _SEO_INTRO = {
         "en": ("No pool balance, no withdrawal, nothing to trust", [
             "Almost every mining pool credits your work to a balance and pays that balance out later — when it passes a threshold, when a block matures, when a batch cycle runs. That gap between earning and holding is where mining money has always gone missing: exits, hacks, thresholds you never reach, a dust balance stranded when you unplug. Lazarus does not have the gap, because it never takes custody in the first place.",
             "Your payout is an output of the block itself. Prime hands every gateway the same coinbase output list before any work goes out, and a share whose coinbase pays anything other than that list is refused — so whichever machine finds the block, that block's coinbase pays every address in the <a href=\"/how\">TIDES window</a> directly. The pool never receives your coins, which means it cannot hold, batch, freeze or lose them.",
-            "In practice: no account, no registration, no KYC, no withdrawal button, no pending balance (an output under 0.005 XBT is carried forward to your next one), and nothing owed to anyone if this pool disappeared tonight. Coinbase outputs are spendable after 100 confirmations like any other — except right now: the temporary Knots #419 rule makes every newly mined coin on this chain, at every pool and for every solo miner, wait 6,480 confirmations instead. A pool that pays you \u201conce your balance passes a threshold\u201d or \u201cat maturity\u201d is holding your coins in between; that is a real difference in what you are trusting, and it is worth knowing which kind you are on. <a href=\"/pools\">Compare the pools on this chain.</a>",
+            "In practice: no account, no registration, no KYC, no withdrawal button, no pending balance (an output under 0.01 XBT is carried forward to your next one), and nothing owed to anyone if this pool disappeared tonight. Coinbase outputs are spendable after 100 confirmations like any other — except right now: the temporary Knots #419 rule makes every newly mined coin on this chain, at every pool and for every solo miner, wait 6,480 confirmations instead. A pool that pays you \u201conce your balance passes a threshold\u201d or \u201cat maturity\u201d is holding your coins in between; that is a real difference in what you are trusting, and it is worth knowing which kind you are on. <a href=\"/pools\">Compare the pools on this chain.</a>",
         ]),
         "zh": ("没有矿池余额，不用提现，没有需要信任的对象", [
             "几乎所有矿池都会把你的工作量记成一笔余额，之后再支付出去——攒够起付线时、区块成熟时、批量支付周期跑到时。赚到和拿到之间这段空隙，正是挖矿的钱历来消失的地方：跑路、被盗、永远攒不到的起付线、拔机后卡住的零星余额。Lazarus 没有这段空隙，因为它从一开始就不接管你的币。",
             "你的收益是区块本身的一个输出。在任何工作下发之前，Prime 就把同一份 coinbase 输出列表交给了每个网关，凡是 coinbase 支付了这份列表以外内容的份额都会被拒绝——所以无论哪台机器出块，那个区块的 coinbase 都直接支付给 <a href=\"/how\">TIDES 窗口</a>里的每一个地址。矿池从不收到你的币，也就无从代持、批量、冻结或弄丢。",
-            "具体就是：没有账户、不用注册、没有 KYC、没有提现按钮、没有待发余额（低于 0.005 XBT 的输出会结转到下一笔）；哪怕这家矿池今晚消失，也不欠任何人。coinbase 输出和其他输出一样，通常 100 个确认后即可动用——但眼下临时的 Knots #419 规则让本链每一枚新挖出的币（任何矿池、任何独挖者）都要等 6,480 个确认。一家说「余额攒够起付线才付」或「成熟后再付」的矿池，在这中间是替你拿着币的；你信任的东西因此不同，值得先弄清自己在哪一种上。<a href=\"/pools\">对比本链各矿池</a>。",
+            "具体就是：没有账户、不用注册、没有 KYC、没有提现按钮、没有待发余额（低于 0.01 XBT 的输出会结转到下一笔）；哪怕这家矿池今晚消失，也不欠任何人。coinbase 输出和其他输出一样，通常 100 个确认后即可动用——但眼下临时的 Knots #419 规则让本链每一枚新挖出的币（任何矿池、任何独挖者）都要等 6,480 个确认。一家说「余额攒够起付线才付」或「成熟后再付」的矿池，在这中间是替你拿着币的；你信任的东西因此不同，值得先弄清自己在哪一种上。<a href=\"/pools\">对比本链各矿池</a>。",
         ]),
     },
     "/calculator": {
@@ -6687,7 +6687,7 @@ BLAKE2b ASICs listed on RouteHash (https://app.routehash.com/) can be rented by 
 
 TIDES pays out a share of a rolling window worth about eight times network difficulty, inside the
 coinbase of the block that is found — the split coinbase Lazarus Pool was first to run on this
-mainnet. There is no pool balance, no withdrawal and no custody; an output under 0.005 XBT is carried
+mainnet. There is no pool balance, no withdrawal and no custody; an output under 0.01 XBT is carried
 forward and added to the miner's next output that clears it. Miners running their
 own DATUM gateway build their own block templates against their own Bitcoin Knots node, so template
 construction is decentralized rather than delegated to the pool. Coins trade as BTCB2
@@ -6714,7 +6714,7 @@ block, and whether a pool limits its own share. As each pool published its own t
 
 - Lazarus Pool: 0% with your own DATUM gateway. Public stratum is a donation, validation and fallback endpoint at 100%,
   with a 24 h / 96 h grace at 25%, then 100%. TIDES, window of 8x difficulty. No custody at all — the block's
-  coinbase pays your address, so there is no balance or withdrawal (outputs under 0.005 XBT carry
+  coinbase pays your address, so there is no balance or withdrawal (outputs under 0.01 XBT carry
   forward to the next block). The block's
   transaction fees scale every miner's payout up. Stratum self-capped at 15%.
 - Riptide (overflow): 0% own DATUM, 1% stratum (variable; currently 1%, half the skim to live DATUM
