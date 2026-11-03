@@ -7037,11 +7037,11 @@ _ORG_ID = "https://lazarus-xbt.xyz/#org"
 _SEO_ARTICLE = {
     "/hardware": ("Article", "2026-09-13", "2026-10-29"),
     "/rentals": ("Article", "2026-10-08", "2026-10-29"),
-    "/pools": ("Article", "2026-09-13", "2026-10-29"),
+    "/pools": ("Article", "2026-09-13", "2026-11-03"),
     "/self-cap": ("Article", "2026-09-13", "2026-10-29"),
-    "/non-custodial": ("Article", "2026-09-13", "2026-10-29"),
+    "/non-custodial": ("Article", "2026-09-13", "2026-11-03"),
     "/bip110": ("Article", "2026-09-13", "2026-10-29"),
-    "/how": ("Article", "2026-09-13", "2026-10-29"),
+    "/how": ("Article", "2026-09-13", "2026-11-03"),
     "/connect": ("TechArticle", "2026-09-13", "2026-10-29"),
     "/ratum": ("TechArticle", "2026-09-28", "2026-10-29"),
     "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-29"),
@@ -7052,7 +7052,7 @@ _SEO_ARTICLE = {
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-10-29",
+    "/": "2026-11-03",
     "/calculator": "2026-10-29",
     "/blocks": "2026-10-29",
 }
