@@ -1,6 +1,6 @@
 {
  "/": {
-  "lastmod": "2026-10-29",
+  "lastmod": "2026-11-03",
   "sha256": "774f6d89a8a3c27777dcbf583baf775894adc6fdfc294dd03bd96b8465152795"
  },
  "/api": {
@@ -32,15 +32,15 @@
   "sha256": "06bbd07d1ddbda443cc86a086bd625d24664d4e8312ba8a9b98200c320758dda"
  },
  "/how": {
-  "lastmod": "2026-10-29",
-  "sha256": "9719b13510cb6c79f3c544391d0767d619e5ef198cef22da64759fc29d4a87fc"
+  "lastmod": "2026-11-03",
+  "sha256": "b7d97323cb9eb6245b4028e09add49d674c5d8ac4c6a3b87b968eca81e71cded"
  },
  "/non-custodial": {
-  "lastmod": "2026-10-29",
-  "sha256": "34fc7dab69d7b145a981313716522a190556e731c961b5d74f9fb9939b280894"
+  "lastmod": "2026-11-03",
+  "sha256": "1e742f81b131325677d5dd02fa820ce88c7b91b72814ab9b60e3838a0cf1fce3"
  },
  "/pools": {
-  "lastmod": "2026-10-29",
+  "lastmod": "2026-11-03",
   "sha256": "e3f62c89932610bced5de0c4eeb494e4876d3eea04ec62f37f6d9041120d671d"
  },
  "/ratum": {
@@ -56,8 +56,8 @@
   "sha256": "7a19e3d3e170b878dabce2fb140dc75c1acc2c83f7d7e1c596ca2383a9ad7324"
  },
  "/zh/": {
-  "lastmod": "2026-10-29",
-  "sha256": "ad4469377c7444ceeac7b893223048b5dc449880f8c4501d4417c64401db72d2"
+  "lastmod": "2026-11-03",
+  "sha256": "9e77b1ee806afc353b3167e8928a4b32f8a7da300d361846fd4cd2372e102056"
  },
  "/zh/api": {
   "lastmod": "2026-10-30",
@@ -88,16 +88,16 @@
   "sha256": "2032bf1353a935c98bea868f81d1f4c1d8d6bb73089cc305ab013c0586c9fb64"
  },
  "/zh/how": {
-  "lastmod": "2026-10-29",
-  "sha256": "4bb5999f8b35f881b9620d6001dee06a3b7e418eb6014324e43f192ffcb3fd4f"
+  "lastmod": "2026-11-03",
+  "sha256": "58517cba21f6e8628b60578178824293eb799731691b1d327b1642ffcdd03f6d"
  },
  "/zh/non-custodial": {
-  "lastmod": "2026-10-29",
-  "sha256": "eac64745d67a494f7c66c49e7d17d062c4f27e7be537ef13dd080326de1ab92f"
+  "lastmod": "2026-11-03",
+  "sha256": "a2d0f65e17af3d7a231a4d1e9dcbed795a0f4cc48979692dbabfeac5e8638b97"
  },
  "/zh/pools": {
-  "lastmod": "2026-10-29",
-  "sha256": "72c5f7d6e7af9d05d108aaa8a4af3ae8fa3573deb63ee3c3d0f43112e5027eaa"
+  "lastmod": "2026-11-03",
+  "sha256": "3176d450625702744e7836f93e1d84d1f7c6aae953f7187d7db0c360e7d0179a"
  },
  "/zh/ratum": {
   "lastmod": "2026-10-29",
