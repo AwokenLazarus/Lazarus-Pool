@@ -67,17 +67,12 @@
     el.addEventListener("click", () => selectTab(el.getAttribute("data-tab")));
   });
 
-  // While the custody fee is on, the notice has new copy and its own dismiss key, so a reader who
-  // dismissed the old notice sees it once more. The server marks the notice `data-custody` when
-  // it rendered that copy; otherwise /api/pool turns it on (custodyNotice below).
-  const NOTICE_DISMISS_KEY = "lazarus.gatewayupdate.v2.dismissed";
-  const CUSTODY_DISMISS_KEY = "lazarus.gatewayupdate.v3.custody.dismissed";
-  let noticeKey = $("gatewaynotice")?.hasAttribute("data-custody") ? CUSTODY_DISMISS_KEY : NOTICE_DISMISS_KEY;
-  const noticeDismissed = () => { try { return localStorage.getItem(noticeKey) === "1"; } catch (e) { return false; } };
-  if (noticeDismissed()) { const el = $("gatewaynotice"); if (el) el.hidden = true; }
-  $("gatewaynotice-dismiss")?.addEventListener("click", () => {
-    try { localStorage.setItem(noticeKey, "1"); } catch (e) { /* private mode */ }
-    const el = $("gatewaynotice"); if (el) el.hidden = true;
+  // Lightning Stream tester promo: dismissable, remembered per browser.
+  const LS_DISMISS_KEY = "lazarus.lightningstream.v1.dismissed";
+  try { if (localStorage.getItem(LS_DISMISS_KEY) === "1") { const el = $("lsnotice"); if (el) el.hidden = true; } } catch (e) { /* private mode */ }
+  $("lsnotice-dismiss")?.addEventListener("click", () => {
+    try { localStorage.setItem(LS_DISMISS_KEY, "1"); } catch (e) { /* private mode */ }
+    const el = $("lsnotice"); if (el) el.hidden = true;
   });
 
   // Knots 29.4.3 (knots#468): 180-day rolling coinbase maturity from this height. The notice counts
@@ -473,23 +468,12 @@
   }
 
   // The custody fee on make-goods for pool-only and partial coinbases. Off (percent 0): nothing
-  // here changes the page. On: the gateway notice takes its custody copy and dismiss key, and the
-  // fee card gets one line, the same words the server puts there when it renders them itself.
+  // here changes the page. On: the fee card gets one line, the same words the server puts there when it renders them itself.
   function custodyNotice(c) {
     const pct = Number(c && c.percent) || 0;
     const height = Number(c && c.from_height) || 0;
     if (!(pct > 0 && height > 0)) return;
     const vars = { pct: String(pct), height: num(height) };
-    const el = $("gatewaynotice");
-    const text = el && el.querySelector(".softfork-text");
-    if (text) {
-      text.removeAttribute("data-i18n-html");
-      text.innerHTML = t("gatewaynotice.custodyText", vars);
-      if (noticeKey !== CUSTODY_DISMISS_KEY) {
-        noticeKey = CUSTODY_DISMISS_KEY;
-        el.hidden = noticeDismissed();
-      }
-    }
     const cta = document.querySelector(".fee-lede-cta");
     if (cta) {
       let line = $("fee-custody");

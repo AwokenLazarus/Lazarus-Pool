@@ -6806,12 +6806,6 @@ def _inject_custody(raw, meta):
         return raw
     lang = "zh" if meta["lang"] == "zh-CN" else "en"
     line = custody_fee_sentence(lang)
-    # The site-wide gateway notice takes its custody copy here, so a page read without scripts
-    # says the same as pool.js will; `data-custody` gives the notice its new dismiss key.
-    notice = _custody_text("gatewaynotice.custodyText", lang)
-    raw = raw.replace('<aside class="softfork urgent" id="gatewaynotice"', '<aside class="softfork urgent" id="gatewaynotice" data-custody', 1)
-    raw = re.sub(r'<p class="softfork-text" data-i18n-html="gatewaynotice\.text">.*?</p>',
-                 lambda _m: f'<p class="softfork-text">{notice}</p>', raw, count=1, flags=re.S)
     raw = re.sub(
         r'(<p class="fee-lede-cta">.*?</p>)',
         lambda m: m.group(1) + f'\n        <p class="note fee-lede-custody" id="fee-custody">{html.escape(line)}</p>',
@@ -7042,9 +7036,9 @@ _SEO_ARTICLE = {
     "/non-custodial": ("Article", "2026-09-13", "2026-11-03"),
     "/bip110": ("Article", "2026-09-13", "2026-10-29"),
     "/how": ("Article", "2026-09-13", "2026-11-03"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-10-29"),
-    "/ratum": ("TechArticle", "2026-09-28", "2026-10-29"),
-    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-10-29"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-11-04"),
+    "/ratum": ("TechArticle", "2026-09-28", "2026-11-04"),
+    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-11-04"),
     "/api": ("TechArticle", "2026-09-13", "2026-10-30"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
@@ -7052,7 +7046,7 @@ _SEO_ARTICLE = {
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-11-03",
+    "/": "2026-11-04",
     "/calculator": "2026-10-29",
     "/blocks": "2026-10-29",
 }
@@ -7076,7 +7070,7 @@ def _keyword_page(raw, meta):
     # scripts, and on /zh/ the summary was English.
     raw = re.sub(r'<noscript id="nojs-summary">.*?</noscript>\n?', "", raw, count=1, flags=re.S)
     if meta["path"] not in _NOTICE_PAGES:
-        raw = re.sub(r'<aside class="softfork urgent" id="(?:forknotice|gatewaynotice)".*?</aside>\n', "", raw, count=2, flags=re.S)
+        raw = re.sub(r'<aside class="(?:softfork urgent|promo)" id="(?:forknotice|lsnotice)".*?</aside>\n', "", raw, count=2, flags=re.S)
     home = "/zh/" if meta["lang"] == "zh-CN" else "/"
 
     def relink(m):

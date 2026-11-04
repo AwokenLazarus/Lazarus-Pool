@@ -65,14 +65,13 @@ window.LZ_I18N_DICTS["en"] = {
     "setup": "Set up a DATUM gateway",
     "dismiss": "Dismiss notice"
   },
-  "gatewaynotice": {
-    "kicker": "Action needed",
-    "title": "Running an old DATUM gateway? Update it.",
-    "text": "Out-of-date gateways can pay a block’s whole reward to the pool, which must hold it and pay miners back as a <b>make-good</b> once it matures (about 45 days). Update so your blocks pay miners directly.",
-    "setup": "Update your gateway →",
-    "discord": "Get help",
-    "dismiss": "Dismiss notice",
-    "custodyText": "From block {height}, make-goods for pool-only or partial coinbases pay <b>{pct}% less</b> to miners whose own gateway produced them. Current gateways are paid in full."
+  "lsnotice": {
+    "aria": "Lightning Stream: testers wanted",
+    "tag": "Testers wanted",
+    "lead": "Rent out your miner over Lightning.",
+    "text": "Lightning Stream is in early testing. Rent your hashrate to other miners and earn sats over Bitcoin Lightning, paid by the slice of work: trustless, no middleman, no custody. When a renter stops paying, your miner goes straight back to your own node. You can also sell media, AI models and VPN exits.",
+    "cta": "Become a tester →",
+    "dismiss": "Dismiss"
   },
   "minerwarn": {
     "kicker": "Action needed",
