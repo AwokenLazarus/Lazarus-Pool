@@ -75,6 +75,97 @@
     const el = $("lsnotice"); if (el) el.hidden = true;
   });
 
+  // The node web behind the Lightning Stream promo: nodes joined by channels, with payments as
+  // pulses of light running along them (after lightning-stream.com's backdrop, much smaller).
+  // One still frame with reduced motion, Save-Data or a weak device; paused off screen or in a
+  // background tab. Decorative: the canvas is aria-hidden and says nothing the copy does not.
+  (function lsWeb() {
+    const box = $("lsnotice");
+    const cv = $("lsnotice-web");
+    if (!box || !cv || !cv.getContext || box.hidden) return;
+    const ctx = cv.getContext("2d");
+    const mq = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+    const nc = navigator.connection || {};
+    const weak = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) || nc.saveData === true;
+    const still = () => weak || (mq && mq.matches);
+    const COLORS = ["#ffd60a", "#9fd8ff", "#ff8f45", "#b9a4ff", "#5fe8d2"];
+    let W = 0, H = 0, nodes = [], edges = [], pulses = [], raf = 0, seen = true, last = 0;
+    function layout() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = box.clientWidth; H = box.clientHeight;
+      if (!W || !H) return false;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = Math.max(10, Math.min(46, Math.round(W / 34)));
+      nodes = Array.from({ length: n }, (_, i) => ({
+        x: (i + 0.5) * (W / n) + (Math.random() - 0.5) * (W / n) * 0.8,
+        y: H * (0.12 + Math.random() * 0.76),
+        r: 1.2 + Math.random() * 2.2,
+        c: Math.random() < 0.35 ? COLORS[(Math.random() * COLORS.length) | 0] : "#ffffff",
+        ph: Math.random() * Math.PI * 2,
+      }));
+      edges = [];
+      nodes.forEach((a, i) => {
+        nodes.map((b, j) => ({ j, d: Math.hypot(a.x - b.x, a.y - b.y) }))
+          .filter((o) => o.j > i).sort((p, q) => p.d - q.d).slice(0, 2)
+          .forEach((o) => { if (o.d < W / 6) edges.push([i, o.j]); });
+      });
+      pulses = [];
+      return true;
+    }
+    function frame(t) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1;
+      for (const [i, j] of edges) {
+        const a = nodes[i], b = nodes[j];
+        ctx.strokeStyle = "rgba(159, 216, 255, 0.13)";
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      for (const p of pulses) {
+        const a = nodes[p.e[0]], b = nodes[p.e[1]];
+        const k = p.back ? 1 - p.k : p.k;
+        const x = a.x + (b.x - a.x) * k, y = a.y + (b.y - a.y) * k;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 7);
+        g.addColorStop(0, p.c); g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
+      }
+      for (const n of nodes) {
+        const glow = 0.55 + 0.45 * Math.sin(t / 900 + n.ph);
+        ctx.globalAlpha = 0.35 + 0.5 * glow;
+        ctx.fillStyle = n.c;
+        ctx.shadowColor = n.c; ctx.shadowBlur = 8 * glow;
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    }
+    function tick(t) {
+      raf = 0;
+      if (!seen || document.hidden || box.hidden) return;
+      const dt = last ? Math.min(64, t - last) : 16; last = t;
+      if (edges.length && pulses.length < Math.min(14, edges.length) && Math.random() < 0.08) {
+        pulses.push({ e: edges[(Math.random() * edges.length) | 0], k: 0, v: 0.00035 + Math.random() * 0.0006, back: Math.random() < 0.5, c: Math.random() < 0.6 ? "#ffd60a" : COLORS[1 + ((Math.random() * 4) | 0)] });
+      }
+      for (const p of pulses) p.k += p.v * dt;
+      pulses = pulses.filter((p) => p.k < 1);
+      frame(t);
+      raf = requestAnimationFrame(tick);
+    }
+    function start() { if (!raf && !still() && seen && !document.hidden) { last = 0; raf = requestAnimationFrame(tick); } }
+    function paintStill() {
+      for (let i = 0; i < Math.min(8, edges.length); i++) pulses.push({ e: edges[(i * 7) % edges.length], k: 0.3 + 0.4 * ((i * 37) % 10) / 10, v: 0, back: false, c: i % 2 ? "#9fd8ff" : "#ffd60a" });
+      frame(0);
+    }
+    function reset() { if (layout()) { if (still()) paintStill(); else { frame(performance.now()); start(); } } }
+    reset();
+    let rt = 0;
+    window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(reset, 150); });
+    document.addEventListener("visibilitychange", start);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver((es) => { seen = es[0].isIntersecting; start(); }).observe(box);
+    }
+    if (mq && mq.addEventListener) mq.addEventListener("change", reset);
+  })();
+
   // Knots 29.4.3 (knots#468): 180-day rolling coinbase maturity from this height. The notice counts
   // down in blocks from the tip /api/pool reports (stats below), at about 10 minutes a block.
   const FORK_HEIGHT = 979919;

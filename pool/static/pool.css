@@ -2301,3 +2301,60 @@
 
 /* "Show older" under the miner payout tables (XBT-143) */
 .payouts-more { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.8rem; }
+
+/* The Lightning Stream promo sits in the last layer so its own button and colours win over the
+   components layer's .btn. */
+@layer utilities {
+  /* ---- Lightning Stream tester promo: in that site's look (near-black, volt yellow, arc blue) with
+     its node web drawn behind the copy (pool.js, #lsnotice-web). */
+  #lsnotice {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-top: 1px solid rgba(255, 214, 10, 0.55);
+    border-bottom: 1px solid rgba(255, 214, 10, 0.22);
+    background:
+      radial-gradient(110% 160% at 8% 0%, rgba(255, 214, 10, 0.18), transparent 55%),
+      radial-gradient(80% 140% at 92% 100%, rgba(159, 216, 255, 0.16), transparent 60%),
+      #050507;
+    box-shadow: inset 0 0 48px -12px rgba(255, 214, 10, 0.35), 0 0 28px -10px rgba(255, 214, 10, 0.45);
+  }
+  #lsnotice .ls-web {
+    position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none;
+    /* bright at the ends, quieter behind the copy */
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.45) 16%, rgba(0, 0, 0, 0.28) 50%, rgba(0, 0, 0, 0.5) 78%, #000 100%);
+    mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.45) 16%, rgba(0, 0, 0, 0.28) 50%, rgba(0, 0, 0, 0.5) 78%, #000 100%);
+  }
+  #lsnotice .promo-row { position: relative; padding-block: 0.8rem 0.85rem; border-left: 3px solid #ffd60a; box-shadow: -10px 0 24px -12px rgba(255, 214, 10, 0.9); }
+  #lsnotice .promo-tag {
+    color: #ffd60a;
+    border-color: rgba(255, 214, 10, 0.65);
+    background: rgba(255, 214, 10, 0.1);
+    box-shadow: 0 0 18px -4px rgba(255, 214, 10, 0.7);
+  }
+  #lsnotice .promo-tag::before { content: "\26A1\FE0E"; margin-right: 0.3rem; }
+  #lsnotice .promo-copy { color: #d9dce2; text-shadow: 0 1px 10px rgba(5, 5, 7, 0.95); }
+  #lsnotice .ls-glow {
+    font-size: 1.05rem;
+    background: linear-gradient(100deg, #ffffff 0%, #fff6c4 35%, #ffd60a 70%, #ffb648 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+  }
+  #lsnotice a.btn.small.ls-btn {
+    background: #ffd60a;
+    border-color: #ffd60a;
+    color: #0a0900;
+    font-weight: 600;
+    box-shadow: 0 0 26px -4px rgba(255, 214, 10, 0.65);
+  }
+  #lsnotice a.btn.small.ls-btn:hover, #lsnotice a.btn.small.ls-btn:focus-visible { background: #ffe766; border-color: #ffe766; color: #000; box-shadow: 0 0 38px -2px rgba(255, 214, 10, 0.85); }
+  #lsnotice .promo-dismiss { background: rgba(5, 5, 7, 0.65); border-color: rgba(255, 255, 255, 0.2); color: #a4a8b1; }
+  #lsnotice .promo-dismiss:hover, #lsnotice .promo-dismiss:focus-visible { color: #ffd60a; border-color: #ffd60a; }
+  /* A phone keeps the headline and the button; the details are one tap away. */
+  @media (max-width: 640px) {
+    #lsnotice .ls-text { display: none; }
+    #lsnotice .promo-row { padding-block: 0.6rem; }
+  }
+}

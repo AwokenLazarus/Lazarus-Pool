@@ -24,10 +24,13 @@ ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
 def crawlable(html):
     """The page text minus the parts that change without the words changing: scripts, styles,
-    structured data (it carries the date itself), the modified-time meta and the live rental grid."""
+    structured data (it carries the date itself), the modified-time meta, the live rental grid and
+    the ?v= versions on /static/ links."""
     html = re.sub(r"(?s)<script\b.*?</script>|<style\b.*?</style>", "", html)
     html = re.sub(r'<meta property="article:modified_time"[^>]*>', "", html)
     html = re.sub(r'(?s)(<ul class="hw-grid" id="rentals-grid">).*?(</ul>)', r"\1\2", html)
+    # an asset's cache-busting version is not the page's words
+    html = re.sub(r'(/static/[^"?]+)\?v=[^"]*', r"\1", html)
     return hashlib.sha256(re.sub(r"\s+", " ", html).encode("utf-8")).hexdigest()
 
 
