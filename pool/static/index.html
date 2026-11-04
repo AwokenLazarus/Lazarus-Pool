@@ -57,7 +57,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap"></noscript>
-<link rel="stylesheet" href="/static/pool.css?v=fork1">
+<link rel="stylesheet" href="/static/pool.css?v=ls2">
 <link rel="stylesheet" href="/static/app.css?v=fork1">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/static/favicon-48.png" sizes="48x48" type="image/png">
@@ -120,10 +120,11 @@
 </aside>
 
 <aside class="promo" id="lsnotice" data-i18n-aria="lsnotice.aria" aria-label="Lightning Stream: testers wanted">
+  <canvas class="ls-web" id="lsnotice-web" aria-hidden="true"></canvas>
   <div class="wrap promo-row">
     <span class="promo-tag" data-i18n="lsnotice.tag">Testers wanted</span>
-    <p class="promo-copy"><strong data-i18n="lsnotice.lead">Rent out your miner over Lightning.</strong> <span data-i18n-html="lsnotice.text">Lightning Stream is in early testing. Rent your hashrate to other miners and earn sats over Bitcoin Lightning, paid by the slice of work: trustless, no middleman, no custody. When a renter stops paying, your miner goes straight back to your own node. You can also sell media, AI models and VPN exits.</span></p>
-    <a class="btn small" href="https://lightning-stream.com/" target="_blank" rel="noopener" data-i18n="lsnotice.cta">Become a tester →</a>
+    <p class="promo-copy"><strong class="ls-glow" data-i18n="lsnotice.lead">Rent out your miner over Lightning.</strong> <span class="ls-text" data-i18n-html="lsnotice.text">Lightning Stream is in early testing. Rent your hashrate to other miners and earn sats over Bitcoin Lightning, paid by the slice of work: trustless, no middleman, no custody. When a renter stops paying, your miner goes straight back to your own node. You can also sell media, AI models and VPN exits.</span></p>
+    <a class="btn small ls-btn" href="https://lightning-stream.com/" target="_blank" rel="noopener" data-i18n="lsnotice.cta">Become a tester →</a>
     <button type="button" class="promo-dismiss" id="lsnotice-dismiss" data-i18n-aria="lsnotice.dismiss" data-i18n-title="lsnotice.dismiss" aria-label="Dismiss" title="Dismiss">&times;</button>
   </div>
 </aside>
@@ -867,12 +868,12 @@
 </nav>
 
 <script src="/static/i18n.js?v=seo2"></script>
-<script src="/static/i18n/en.js?v=fork1"></script>
-<script src="/static/i18n/zh-CN.js?v=fork1"></script>
+<script src="/static/i18n/en.js?v=ls2"></script>
+<script src="/static/i18n/zh-CN.js?v=ls2"></script>
 <script>LZ_I18N.boot();</script>
 <script src="/static/shared.js?v=fork1"></script>
 <script src="/static/app.js?v=fork2"></script>
-<script src="/static/pool.js?v=fork1"></script>
+<script src="/static/pool.js?v=ls2"></script>
 <script src="/static/chart.js?v=app4"></script>
 </body>
 </html>

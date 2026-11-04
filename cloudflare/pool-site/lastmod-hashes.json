@@ -1,114 +1,114 @@
 {
  "/": {
   "lastmod": "2026-11-04",
-  "sha256": "6d9af0e2c92b63e74ba38706e63be430451e6a4ad83ad44c89bb9dbaf7acf880"
+  "sha256": "3949076c78897021543fae245ebb75a7c053bbe6beba3e74b9429bfb42ca1cb2"
  },
  "/api": {
   "lastmod": "2026-10-30",
-  "sha256": "9e7ec3b7a03c7ea17b5a5573ea310b677b0cda1cd58c4ece82187edeb1688d48"
+  "sha256": "fe7470627d7409c68cbe20d74e3890082d52a890245be1392ee55a4122b021c2"
  },
  "/bip110": {
   "lastmod": "2026-10-29",
-  "sha256": "1eeb00b7e05579fb1e1e5d36c2a3fdb8c4f7e41f5d57d8aa02f8a0d262c76e16"
+  "sha256": "83e9731f44210ca2f976df494a99b2ee51ae620f7fe3b9b09bf296833fbe3882"
  },
  "/blocks": {
   "lastmod": "2026-10-29",
-  "sha256": "c9424bb3fe4fd0530179cea5a2a87b539ba733626f684394177b223573c0ae2f"
+  "sha256": "f37e1f7f06eed3cd66fc36f52491651e1a336e1e9cc084edeb1d38af73185d91"
  },
  "/calculator": {
   "lastmod": "2026-10-29",
-  "sha256": "d5fa36ab6f64d23a7210333ac1b4bccbd343d6197a85712bb322b731e95e5926"
+  "sha256": "38999952c39694e33e83ece8b8fadebf95be6f40658c1f3e7cd60d7e439a4b0c"
  },
  "/connect": {
   "lastmod": "2026-11-04",
-  "sha256": "24a80a5cde30dea1505b78e2ff8d8b2412d577abb95ad29e83c27ef0ec6cda61"
+  "sha256": "05ca6c91259723a665e992374df437ef45af415a6e10ffe4e2a6436f718c7c0d"
  },
  "/flytheelephant": {
   "lastmod": "2026-11-04",
-  "sha256": "ff4e88eb12240ab9f2250c94e79e7951bfa8486da2db7b8ba114d7640f8f0564"
+  "sha256": "f1ae26edae2239050140c1f8ecead73a6969347fece536be4b281e72d5d74e03"
  },
  "/hardware": {
   "lastmod": "2026-10-29",
-  "sha256": "06bbd07d1ddbda443cc86a086bd625d24664d4e8312ba8a9b98200c320758dda"
+  "sha256": "050ebc57011abe4601f6d4b0f60badef5783d441388182fb4e404a77f65afca7"
  },
  "/how": {
   "lastmod": "2026-11-03",
-  "sha256": "b7d97323cb9eb6245b4028e09add49d674c5d8ac4c6a3b87b968eca81e71cded"
+  "sha256": "921d66a1e9d962ea0ea4d5b1e4d445a3da93c732dab4517ca6631594c035f9a1"
  },
  "/non-custodial": {
   "lastmod": "2026-11-03",
-  "sha256": "1e742f81b131325677d5dd02fa820ce88c7b91b72814ab9b60e3838a0cf1fce3"
+  "sha256": "315a656fb04cd8a149e930a818652c8ad184e349e4ff81d40d7b4597ae069d98"
  },
  "/pools": {
   "lastmod": "2026-11-03",
-  "sha256": "e3f62c89932610bced5de0c4eeb494e4876d3eea04ec62f37f6d9041120d671d"
+  "sha256": "7cc0a6c1b8fb8a2bc24635384125716406da2ac0908c8a82a66cf6987ade4389"
  },
  "/ratum": {
   "lastmod": "2026-11-04",
-  "sha256": "e09c7c46dc8e10e136a0dda5b167408206088a718b3895809c43ac50359ad018"
+  "sha256": "bba06b569769a390c18ff0f780cd53ade89f6cd4ffd1bba91c655beea6eedcfb"
  },
  "/rentals": {
   "lastmod": "2026-10-29",
-  "sha256": "6c2650e3ea07241b3a9d68368061f27a4e18d501ee463dfc74b8c434adab0510"
+  "sha256": "34383351cb80f048d95160576a71d7d1cf475a4f3ecd2d4079e45f40257fff73"
  },
  "/self-cap": {
   "lastmod": "2026-10-29",
-  "sha256": "7a19e3d3e170b878dabce2fb140dc75c1acc2c83f7d7e1c596ca2383a9ad7324"
+  "sha256": "ed851132e877a848831ba5acac4519879220a09cda798723b7f61f777783d99c"
  },
  "/zh/": {
   "lastmod": "2026-11-04",
-  "sha256": "344a016f4dfb84ed51b3f11c716e117a6d7e5b6cfa696fba60ff65994964d273"
+  "sha256": "1e8d52af642fc1342a3171e958f22e1b590a9623584c84d8bc78682428961750"
  },
  "/zh/api": {
   "lastmod": "2026-10-30",
-  "sha256": "763b2e4029c28cab830531ecc905c7307f93ab6edc36711cc5ae9d5f42197db3"
+  "sha256": "3692fe23dd9b753b69fc3666eaf8ef71a85b741723ffcccfc037a7afa47d8dc0"
  },
  "/zh/bip110": {
   "lastmod": "2026-10-29",
-  "sha256": "eb4980c4b5fb43fabb1bbf2c1a3bf1f755d661beb5cac19d8dedffc774eec455"
+  "sha256": "dbb46deaa734f3d6a88d0c7ce28c18c519eb90ca2894f18761a3774c9f62d67e"
  },
  "/zh/blocks": {
   "lastmod": "2026-10-29",
-  "sha256": "766c88ccbceaa2c2411c99d3f2cd775ff1aa561e520d5c40da8b241dd24e1b34"
+  "sha256": "2e3013c014fdb119e3ba7beb3d62f226337eecd5094ca9b91ca2b544d7b3bb75"
  },
  "/zh/calculator": {
   "lastmod": "2026-10-29",
-  "sha256": "928799c8fe9c3acfc02c77c0a130f9761d88797565808ec9ce125705f36c091d"
+  "sha256": "b1eb8bc0f3a50340878b54b80d82c168d347481cf6460a05ce03356651bfcd2e"
  },
  "/zh/connect": {
   "lastmod": "2026-11-04",
-  "sha256": "f3a81845a1567bf79e7e20c22314bfeb534c5f1f8a05f6cec575fab889451f07"
+  "sha256": "05380d355c72288c55c35d83674013b723e5fca33af7cabdec3917488c7a17fa"
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-11-04",
-  "sha256": "ff5f4af8e4fb5402f2a3ef5be90413a508cda9ff4f3d629d3409d7dd113870e0"
+  "sha256": "5bae34cb6bcdb02d5502cd8cd2aebe9a2bc83c10193dfd567183e61efd92e3a8"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-29",
-  "sha256": "2032bf1353a935c98bea868f81d1f4c1d8d6bb73089cc305ab013c0586c9fb64"
+  "sha256": "c3349f665c043ba2b1057575a203024b561e3d49b494c5fa1648428ec52b6f10"
  },
  "/zh/how": {
   "lastmod": "2026-11-03",
-  "sha256": "58517cba21f6e8628b60578178824293eb799731691b1d327b1642ffcdd03f6d"
+  "sha256": "c08150de334ffeb0026d2bbbaafa5db74dfec3331222c7d0a5a0e406e46a22e1"
  },
  "/zh/non-custodial": {
   "lastmod": "2026-11-03",
-  "sha256": "a2d0f65e17af3d7a231a4d1e9dcbed795a0f4cc48979692dbabfeac5e8638b97"
+  "sha256": "65b8dbfa6047a171774c08af1425ae159888a990e6faae4467cf211a12191825"
  },
  "/zh/pools": {
   "lastmod": "2026-11-03",
-  "sha256": "3176d450625702744e7836f93e1d84d1f7c6aae953f7187d7db0c360e7d0179a"
+  "sha256": "9f6bd648e988c1ef1a10fc31c321460c06e4a3b4d7241b9bf1292bc5c5d3febc"
  },
  "/zh/ratum": {
   "lastmod": "2026-11-04",
-  "sha256": "f134e4ea5a47cacd6e184b3cb1a2ec5d98dd296d0781f92a73117772a794fec0"
+  "sha256": "61ca17949b40aec1ea0d447d9f9a51375df5e684a2f7c0317afe6de49ddece0a"
  },
  "/zh/rentals": {
   "lastmod": "2026-10-29",
-  "sha256": "8d0db63a3d720914da91f577b0df77fd742691e2fb294a8624002d3db7fe95f3"
+  "sha256": "357dc9ad9560f4ab9a88965c39b72d3539690b9ab86ac55ffa9d91b6b90bc0e3"
  },
  "/zh/self-cap": {
   "lastmod": "2026-10-29",
-  "sha256": "6baf0216729806fd373a4a61311f6da18e18e1c3f2faf17c1754113ea9af3104"
+  "sha256": "d4edb0e5ec5cc7b4e37b5e47a4b09a5c0e912b3a1464d77c30f9f7c7cfe9cedc"
  }
 }
