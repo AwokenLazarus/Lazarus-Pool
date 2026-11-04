@@ -65,14 +65,13 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "setup": "搭建 DATUM 网关",
     "dismiss": "关闭通知"
   },
-  "gatewaynotice": {
-    "kicker": "需要处理",
-    "title": "还在用旧版 DATUM 网关？请更新。",
-    "text": "过时的网关可能把整个区块奖励付给矿池，矿池只能代管，等区块成熟（约 45 天）后再以<b>补付</b>还给矿工。更新后，你的区块会直接付给矿工。",
-    "setup": "更新你的网关 →",
-    "discord": "寻求帮助",
-    "dismiss": "关闭公告",
-    "custodyText": "自区块 {height} 起，仅矿池或部分分账 coinbase 的补付，对自身网关产生这类 coinbase 的矿工<b>少付 {pct}%</b>。使用当前版本网关的矿工全额到账。"
+  "lsnotice": {
+    "aria": "Lightning Stream：招募测试者",
+    "tag": "招募测试者",
+    "lead": "通过闪电网络出租你的矿机。",
+    "text": "Lightning Stream 正处于早期测试阶段。把你的算力租给其他矿工，通过比特币闪电网络赚 sats，按每一份工作量付费：无需信任、没有中间人、不托管资金。租用方一停止付款，你的矿机就立刻回到你自己的节点。你还可以出售媒体、AI 模型和 VPN 出口。",
+    "cta": "成为测试者 →",
+    "dismiss": "关闭"
   },
   "minerwarn": {
     "kicker": "需要处理",

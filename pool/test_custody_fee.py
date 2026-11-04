@@ -267,7 +267,7 @@ class Pages(unittest.TestCase):
         for page in (home, zh):
             self.assertNotIn("data-custody", page)
             self.assertNotIn('id="fee-custody"', page)
-        self.assertIn('data-i18n-html="gatewaynotice.text"', home)
+        self.assertIn('id="lsnotice"', home)
         self.assertNotIn("Custody fee", pool["fees"]["note"])
         self.assertEqual(pool["fees"]["custody"]["percent"], 0.0)
 
@@ -280,11 +280,8 @@ class Pages(unittest.TestCase):
             pool = server.pool_payload()
         self.assertIn("- Custody fee: from block 990,000", llms)
         self.assertIn("paid in full", llms)
-        self.assertIn('id="gatewaynotice" data-custody', home)
-        self.assertIn("From block 990,000, make-goods for pool-only or partial coinbases pay <b>10% less</b>", home)
         self.assertIn('id="fee-custody"', home)
         self.assertIn("自区块 990,000 起", zh)
-        self.assertIn("<b>少付 10%</b>", zh)
         self.assertIn("<p>Custody fee: from block 990,000", how)
         self.assertEqual(pool["fees"]["custody"], {"bps": 1000, "percent": 10.0, "from_height": H})
         self.assertIn("Custody fee", pool["fees"]["note"])
@@ -292,7 +289,7 @@ class Pages(unittest.TestCase):
     def test_i18n_keys_exist_in_both_languages(self):
         for locale in ("en", "zh-CN"):
             d = server._i18n_dict(locale)
-            self.assertIn("{height}", d["gatewaynotice"]["custodyText"])
+            self.assertTrue(all(d["lsnotice"][k] for k in ("tag", "lead", "text", "cta", "dismiss")), locale)
             self.assertIn("{pct}", d["hero"]["custodyFee"])
             for k in ("kicker", "title", "text", "textFee", "setup", "discord"):
                 self.assertTrue(d["minerwarn"][k], (locale, k))
