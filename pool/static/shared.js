@@ -435,7 +435,7 @@
         </dl>
         <div>
           <p class="kicker table-label">${t("solo.soloBlocks")}</p>
-          <div class="scroll"><table><thead><tr><th class="num">${t("solo.thHeight")}</th><th class="num">${t("blocks.thAmt")}</th><th class="num">${t("solo.thFee")}</th><th>${t("solo.thTime")}</th></tr></thead><tbody>${pays || `<tr><td colspan="4" class="empty">${t("solo.emptyBlocks")}</td></tr>`}</tbody></table></div>
+          <div data-scrollbox="solo" class="scroll"><table><thead><tr><th class="num">${t("solo.thHeight")}</th><th class="num">${t("blocks.thAmt")}</th><th class="num">${t("solo.thFee")}</th><th>${t("solo.thTime")}</th></tr></thead><tbody>${pays || `<tr><td colspan="4" class="empty">${t("solo.emptyBlocks")}</td></tr>`}</tbody></table></div>
         </div>
       </div>`;
   }
@@ -471,7 +471,7 @@
         <div${panelAttr("maturingTable")}>
           <p class="kicker table-label">${t("miner.pendingLabel", { n: rows.length })}</p>
           <p class="note">${t("miner.pendingHelp", { need: num(need) })}</p>
-          <div class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th class="num">${t("miner.thConfs")}</th><th class="num">${t("miner.thLeft")}</th><th>${t("miner.thSpend")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thFound")}</th></tr></thead><tbody>${body}</tbody></table></div>
+          <div data-scrollbox="pending" class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th class="num">${t("miner.thConfs")}</th><th class="num">${t("miner.thLeft")}</th><th>${t("miner.thSpend")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thFound")}</th></tr></thead><tbody>${body}</tbody></table></div>
         </div>`;
   }
 
@@ -527,7 +527,7 @@
         <div${panelAttr("makegoodTable")}>
           <p class="kicker table-label">${pend.length ? t("miner.mgLabelPending", { n: pend.length, amt: satsExact(pendSats) }) : t("miner.mgLabel")}</p>
           <p class="note">${t("miner.mgHelp", { need: num(m.maturity_confs || 100) })}${m.makegood_long_maturity ? " " + t("miner.mgLongMaturity", lmVars(m)) : ""}</p>
-          <div class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th>${t("miner.thKind")}</th><th class="num">${t("miner.thPayableAt")}</th><th>${t("miner.thLands")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thTx")}</th></tr></thead><tbody>${body}</tbody></table></div>
+          <div data-scrollbox="makegood" class="scroll${ctx.full ? "" : " tall"}"><table class="pending"><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th>${t("miner.thKind")}</th><th class="num">${t("miner.thPayableAt")}</th><th>${t("miner.thLands")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thTx")}</th></tr></thead><tbody>${body}</tbody></table></div>
         </div>`;
   }
 
@@ -539,7 +539,7 @@
     return `
         <div${panelAttr("paidTable")}>
           <p class="kicker table-label">${t("miner.paidLabel")}</p>
-          <div class="scroll tall"><table><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th class="num">${t("miner.thOf")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thFound")}</th></tr></thead><tbody>${body || `<tr><td colspan="5" class="empty">${t("miner.nothingMatured")}</td></tr>`}</tbody></table></div>
+          <div data-scrollbox="paid" class="scroll tall"><table><thead><tr><th class="num">${t("miner.thBlock")}</th><th class="num">${t("miner.thAmt")}</th><th class="num">${t("miner.thOf")}</th><th>${t("miner.thStatus")}</th><th>${t("miner.thFound")}</th></tr></thead><tbody>${body || `<tr><td colspan="5" class="empty">${t("miner.nothingMatured")}</td></tr>`}</tbody></table></div>
         </div>`;
   }
 
@@ -572,6 +572,25 @@
   function payoutTables(m, ctx) {
     return `<div data-payouts-tables>${pendingTable(m, ctx)}${makegoodTable(m, ctx)}${paidTable(m, ctx)}${payoutsMore(m)}</div>`;
   }
+  // The miner card is redrawn on every refresh. A redraw puts each scrolling list back at its top,
+  // so someone reading their maturing payouts or make-goods was snapped back every 10 s. keepScroll
+  // runs a redraw and then returns every [data-scrollbox] list inside `root`, and the page, to where
+  // they were.
+  function keepScroll(root, redraw) {
+    const at = {};
+    root?.querySelectorAll("[data-scrollbox]").forEach((el) => {
+      if (el.scrollTop || el.scrollLeft) at[el.getAttribute("data-scrollbox")] = [el.scrollTop, el.scrollLeft];
+    });
+    const pageY = window.scrollY;
+    redraw();
+    root?.querySelectorAll("[data-scrollbox]").forEach((el) => {
+      const was = at[el.getAttribute("data-scrollbox")];
+      if (was) el.scrollTo({ top: was[0], left: was[1], behavior: "instant" });
+    });
+    // and the page itself, should the new card's height have moved it
+    if (Math.abs(window.scrollY - pageY) > 1) window.scrollTo({ top: pageY, left: window.scrollX, behavior: "instant" });
+  }
+
   // Redraw only the payout tables of the card on screen, from the last payload it was drawn with.
   function redrawPayoutTables() {
     const last = olderPayouts.last;
@@ -579,7 +598,7 @@
     const m = withOlderPayouts(last.m);
     document.querySelectorAll(".miner-card").forEach((card) => {
       if (card.getAttribute("data-miner") !== m.address) return;
-      card.querySelectorAll("[data-payouts-tables]").forEach((box) => { box.outerHTML = payoutTables(m, last.ctx); });
+      keepScroll(card, () => card.querySelectorAll("[data-payouts-tables]").forEach((box) => { box.outerHTML = payoutTables(m, last.ctx); }));
     });
   }
   document.addEventListener("click", (e) => {
@@ -629,7 +648,7 @@
         <div${panelAttr("foundList")}>
           <p class="kicker table-label">${t("miner.foundLabel")}</p>
           <p class="note">${t("miner.foundHelp")}</p>
-          <div class="scroll tall"><table><thead><tr><th class="num">${t("miner.thBlock")}</th><th>${t("miner.thFound")}</th><th class="num">${t("miner.thReward")}</th><th>${t("miner.thSplit")}</th></tr></thead><tbody>${body}</tbody></table></div>
+          <div data-scrollbox="found" class="scroll tall"><table><thead><tr><th class="num">${t("miner.thBlock")}</th><th>${t("miner.thFound")}</th><th class="num">${t("miner.thReward")}</th><th>${t("miner.thSplit")}</th></tr></thead><tbody>${body}</tbody></table></div>
         </div>`;
   }
 
@@ -936,7 +955,7 @@
         ${relayNote}
         ${namesNote}
         <p class="note">${t("miner.workersNote")}</p>
-        <div class="scroll tall"><table><thead><tr><th>${t("miner.thWorker")}</th><th>${t("miner.thPath")}</th><th class="num">${t("miner.thHr")}</th><th class="num">${t("miner.thSess")}</th><th class="num">${t("miner.thAcc")}</th><th class="num">${t("miner.thRej")}</th><th class="num">${t("miner.thLast")}</th></tr></thead><tbody>${workers || `<tr><td colspan="7" class="empty">${t("miner.offlineRow")}</td></tr>`}</tbody></table></div>
+        <div data-scrollbox="workers" class="scroll tall"><table><thead><tr><th>${t("miner.thWorker")}</th><th>${t("miner.thPath")}</th><th class="num">${t("miner.thHr")}</th><th class="num">${t("miner.thSess")}</th><th class="num">${t("miner.thAcc")}</th><th class="num">${t("miner.thRej")}</th><th class="num">${t("miner.thLast")}</th></tr></thead><tbody>${workers || `<tr><td colspan="7" class="empty">${t("miner.offlineRow")}</td></tr>`}</tbody></table></div>
         </div>
       </div>`;
 
@@ -987,7 +1006,7 @@
   window.LZ = {
     blockMarks, esc, fmtHr, num, bigNum, short, shortHash, pct, pctSmart, ago, agoS, dur, when, clock, sig4, amt, amtSats, amtExact,
     kindPill, statusPill, chartLegend, continuous, chartTip, markHover, draw, CHART_MARK,
-    satsExact, EXPLORER, pathLabel, isPrimePath, sessCell, winShareCell, feePct, poolLink, payStatus, blockLink, soloCard, minerCard, showMinerTab, MINER_TABS,
+    satsExact, EXPLORER, pathLabel, isPrimePath, sessCell, winShareCell, feePct, poolLink, payStatus, blockLink, soloCard, minerCard, showMinerTab, MINER_TABS, keepScroll,
     t,
   };
 })();

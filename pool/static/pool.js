@@ -1392,7 +1392,7 @@
     try { localStorage.setItem("lz.addr", addr); } catch (e) { /* private mode */ }
     navPayouts(addr);
     const hasPool = !!(m.via || Number(m.window_work) > 0 || Number(m.shares_lifetime) > 0 || Number(m.round_share) > 0);
-    $("miner").innerHTML = minerCard(m, { fees, money, blockInterval, tab: minerTab, full: false });
+    LZ.keepScroll($("miner"), () => { $("miner").innerHTML = minerCard(m, { fees, money, blockInterval, tab: minerTab, full: false }); });
     if (!m.known || !hasPool) {
       showChart(false);
       return;

@@ -155,7 +155,7 @@
       if (Number(p.block_interval_seconds) > 0) blockInterval = Number(p.block_interval_seconds);
       if (p && p.pool_hr_ghs != null) $("nav-hr").textContent = fmtHr(p.pool_hr_ghs);
       summary(d);
-      $("miner").innerHTML = minerCard(d, { fees, money, blockInterval, tab, full: true });
+      LZ.keepScroll($("miner"), () => { $("miner").innerHTML = minerCard(d, { fees, money, blockInterval, tab, full: true }); });
       setTab(tab, false);
       const hasPool = !!(d.via || Number(d.window_work) > 0 || Number(d.shares_lifetime) > 0 || Number(d.round_share) > 0);
       $("chart-wrap").hidden = !(d.known && hasPool);
