@@ -600,6 +600,11 @@ _hr_last_work = {}
 _GW_HR_AVG_S = 300
 _gw_diff_hist = defaultdict(deque)
 _gw_last_diff = {}
+# Per stratum session (address, host:port, worker): its last accepted-diff counter and when it
+# was last seen, so each poll credits only what each session added since the previous poll.
+_gw_session_diff = {}
+_gw_cum_diff = defaultdict(int)
+_GW_SESSION_KEEP_S = 3600
 
 
 def _rolling_credit_hr(hist, last_map, addr, value, ts, avg_s):
@@ -1257,16 +1262,37 @@ def _gateway_hr_from_diff(addr, diff_total, ts):
 
 
 def _update_gateway_hr(miners, ts):
-    by = defaultdict(int)
+    """House-stratum accepted-diff rate per address, from each session's own counter.
+
+    Each session's diff_acc is a running total since it connected. Summing them per address
+    and differencing the sum double-counts whenever a session drops out of one scrape and is
+    back in the next (a failed page fetch, a row missing): the sum dips, then the whole
+    session total comes back as new work. DouPool (1.4 PH/s on its own gateway, ~70 TH/s
+    here) showed as 1.5 PH/s of public stratum that way. Differencing per session credits
+    only what each session added since it was last seen; a session seen for the first time
+    adds nothing until its next poll.
+    """
+    added = defaultdict(int)
+    present = set()
     for m in miners or []:
         if (m.get("via") or "") != "stratum":
             continue
         addr = m.get("address") or ""
-        if addr:
-            by[addr] += int(m.get("diff_acc") or 0)
+        if not addr:
+            continue
+        present.add(addr)
+        key = (addr, m.get("host") or "", m.get("worker") or "")
+        cur = int(m.get("diff_acc") or 0)
+        prev = _gw_session_diff.get(key)
+        if prev is not None and cur > prev[0]:
+            added[addr] += cur - prev[0]
+        _gw_session_diff[key] = (cur, ts)
+    for key in [k for k, (_, seen) in _gw_session_diff.items() if ts - seen > _GW_SESSION_KEEP_S]:
+        del _gw_session_diff[key]
     rates = {}
-    for addr, diff in by.items():
-        rates[addr] = _gateway_hr_from_diff(addr, diff, ts)
+    for addr in present:
+        _gw_cum_diff[addr] += added[addr]
+        rates[addr] = _gateway_hr_from_diff(addr, _gw_cum_diff[addr], ts)
     state["gateway_hr"] = rates
     return rates
 
