@@ -4678,33 +4678,47 @@ def _hasher_path(m):
 
 
 def _path_hashrate(miners):
-    """Credited live hashrate split by hasher path. One row per payout address.
+    """Credited live hashrate split by hasher path. One entry per payout address.
 
     Same identity-level credited rate as the pool ticker (Prime ledger), classified by
     whether that address is hashing through its own DATUM gateway or the public stratum
     right now. Not TIDES window share, and not overflow.datum_hs (that meter is for relay).
+
+    An address on both paths (a row marked "both", or stratum session rows plus the DATUM-side
+    row merge_prime_online adds) is split: the house stratum's accepted-diff rate is the part
+    that came here, the rest arrived through the miner's gateway. Taking only the first row
+    put a 1.4 PH/s gateway miner with ~70 TH/s of stratum rigs wholly on the stratum, since its
+    stratum session rows come first and carry the address-level credited rate (2026-11-07).
     """
-    seen = set()
-    datum = stratum = 0.0
-    n_datum = n_stratum = 0
+    by = {}
     for m in miners or []:
         a = m.get("address") or ""
-        if not a or a in seen:
+        if not a:
             continue
-        seen.add(a)
         hr = float(m.get("credited_hr_ghs") or 0)
         if hr < 1e-6:
             hr = float(m.get("hr_ghs") or 0)
+        e = by.setdefault(a, {"hr": hr, "paths": set(), "here": 0.0})
+        if e["hr"] < 1e-6:
+            e["hr"] = hr
         via = str(m.get("via") or "").lower()
         if via == "both":
-            # Own gateway and house stratum at once: the stratum's accepted-diff rate is the
-            # part that came here, the rest arrived through the miner's gateway.
-            here = min(hr, float(m.get("gateway_hr_ghs") or 0))
+            e["paths"].update(("datum", "stratum"))
+        else:
+            e["paths"].add(_hasher_path(m))
+        e["here"] = max(e["here"], float(m.get("gateway_hr_ghs") or 0))
+    gw_rates = state.get("gateway_hr") or {}
+    datum = stratum = 0.0
+    n_datum = n_stratum = 0
+    for a, e in by.items():
+        hr = e["hr"]
+        if e["paths"] == {"datum", "stratum"}:
+            here = min(hr, e["here"] or float(gw_rates.get(a) or 0))
             stratum += here
             datum += hr - here
             n_stratum += 1
             n_datum += 1
-        elif _hasher_path(m) == "datum":
+        elif "datum" in e["paths"]:
             datum += hr
             n_datum += 1
         else:

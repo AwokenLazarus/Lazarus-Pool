@@ -88,5 +88,38 @@ class GatewayRate(unittest.TestCase):
         self.assertAlmostEqual(datum + stratum, 1_430_000.0)
 
 
+class PathSplit(unittest.TestCase):
+    """The rows merge_prime_online hands _path_hashrate for an address on both paths."""
+
+    def setUp(self):
+        server.state["gateway_hr"] = {A: 72_000.0}
+
+    def tearDown(self):
+        server.state.pop("gateway_hr", None)
+
+    def test_stratum_rows_then_datum_side_row(self):
+        rows = [
+            {"address": A, "via": "stratum", "credited_hr_ghs": 1_430_000.0, "host": "5.188.33.83:12596"},
+            {"address": A, "via": "stratum", "credited_hr_ghs": 1_430_000.0, "host": "5.188.33.83:28318"},
+            {"address": A, "via": "prime", "ua": "DATUM gateway", "credited_hr_ghs": 1_430_000.0,
+             "gateway_hr_ghs": 72_000.0},
+            {"address": "bc1qplainstratum", "via": "stratum", "credited_hr_ghs": 50_000.0},
+            {"address": "bc1qplaindatum", "via": "prime", "credited_hr_ghs": 900_000.0},
+        ]
+        datum, stratum, n_datum, n_stratum = server._path_hashrate(rows)
+        self.assertAlmostEqual(stratum, 122_000.0)
+        self.assertAlmostEqual(datum, 1_358_000.0 + 900_000.0)
+        self.assertEqual((n_datum, n_stratum), (2, 2))
+
+    def test_stratum_rows_without_gateway_rate_on_the_row(self):
+        rows = [
+            {"address": A, "via": "stratum", "credited_hr_ghs": 1_430_000.0},
+            {"address": A, "via": "prime", "credited_hr_ghs": 1_430_000.0},
+        ]
+        datum, stratum, _, _ = server._path_hashrate(rows)
+        self.assertAlmostEqual(stratum, 72_000.0)
+        self.assertAlmostEqual(datum, 1_358_000.0)
+
+
 if __name__ == "__main__":
     unittest.main()
