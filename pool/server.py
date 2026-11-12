@@ -7074,11 +7074,11 @@ _SEO_ARTICLE = {
     "/pools": ("Article", "2026-09-13", "2026-11-03"),
     "/self-cap": ("Article", "2026-09-13", "2026-10-29"),
     "/non-custodial": ("Article", "2026-09-13", "2026-11-03"),
-    "/bip110": ("Article", "2026-09-13", "2026-10-29"),
+    "/bip110": ("Article", "2026-09-13", "2026-11-12"),
     "/how": ("Article", "2026-09-13", "2026-11-03"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-11-04"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-11-12"),
     "/ratum": ("TechArticle", "2026-09-28", "2026-11-04"),
-    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-11-04"),
+    "/flytheelephant": ("TechArticle", "2026-09-28", "2026-11-12"),
     "/api": ("TechArticle", "2026-09-13", "2026-10-30"),
 }
 # The sitemap pages that are not articles, with the date their crawlable copy last changed. Same
@@ -7086,7 +7086,7 @@ _SEO_ARTICLE = {
 # cloudflare/pool-site/tests/lastmod.py fails the build when a page's text changed and its date did
 # not, so a stale date cannot ship unnoticed.
 _SEO_MODIFIED = {
-    "/": "2026-11-04",
+    "/": "2026-11-12",
     "/calculator": "2026-10-29",
     "/blocks": "2026-10-29",
 }

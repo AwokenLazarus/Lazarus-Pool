@@ -1,15 +1,15 @@
 {
  "/": {
-  "lastmod": "2026-11-04",
-  "sha256": "3949076c78897021543fae245ebb75a7c053bbe6beba3e74b9429bfb42ca1cb2"
+  "lastmod": "2026-11-12",
+  "sha256": "a537aaf86673798de1bb86ac7a2191b58357e64f0817e6ad90fed781352fce17"
  },
  "/api": {
   "lastmod": "2026-10-30",
   "sha256": "fe7470627d7409c68cbe20d74e3890082d52a890245be1392ee55a4122b021c2"
  },
  "/bip110": {
-  "lastmod": "2026-10-29",
-  "sha256": "83e9731f44210ca2f976df494a99b2ee51ae620f7fe3b9b09bf296833fbe3882"
+  "lastmod": "2026-11-12",
+  "sha256": "117bce70adebfcd0bdea5f353289a2f43d2ea85533f6aa3a413952a4ea2e992c"
  },
  "/blocks": {
   "lastmod": "2026-10-29",
@@ -20,12 +20,12 @@
   "sha256": "38999952c39694e33e83ece8b8fadebf95be6f40658c1f3e7cd60d7e439a4b0c"
  },
  "/connect": {
-  "lastmod": "2026-11-04",
-  "sha256": "05ca6c91259723a665e992374df437ef45af415a6e10ffe4e2a6436f718c7c0d"
+  "lastmod": "2026-11-12",
+  "sha256": "2a9ab1a37615cac8ae59b8053e9838aa08900d72ee34caf41458271f28f8984a"
  },
  "/flytheelephant": {
-  "lastmod": "2026-11-04",
-  "sha256": "f1ae26edae2239050140c1f8ecead73a6969347fece536be4b281e72d5d74e03"
+  "lastmod": "2026-11-12",
+  "sha256": "54f0ada5f42939b2e4ef96ef5814239dfa52b5d31bb5cb49dcc4c66b89329a5a"
  },
  "/hardware": {
   "lastmod": "2026-10-29",
@@ -56,16 +56,16 @@
   "sha256": "ed851132e877a848831ba5acac4519879220a09cda798723b7f61f777783d99c"
  },
  "/zh/": {
-  "lastmod": "2026-11-04",
-  "sha256": "1e8d52af642fc1342a3171e958f22e1b590a9623584c84d8bc78682428961750"
+  "lastmod": "2026-11-12",
+  "sha256": "32b2291b085f19251632152b6f93fdbd8951848a954df50588bc6454075e53d2"
  },
  "/zh/api": {
   "lastmod": "2026-10-30",
   "sha256": "3692fe23dd9b753b69fc3666eaf8ef71a85b741723ffcccfc037a7afa47d8dc0"
  },
  "/zh/bip110": {
-  "lastmod": "2026-10-29",
-  "sha256": "dbb46deaa734f3d6a88d0c7ce28c18c519eb90ca2894f18761a3774c9f62d67e"
+  "lastmod": "2026-11-12",
+  "sha256": "205e12fe9b564c11e3796f24488d7c1a163731809c230e49b2ad29b32b90c7ea"
  },
  "/zh/blocks": {
   "lastmod": "2026-10-29",
@@ -76,12 +76,12 @@
   "sha256": "b1eb8bc0f3a50340878b54b80d82c168d347481cf6460a05ce03356651bfcd2e"
  },
  "/zh/connect": {
-  "lastmod": "2026-11-04",
-  "sha256": "05380d355c72288c55c35d83674013b723e5fca33af7cabdec3917488c7a17fa"
+  "lastmod": "2026-11-12",
+  "sha256": "9bddd8b596e0c3c651bb3b747272d5e76a8322ca30e7ed349404435383b9f2db"
  },
  "/zh/flytheelephant": {
-  "lastmod": "2026-11-04",
-  "sha256": "5bae34cb6bcdb02d5502cd8cd2aebe9a2bc83c10193dfd567183e61efd92e3a8"
+  "lastmod": "2026-11-12",
+  "sha256": "aef14c3e9f59b2de554a79e7f5238431b3cedbbe37bcf4b1caf4d1833e156774"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-29",
