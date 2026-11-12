@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>What Is XBT (BTCB2)? Bitcoin's BLAKE2b Fork Explained | Lazarus</title>
-<meta name="description" content="What XBT (BTCB2) is: Bitcoin's ledger continued under BLAKE2b from block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
+<title>What Is XBT (BTCB2)? Bitcoin on BLAKE2b Explained | Lazarus</title>
+<meta name="description" content="What XBT (BTCB2) is: Bitcoin, mined with BLAKE2b since block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
 <link rel="canonical" href="https://lazarus-xbt.xyz/learn/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lazarus Pool">
-<meta property="og:title" content="What Is XBT (BTCB2)? Bitcoin's BLAKE2b Fork Explained">
-<meta property="og:description" content="What XBT (BTCB2) is: Bitcoin's ledger continued under BLAKE2b from block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
+<meta property="og:title" content="What Is XBT (BTCB2)? Bitcoin on BLAKE2b Explained">
+<meta property="og:description" content="What XBT (BTCB2) is: Bitcoin, mined with BLAKE2b since block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
 <meta property="og:url" content="https://lazarus-xbt.xyz/learn/">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
@@ -17,8 +17,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The same ledger. A different proof of work. Bitcoin on BLAKE2b (XBT / BTCB2), lazarus-xbt.xyz">
 <meta name="twitter:site" content="@LazarusPoolXBT">
-<meta name="twitter:title" content="What Is XBT (BTCB2)? Bitcoin&#x27;s BLAKE2b Fork Explained">
-<meta name="twitter:description" content="What XBT (BTCB2) is: Bitcoin&#x27;s ledger continued under BLAKE2b from block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
+<meta name="twitter:title" content="What Is XBT (BTCB2)? Bitcoin on BLAKE2b Explained">
+<meta name="twitter:description" content="What XBT (BTCB2) is: Bitcoin, mined with BLAKE2b since block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.">
 <meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
 <meta name="theme-color" content="#1a1712">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -38,8 +38,8 @@
    "@type": "WebPage",
    "@id": "https://lazarus-xbt.xyz/learn/#webpage",
    "url": "https://lazarus-xbt.xyz/learn/",
-   "name": "What Is XBT (BTCB2)? Bitcoin's BLAKE2b Fork Explained | Lazarus",
-   "description": "What XBT (BTCB2) is: Bitcoin's ledger continued under BLAKE2b from block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.",
+   "name": "What Is XBT (BTCB2)? Bitcoin on BLAKE2b Explained | Lazarus",
+   "description": "What XBT (BTCB2) is: Bitcoin, mined with BLAKE2b since block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.",
    "isPartOf": {
     "@id": "https://lazarus-xbt.xyz/#website"
    },
@@ -71,7 +71,7 @@
    "@type": "TechArticle",
    "@id": "https://lazarus-xbt.xyz/learn/#article",
    "headline": "What XBT (BTCB2) is: Bitcoin's ledger on BLAKE2b proof of work",
-   "description": "What XBT (BTCB2) is: Bitcoin's ledger continued under BLAKE2b from block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.",
+   "description": "What XBT (BTCB2) is: Bitcoin, mined with BLAKE2b since block 961,640. Address safety, DATUM mining, TIDES payouts and the coinbase maturity soft fork.",
    "url": "https://lazarus-xbt.xyz/learn/",
    "image": "https://lazarus-xbt.xyz/assets/og.png",
    "datePublished": "2026-09-22",
@@ -128,7 +128,7 @@
 <section class="section wrap">
   <div class="prose" data-reveal>
     <h2 id="names">XBT, BTCB2, Bitcoin BLAKE2b, BIP-110</h2>
-    <p>All four names mean this chain. Its coins are written XBT here and on the pools, and exchanges such as NonKYC list them as BTCB2. "Bitcoin BLAKE2b" comes from the proof of work. "The BIP-110 fork" comes from August 2026, when nodes enforcing BIP-110 split from SHA-256 Bitcoin; the proof of work changed to BLAKE2b three weeks later. <a href="https://pool.lazarus-xbt.xyz/bip110" rel="noopener">The pool site covers BIP-110 and the split in more detail</a>.</p>
+    <p>All four names mean this chain. Its coins are written XBT here and on the pools, and exchanges such as NonKYC list them as BTCB2. "Bitcoin BLAKE2b" comes from the proof of work. "The BIP-110 fork" comes from August 2026, when nodes enforcing BIP-110 stopped accepting blocks from the large SHA-256 miners that would not signal for it. The chain those miners kept is the SHA-256 fork; Bitcoin moved its proof of work to BLAKE2b three weeks later. <a href="https://pool.lazarus-xbt.xyz/bip110" rel="noopener">The pool site covers BIP-110 and the split in more detail</a>.</p>
 
     <h2 id="fork">The fork</h2>
     <p>On 30 August 2026, at block 961,640, this chain stopped hashing with SHA-256 and started hashing with BLAKE2b-256. Blocks from that height carry a 164-byte header instead of Bitcoin's 80-byte one, which is why SHA-256 mining hardware cannot work here and why software has to be built for it.</p>
@@ -137,9 +137,9 @@
 
     <h2 id="addresses">Addresses: the one real trap</h2>
     <div class="callout warn">
-      <p><strong>Never use an address that holds real BTC.</strong> Because history is shared to block 961,640, a key that controlled coins on Bitcoin controls the matching coins here. Mining or receiving XBT to it publishes activity tied to your bitcoin address, and confuses every wallet that tries to read both chains. Make a wallet you use only for XBT.</p>
+      <p><strong>Never use an address that holds BTC on the SHA-256 fork.</strong> Because history is shared to block 961,640, a key that controls coins on the SHA-256 fork controls the matching coins here. Mining or receiving XBT to it ties your activity on the two chains together, and confuses every wallet that tries to read both. Make a wallet you use only for XBT.</p>
     </div>
-    <p>This cuts both ways: if you held bitcoin before the fork, the same balance exists here, at the same address, and only your key can move it. Moving it means exposing that key to this chain's software, so treat it as you would any other claim of forked coins and decide carefully.</p>
+    <p>This cuts both ways: if you held bitcoin before the split, the same balance exists here, at the same address, and only your key can move it. A key that has been used on the SHA-256 fork may be exposed to that fork's software too, so decide carefully before you move it.</p>
 
     <h2 id="mining">How mining works here</h2>
     <p>Most of this network's hashrate runs <strong>DATUM</strong>: the miner's own node builds the block template, and the pool only issues the coinbase split and verifies shares. It puts transaction selection back with miners rather than with a handful of pool operators, which was much of the point of changing the proof of work in the first place.</p>

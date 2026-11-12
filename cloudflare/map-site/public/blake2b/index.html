@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s BLAKE2b Fork | Lazarus</title>
-<meta name="description" content="What BLAKE2b is, how it compares with SHA-256, why this Bitcoin chain mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
+<title>BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s Move to BLAKE2b | Lazarus</title>
+<meta name="description" content="What BLAKE2b is, how it compares with SHA-256, why Bitcoin mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
 <link rel="canonical" href="https://lazarus-xbt.xyz/blake2b/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lazarus Pool">
-<meta property="og:title" content="BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s BLAKE2b Fork">
-<meta property="og:description" content="What BLAKE2b is, how it compares with SHA-256, why this Bitcoin chain mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
+<meta property="og:title" content="BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s Move to BLAKE2b">
+<meta property="og:description" content="What BLAKE2b is, how it compares with SHA-256, why Bitcoin mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
 <meta property="og:url" content="https://lazarus-xbt.xyz/blake2b/">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://lazarus-xbt.xyz/assets/og.png">
@@ -17,8 +17,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The same ledger. A different proof of work. Bitcoin on BLAKE2b (XBT / BTCB2), lazarus-xbt.xyz">
 <meta name="twitter:site" content="@LazarusPoolXBT">
-<meta name="twitter:title" content="BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s BLAKE2b Fork">
-<meta name="twitter:description" content="What BLAKE2b is, how it compares with SHA-256, why this Bitcoin chain mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
+<meta name="twitter:title" content="BLAKE2b vs SHA-256: The Hash Behind Bitcoin&#x27;s Move to BLAKE2b">
+<meta name="twitter:description" content="What BLAKE2b is, how it compares with SHA-256, why Bitcoin mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).">
 <meta name="twitter:image" content="https://lazarus-xbt.xyz/assets/og.png">
 <meta name="theme-color" content="#1a1712">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -38,8 +38,8 @@
    "@type": "WebPage",
    "@id": "https://lazarus-xbt.xyz/blake2b/#webpage",
    "url": "https://lazarus-xbt.xyz/blake2b/",
-   "name": "BLAKE2b vs SHA-256: The Hash Behind Bitcoin's BLAKE2b Fork | Lazarus",
-   "description": "What BLAKE2b is, how it compares with SHA-256, why this Bitcoin chain mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).",
+   "name": "BLAKE2b vs SHA-256: The Hash Behind Bitcoin's Move to BLAKE2b | Lazarus",
+   "description": "What BLAKE2b is, how it compares with SHA-256, why Bitcoin mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).",
    "isPartOf": {
     "@id": "https://lazarus-xbt.xyz/#website"
    },
@@ -76,8 +76,8 @@
   {
    "@type": "TechArticle",
    "@id": "https://lazarus-xbt.xyz/blake2b/#article",
-   "headline": "BLAKE2b vs SHA-256: the hash behind Bitcoin's BLAKE2b fork",
-   "description": "What BLAKE2b is, how it compares with SHA-256, why this Bitcoin chain mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).",
+   "headline": "BLAKE2b vs SHA-256: the hash behind Bitcoin's move to BLAKE2b",
+   "description": "What BLAKE2b is, how it compares with SHA-256, why Bitcoin mines with BLAKE2b-256, and which ASICs can mine it (Siacoin miners yes, S19 no).",
    "url": "https://lazarus-xbt.xyz/blake2b/",
    "image": "https://lazarus-xbt.xyz/assets/og.png",
    "datePublished": "2026-09-27",
@@ -160,7 +160,7 @@
 
 <section class="hero wrap">
   <h1><span class="kicker">The proof of work · BLAKE2b hash explained</span>BLAKE2b vs SHA-256</h1>
-  <p class="lede">Bitcoin is mined with SHA-256. Since block 961,640 this chain has been mined with BLAKE2b-256, which needs different hardware. This page compares the two hashes and lists the machines that can mine it.</p>
+  <p class="lede">Bitcoin was mined with SHA-256 until block 961,640. Since then it has been mined with BLAKE2b-256, which needs different hardware. This page compares the two hashes and lists the machines that can mine it.</p>
   <p class="note">Updated 27 September 2026</p>
   <nav class="toc" aria-label="On this page">
     <p class="category">On this page</p>
@@ -172,7 +172,7 @@
   <div class="prose" data-reveal>
     <h2 id="compare">BLAKE2b and SHA-256 side by side</h2>
     <div class="table-wrap prose-table"><table>
-      <thead><tr><th></th><th>SHA-256 (Bitcoin)</th><th>BLAKE2b (this chain)</th></tr></thead>
+      <thead><tr><th></th><th>SHA-256 (the SHA-256 fork)</th><th>BLAKE2b (Bitcoin since 961,640)</th></tr></thead>
       <tbody>
         <tr><td>Designed by</td><td>NSA, published by NIST in 2001 as part of SHA-2</td><td>Aumasson, Neves, Wilcox-O'Hearn and Winnerlein, 2012; specified in RFC 7693</td></tr>
         <tr><td>Built for</td><td>32-bit words</td><td>64-bit words</td></tr>
@@ -191,12 +191,12 @@
 
     <h2 id="why">Why this chain mines with BLAKE2b</h2>
     <p>On 30 August 2026, at block 961,640, this chain stopped hashing with SHA-256 and started hashing with BLAKE2b-256. The ledger, the 21 million cap, the halving schedule and the script rules stayed Bitcoin's (<a href="/learn/#fork">what carried over</a>).</p>
-    <p>Changing the proof of work resets the hardware race. The large SHA-256 farms that dominate Bitcoin mining cannot mine here at all. Most of this chain's hashrate runs DATUM, where the miner's own node builds the block (<a href="/learn/#mining">how mining works here</a>).</p>
+    <p>Changing the proof of work resets the hardware race. The large SHA-256 farms that had come to dominate mining cannot mine here at all. Most of this chain's hashrate runs DATUM, where the miner's own node builds the block (<a href="/learn/#mining">how mining works here</a>).</p>
 
     <h2 id="hardware">Which miners can mine it</h2>
     <p>Any ASIC built for Siacoin, on stock firmware: the Goldshell SC series (SC Lite, SC Box, SC Box II, SC5 Pro), the iBeLink BM-S3 and BM-S3+, and the Antminer A3. SHA-256 miners can't mine it, and neither can Decred's BLAKE-256 machines.</p>
     <div class="btn-row"><a class="btn" href="https://pool.lazarus-xbt.xyz/hardware" rel="noopener">Siacoin ASICs and what they earn</a><a class="btn ghost" href="https://pool.lazarus-xbt.xyz/connect" rel="noopener">Point a miner at Lazarus Pool</a></div>
-    <div class="callout warn"><p><strong>Before you mine:</strong> this chain shares its history with SHA-256 Bitcoin, so never mine to an address that holds real BTC. <a href="/learn/#addresses">Why, and what to use instead</a>.</p></div>
+    <div class="callout warn"><p><strong>Before you mine:</strong> the SHA-256 fork shares this chain's history, so never mine to an address that holds BTC on that fork. <a href="/learn/#addresses">Why, and what to use instead</a>.</p></div>
   </div>
 </section>
 

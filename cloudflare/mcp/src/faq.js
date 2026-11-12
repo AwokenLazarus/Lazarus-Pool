@@ -169,7 +169,7 @@ export const FAQ = [
     title: "Wallets, replay protection and the chain split",
     keywords: ["wallet", "wallets", "replay", "protection", "split", "fork", "shrike", "electrum", "seed", "claim", "address", "fresh", "sighash", "btcb2", "xbt"],
     answer:
-      "This chain (XBT, listed as BTCB2) split from Bitcoin at block 961,632 and has mined with BLAKE2b since block 961,640. Coins mined here, including every pool payout, exist only on this chain, so they cannot be replayed. " +
+      "Bitcoin (XBT, listed as BTCB2) split from the SHA-256 fork at block 961,632 and has mined with BLAKE2b since block 961,640. Coins mined here, including every pool payout, exist only on this chain, so they cannot be replayed. " +
       "Coins held before the split exist on both chains under the same keys; protection is opt-in per transaction with the SIGHASH_UNIFIED flag (0x21), which the Shrike wallet uses by default for this chain (check its send screen). Use a fresh address here. " +
       "There is no claim process: anyone asking for a seed phrase is a scammer. Wallets that count 100-confirmation maturity show different balances from ones that count 6,480 (see 'coinbase-maturity').",
     links: [`${S}/bip110`],
