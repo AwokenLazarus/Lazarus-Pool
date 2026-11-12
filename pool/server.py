@@ -4181,7 +4181,7 @@ def mempool_blocks():
         return []
 
 
-# Bitcoin (and this BLAKE2b fork) measures block proof as difficulty × 2^32 hashes.
+# Bitcoin (before and after BLAKE2b) measures block proof as difficulty × 2^32 hashes.
 # getmininginfo.networkhashps is work/time over the last 120 blocks, so it already
 # embeds however fast those blocks arrived. Mixing that nethash with a 600s target
 # spacing double-counts a hot network: TTF comes out too long and luck too high.
@@ -5708,7 +5708,7 @@ _SEO_PAGES = {
             "title": "Lazarus Pool — 用 Siacoin BLAKE2b 矿机挖比特币（XBT / BTCB2）的矿池",
             "description": (
                 "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。"
-                "本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池。"
+                "本矿池是比特币 BLAKE2b 主网上第一家用 TIDES 拆分 coinbase 支付的矿池。"
             ),
             "scroll": "",
         },
@@ -5775,15 +5775,15 @@ _SEO_PAGES = {
     },
     "/bip110": {
         "en": {
-            "title": "Mining the BIP-110 Fork Chain (XBT) | Lazarus Pool",
-            "description": "BIP-110 split Bitcoin at block 961,632 in August 2026 and the chain moved to BLAKE2b at 961,640. How to mine it today with Sia-family hardware.",
+            "title": "BIP-110 and Bitcoin's Move to BLAKE2b (XBT) | Lazarus Pool",
+            "description": "BIP-110 split off the SHA-256 fork at block 961,632 in August 2026, and Bitcoin moved to BLAKE2b at 961,640. How to mine it today with Sia-family hardware.",
             "scroll": "how",
         },
         "zh": {
-            "title": "BIP-110 比特币分叉挖矿 — BLAKE2b（XBT / BTCB2）| Lazarus Pool",
+            "title": "BIP-110 与比特币改用 BLAKE2b — 挖矿（XBT / BTCB2）| Lazarus Pool",
             "description": (
-                "BIP-110 于 2026 年 8 月在 961,632 高度让比特币分链，这条链随后在 961,640 高度把工作量证明"
-                "从 SHA-256d 换成 BLAKE2b。在 Lazarus Pool 用 Siacoin 矿机挖这条比特币分叉（XBT / BTCB2）："
+                "BIP-110 于 2026 年 8 月在 961,632 高度让比特币分链，比特币随后在 961,640 高度把工作量证明"
+                "从 SHA-256d 换成 BLAKE2b。在 Lazarus Pool 用 Siacoin 矿机挖比特币（XBT / BTCB2）："
                 "TIDES、DATUM，并在 coinbase 内直接支付。"
             ),
             "scroll": "how",
@@ -6380,14 +6380,14 @@ _SEO_INTRO = {
     },
     "/bip110": {
         "en": ("BIP-110 and BLAKE2b: what actually forked", [
-            "BIP-110 is a Bitcoin proposal to restrict non-financial data in transactions for a year. It asked for 55% of hashrate to signal support and peaked near 2.6%, and nodes running it began rejecting blocks that did not signal at height 961,632 on 8 August 2026. That is the moment the chain split. This chain is the BIP-110 branch; the majority chain carried on under SHA-256d, unaffected.",
-            "The proof-of-work change is a separate, later decision on this branch. On 30 August 2026 it moved from SHA-256d to BLAKE2b with a Sia-style header: block 961,639 was the last SHA-256d block and 961,640 the first BLAKE2b one. Everything else is still Bitcoin — the 21 million cap, the halving schedule, script, addresses, and every block of history before the split.",
-            "So \u201cBIP-110\u201d is what people call this chain, but BLAKE2b is what decides your hardware. Any ASIC built for Siacoin mines here on stock firmware; no SHA-256 machine can produce a valid share at all. Because the pre-split history is shared with Bitcoin, generate a fresh address for this chain and keep SHA-256 keys well clear. Lazarus Pool mines it with <a href=\"/how\">TIDES payouts in the coinbase</a> and a 0% fee through your own DATUM gateway.",
+            "BIP-110 is a Bitcoin proposal to restrict non-financial data in transactions for a year. It asked for 55% of hashrate to signal support and peaked near 2.6%, and nodes running it began rejecting blocks that did not signal at height 961,632 on 8 August 2026. That is the moment the chain split: the large SHA-256 miners that would not signal kept their own chain, and that chain is the SHA-256 fork.",
+            "The proof-of-work change is a separate, later decision. On 30 August 2026 Bitcoin moved from SHA-256d to BLAKE2b with a Sia-style header: block 961,639 was the last SHA-256d block and 961,640 the first BLAKE2b one. Everything else is still Bitcoin — the 21 million cap, the halving schedule, script, addresses, and every block of history before the split.",
+            "So \u201cBIP-110\u201d is what people call this chain, but BLAKE2b is what decides your hardware. Any ASIC built for Siacoin mines here on stock firmware; no SHA-256 machine can produce a valid share at all. Because the pre-split history is shared with the SHA-256 fork, generate a fresh address for this chain and keep keys that hold coins on that fork well clear. Lazarus Pool mines it with <a href=\"/how\">TIDES payouts in the coinbase</a> and a 0% fee through your own DATUM gateway.",
         ]),
         "zh": ("BIP-110 与 BLAKE2b：到底分叉了什么", [
-            "BIP-110 是一项比特币提案，主张在一年内限制交易中的非金融数据。它需要 55% 的算力表态支持，最高只到约 2.6%；运行它的节点从 2026 年 8 月 8 日、961,632 高度起开始拒绝不表态的区块——那一刻链就分开了。本链是 BIP-110 这一支，多数链继续用 SHA-256d，未受影响。",
-            "改工作量证明是这一支后来的另一个决定。2026 年 8 月 30 日，它从 SHA-256d 换成了 BLAKE2b（Sia 风格区块头）：961,639 是最后一个 SHA-256d 区块，961,640 是第一个 BLAKE2b 区块。其余部分仍是比特币——2100 万上限、减半周期、脚本、地址，以及分叉前的全部历史。",
-            "所以「BIP-110」是大家对这条链的称呼，但真正决定你用什么硬件的是 BLAKE2b。任何为 Siacoin 而造的 ASIC 用原厂固件就能在这里挖矿；SHA-256 机器根本产不出有效份额。由于分叉前的历史与比特币共享，请为本链另生成新地址，SHA-256 的私钥务必远离。Lazarus Pool 用 <a href=\"/how\">TIDES 在 coinbase 内支付</a>，自建 DATUM 网关手续费 0%。",
+            "BIP-110 是一项比特币提案，主张在一年内限制交易中的非金融数据。它需要 55% 的算力表态支持，最高只到约 2.6%；运行它的节点从 2026 年 8 月 8 日、961,632 高度起开始拒绝不表态的区块——那一刻链就分开了。不肯表态的大型 SHA-256 矿工留在了自己的链上，那条链就是 SHA-256 分叉链。",
+            "改工作量证明是后来的另一个决定。2026 年 8 月 30 日，比特币从 SHA-256d 换成了 BLAKE2b（Sia 风格区块头）：961,639 是最后一个 SHA-256d 区块，961,640 是第一个 BLAKE2b 区块。其余部分仍是比特币——2100 万上限、减半周期、脚本、地址，以及分叉前的全部历史。",
+            "所以「BIP-110」是大家对这条链的称呼，但真正决定你用什么硬件的是 BLAKE2b。任何为 Siacoin 而造的 ASIC 用原厂固件就能在这里挖矿；SHA-256 机器根本产不出有效份额。由于分叉前的历史与 SHA-256 分叉链共享，请为本链另生成新地址，在该分叉链上持币的私钥务必远离。Lazarus Pool 用 <a href=\"/how\">TIDES 在 coinbase 内支付</a>，自建 DATUM 网关手续费 0%。",
         ]),
     },
     "/hardware": {
@@ -6415,13 +6415,13 @@ _SEO_INTRO = {
             "You need three things: an ASIC that hashes BLAKE2b, a fresh address on this chain to be paid to, and a DATUM gateway running beside a Bitcoin Knots node. If you already own a Siacoin miner you have the first one — this is the same algorithm, so stock firmware works. The gateway is how you mine here: point its datum section at <b>datum.lazarus-xbt.xyz:28915</b> with the pool pubkey below, set your payout address, and point your miners at the gateway. Each ASIC hashes a plain BLAKE2b header with a Sia-style framing, not SHA-256d; new sessions start at difficulty 4096 and vardiff steps up toward your hashrate from there.",
             "Running your own node and gateway costs 0%, because you are building the templates yourself. Tested gateways with full configs: <a href=\"/ratum\">Ratum</a> and <a href=\"/flytheelephant\">FlyTheElephant</a>. For a longer Knots + DATUM walkthrough, use <a href=\"https://convoy.xyz/getstarted\">CONVOY’s get-started guide</a> (also in <a href=\"https://convoy.xyz/getstarted?lang=zh\">中文</a>), then come back here for this pool’s host, port, and pubkey.",
             "The public stratum, <b>stratum+tcp://stratum.lazarus-xbt.xyz:23334</b> (username your address, optionally <code>address.worker</code>; password <code>x</code>), is the donation, validation and fallback endpoint at 100%, with a 24 h / 96 h grace at 25%, then 100%. Point a miner at it to confirm it connects and submits shares while your gateway is still coming online, or as a fallback if your gateway goes down. Bitcoin Knots has announced a rule to invalidate payouts to addresses that hash through any pool's stratum, so it is not a way to be paid. Both routes land in the same TIDES window under your address, so switching keeps the accepted work you already have.",
-            "One warning worth reading twice: this chain shares every block of history with SHA-256 Bitcoin up to block 961,640, so an address holding real BTC should never be used here. Generate a fresh address for this chain. Payouts arrive as outputs in the coinbase of blocks the pool finds, with no balance to withdraw. Coinbase outputs normally spend after 100 confirmations; under the temporary Knots #419 rule a newly mined coin waits 6,480 confirmations, and nodes will not relay any coinbase spend below that, so a payout takes about 45 days to become spendable. <a href=\"/hardware\">Which machines work</a> · <a href=\"/how\">how the payout is calculated</a>.",
+            "One warning worth reading twice: the SHA-256 fork shares every block of history with Bitcoin up to block 961,640, so an address holding BTC on that fork should never be used here. Generate a fresh address for this chain. Payouts arrive as outputs in the coinbase of blocks the pool finds, with no balance to withdraw. Coinbase outputs normally spend after 100 confirmations; under the temporary Knots #419 rule a newly mined coin waits 6,480 confirmations, and nodes will not relay any coinbase spend below that, so a payout takes about 45 days to become spendable. <a href=\"/hardware\">Which machines work</a> · <a href=\"/how\">how the payout is calculated</a>.",
         ]),
         "zh": ("如何用 Siacoin 矿机挖比特币", [
             "你需要三样东西：一台能算 BLAKE2b 的 ASIC、一个本链专用的新收款地址，以及一个跟着 Bitcoin Knots 节点运行的 DATUM 网关。如果你已经有 Siacoin 矿机，第一样就有了——算法相同，原厂固件即可。网关才是在这里挖矿的方式：把它的 datum 配置指向 <b>datum.lazarus-xbt.xyz:28915</b> 并填入下方的矿池公钥，设置你的收款地址，再把矿机指向这个网关。矿机算的是带 Sia 风格封装的普通 BLAKE2b 区块头，不是 SHA-256d；新会话从难度 4096 起步，之后 vardiff 会朝你的算力逐步调整。",
             "自己跑节点和网关费率为 0%，因为模板是你自己构建的。实测过并附完整配置的网关：<a href=\"/zh/ratum\">Ratum</a> 和 <a href=\"/zh/flytheelephant\">FlyTheElephant</a>。更完整的 Knots + DATUM 说明见 <a href=\"https://convoy.xyz/getstarted?lang=zh\">CONVOY 入门指南（中文）</a>（<a href=\"https://convoy.xyz/getstarted\">English</a>），然后回到本页填写本池的主机、端口和公钥。",
             "公共 stratum <b>stratum+tcp://stratum.lazarus-xbt.xyz:23334</b>（用户名填你的地址，也可以写成 <code>地址.worker</code>；密码填 <code>x</code>）是捐赠、验证与后备端点，费率 100%，并有 24 小时 / 96 小时、费率为 25%、之后为 100% 的宽限期。在你的网关仍在上线时，或在网关中断时作为后备，把矿机指向它即可确认能够连接并提交份额。Bitcoin Knots 已宣布将判定通过任何矿池 stratum 出算力的地址所获付款无效，所以它不是拿得到付款的路。两条路都记入同一个 TIDES 窗口、同一个地址，所以切换不会丢掉已积累的工作量。",
-            "有一条提醒值得看两遍：本链与 SHA-256 比特币共享 961,640 高度之前的全部历史，因此持有真实 BTC 的地址绝不可在此使用，请为本链另生成一个新地址。收益以矿池所出区块 coinbase 中的输出形式到账，没有余额需要提现。coinbase 输出通常 100 个确认后可动用；在临时的 Knots #419 规则下，新挖出的币要等 6,480 个确认（约 45 天）才能动用。<a href=\"/zh/hardware\">哪些机器能用</a> · <a href=\"/zh/how\">支付如何计算</a>。",
+            "有一条提醒值得看两遍：SHA-256 分叉链与比特币共享 961,640 高度之前的全部历史，因此在该分叉链上持有 BTC 的地址绝不可在此使用，请为本链另生成一个新地址。收益以矿池所出区块 coinbase 中的输出形式到账，没有余额需要提现。coinbase 输出通常 100 个确认后可动用；在临时的 Knots #419 规则下，新挖出的币要等 6,480 个确认（约 45 天）才能动用。<a href=\"/zh/hardware\">哪些机器能用</a> · <a href=\"/zh/how\">支付如何计算</a>。",
         ]),
     },
     "/ratum": {"en": _RATUM_INTRO_EN, "zh": _RATUM_INTRO_ZH},
@@ -6430,7 +6430,7 @@ _SEO_INTRO = {
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> is a DATUM gateway for this chain: CONVOY\'s BLAKE2b code plus FlyTheElephant\'s own work. Its <code>master</code> gives every miner the pool\'s whole payout split (the 16&nbsp;KB coinbase) and fits that coinbase to the block\'s weight and sigop limits, so a full split can never make your block invalid. It connects to Lazarus with no patch. FlyTheElephant also helps miners set up in our Discord <code>#support</code>. Thank you.</p>',
             '<p><b>1. Your node.</b> Bitcoin Knots <b>29.4.3</b> (older builds do not know the 180-day coinbase maturity rule from block 979,919 and can build blocks the network rejects), fully synced on this chain. In <code>bitcoin.conf</code>:</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
-            '<p><code>blockmaxweight</code> leaves room for the split coinbase. <code>maxscriptsize=589</code> keeps the large fake-multisig data transactions out of your blocks; stock Knots mines them by default. It is your node and your choice: the setting also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. Knots\' default DNS seeds point at SHA-256 peers, so add a few <code>addnode=</code> lines from a current list for this chain (<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>, or <a href="https://convoy.xyz/getstarted" target="_blank" rel="noreferrer">CONVOY\'s guide</a>); a list pasted weeks ago rots. <code>maxtipage</code> only mattered during the slow weeks after the fork and you can leave it out once you are synced.</p>',
+            '<p><code>blockmaxweight</code> leaves room for the split coinbase. <code>maxscriptsize=589</code> keeps the large fake-multisig data transactions out of your blocks; stock Knots mines them by default. It is your node and your choice: the setting also declines very large multisig spends (about 5-of-7 and up), which other nodes still mine. Knots\' default DNS seeds point at peers on the SHA-256 fork, so add a few <code>addnode=</code> lines from a current list for this chain (<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>, or <a href="https://convoy.xyz/getstarted" target="_blank" rel="noreferrer">CONVOY\'s guide</a>); a list pasted weeks ago rots. <code>maxtipage</code> only mattered during the slow weeks after the fork and you can leave it out once you are synced.</p>',
             "<p><b>2. Build the gateway.</b> On Debian or Ubuntu (other systems: the repo's README):</p>",
             '<pre><code>sudo apt install cmake pkgconf libcurl4-openssl-dev libjansson-dev libsodium-dev libmicrohttpd-dev psmisc\ngit clone https://github.com/FlyTheElephant1/datum_gateway\ncd datum_gateway\ncmake . &amp;&amp; make\n./datum_gateway --test\n./datum_gateway -c datum_gateway_config.json</code></pre>',
             '<p>There is also a <code>Dockerfile</code> in the repo; in Docker set <code>notify_fallback</code> to <code>false</code> and use <code>blocknotify=wget -q -O /dev/null http://datum-gateway:7152/NOTIFY</code>.</p>',
@@ -6439,14 +6439,14 @@ _SEO_INTRO = {
             '<p>Leave <code>vardiff_min</code> at 4096: without it stock DATUM starts every session at 16384, and Prime cannot lower that.</p>',
             "<p><b>4. Point your miners at the gateway,</b> not at us: <code>stratum+tcp://&lt;your gateway's LAN IP&gt;:23334</code>, username <code>youraddress.worker</code>, password <code>x</code>. The part before the first <code>.</code> is who gets paid.</p>",
             '<p><b>5. Check it.</b> Within a minute your gateway shows under <a href="#gateways">Gateways</a> as <code>v0.4.1-beta/&lt;commit&gt;</code> with fee path DATUM, and your address appears under <a href="#miners">Miners</a> after its first share. The gateway\'s own dashboard is on port 7152. Its log should say <i>DATUM Server MOTD</i> with our Proverbs line; a found block shows here with its split.</p>',
-            '<p><b>If it does not connect.</b> <i>DATUM not connected and configured for pooled mining only! Rejecting connection</i> means the gateway has no pool session, so it turns miners away (their firmware then fails over to their backup pool): check <code>pool_host</code>, <code>pool_port</code> and that <code>pool_pubkey</code> is the whole key from this page; a wrong key never gets past the handshake. A tip stuck at 961,639 is an old Knots or peers on the other chain. <i>Refused</i> in the log with an upgrade message means your node built a block the chain rejected; upgrade Knots and reconnect, and it lets you back in by itself.</p>',
+            '<p><b>If it does not connect.</b> <i>DATUM not connected and configured for pooled mining only! Rejecting connection</i> means the gateway has no pool session, so it turns miners away (their firmware then fails over to their backup pool): check <code>pool_host</code>, <code>pool_port</code> and that <code>pool_pubkey</code> is the whole key from this page; a wrong key never gets past the handshake. A tip stuck at 961,639 is an old Knots or peers on the SHA-256 fork. <i>Refused</i> in the log with an upgrade message means your node built a block the chain rejected; upgrade Knots and reconnect, and it lets you back in by itself.</p>',
             '<p><b>What we measured.</b> We ran this gateway against our own Prime and Knots 29.4.2 on regtest, most recently <code>master</code> <code>280cf54</code> on 9&nbsp;October 2026, where blocks found by an Antminer A3 and by a generic miner each paid all 60 miners in the window: handshake and pubkey pinning, the split in every found block paying every miner in the window, <code>address.worker</code> and bare-address usernames, the 0% DATUM fee path, reconnects, Prime\'s template checks and refusals all pass. One thing does not, and it is shared by every C DATUM gateway today (iohzrd and CONVOY too): for a fraction of a second after each new block, and for as long as the pool\'s split is late, the gateway can hand out a job whose coinbase pays only the pool. A small patch fixes it by serving the empty subsidy-only job, or nothing, until the split is in. It is not in <code>master</code> yet (it still applies to <code>280cf54</code>), so apply it yourself: <a href="https://github.com/AwokenLazarus/Lazarus-Pool/blob/main/lazarus/patches/datum-gateway-fte-late-coinbaser.patch" target="_blank" rel="noreferrer">datum-gateway-fte-late-coinbaser.patch</a> (<code>patch -p1 &lt;</code> it before <code>cmake</code>).</p>',
         ]),
         "zh": ('用 FlyTheElephant 网关在 Lazarus 挖矿', [
             '<p><a href="https://github.com/FlyTheElephant1/datum_gateway" target="_blank" rel="noreferrer">FlyTheElephant1/datum_gateway</a> 是这条链上的一个 DATUM 网关：基于 CONVOY 的 BLAKE2b 代码，加上 FlyTheElephant 自己的改进。它的 <code>master</code> 让每台矿机都拿到矿池完整的分账（16&nbsp;KB coinbase），并按区块的 weight 和 sigop 上限裁剪这个 coinbase，所以完整分账永远不会让你的区块无效。无需任何补丁即可连接 Lazarus。FlyTheElephant 也在我们 Discord 的 <code>#support</code> 频道帮矿工配置，谢谢他。</p>',
             '<p><b>1. 节点。</b>Bitcoin Knots <b>29.4.3</b>（旧版本不认从区块 979,919 开始的 180 天 coinbase 成熟期规则，可能出网络拒绝的块），在这条链上完全同步。<code>bitcoin.conf</code> 中：</p>',
             '<pre><code>server=1\nblake2b_headline=8-30 NYPost Deride And Conquer\nblockmaxweight=736000\nmaxscriptsize=589\nblocknotify=killall -USR1 datum_gateway</code></pre>',
-            '<p><code>blockmaxweight</code> 为分账 coinbase 留出空间。<code>maxscriptsize=589</code> 把大型伪多签数据交易挡在你的区块之外；原版 Knots 默认会打包它们。节点是你的，由你决定：这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。Knots 默认的 DNS 种子指向 SHA-256 节点，所以请从这条链的最新列表加几行 <code>addnode=</code>（<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>，或 <a href="https://convoy.xyz/getstarted?lang=zh" target="_blank" rel="noreferrer">CONVOY 的指南</a>）；几周前复制的列表会失效。<code>maxtipage</code> 只在分叉后同步缓慢的那几周有用，同步完成后可以不设。</p>',
+            '<p><code>blockmaxweight</code> 为分账 coinbase 留出空间。<code>maxscriptsize=589</code> 把大型伪多签数据交易挡在你的区块之外；原版 Knots 默认会打包它们。节点是你的，由你决定：这个设置也会拒绝非常大的多签花费（大约 5-of-7 及以上），其他节点仍会打包它们。Knots 默认的 DNS 种子指向 SHA-256 分叉链的节点，所以请从这条链的最新列表加几行 <code>addnode=</code>（<a href="https://bitcoinxor.org/node" target="_blank" rel="noreferrer">bitcoinxor.org/node</a>，或 <a href="https://convoy.xyz/getstarted?lang=zh" target="_blank" rel="noreferrer">CONVOY 的指南</a>）；几周前复制的列表会失效。<code>maxtipage</code> 只在分叉后同步缓慢的那几周有用，同步完成后可以不设。</p>',
             '<p><b>2. 编译网关。</b>Debian 或 Ubuntu 下（其他系统见仓库 README）：</p>',
             '<pre><code>sudo apt install cmake pkgconf libcurl4-openssl-dev libjansson-dev libsodium-dev libmicrohttpd-dev psmisc\ngit clone https://github.com/FlyTheElephant1/datum_gateway\ncd datum_gateway\ncmake . &amp;&amp; make\n./datum_gateway --test\n./datum_gateway -c datum_gateway_config.json</code></pre>',
             '<p>仓库里也有 <code>Dockerfile</code>；用 Docker 时把 <code>notify_fallback</code> 设为 <code>false</code>，并用 <code>blocknotify=wget -q -O /dev/null http://datum-gateway:7152/NOTIFY</code>。</p>',
@@ -6455,7 +6455,7 @@ _SEO_INTRO = {
             '<p><code>vardiff_min</code> 保持 4096：不设的话原版 DATUM 每个会话从 16384 起步，Prime 无法调低。</p>',
             '<p><b>4. 矿机指向你的网关，</b>而不是我们：<code>stratum+tcp://&lt;网关的局域网 IP&gt;:23334</code>，用户名 <code>你的地址.worker</code>，密码 <code>x</code>。第一个 <code>.</code> 之前的部分就是收款地址。</p>',
             '<p><b>5. 确认运行。</b>一分钟内你的网关会出现在 <a href="#gateways">Gateways</a>，显示为 <code>v0.4.1-beta/&lt;commit&gt;</code>、费用路径 DATUM；第一个份额之后你的地址会出现在 <a href="#miners">Miners</a>。网关自己的面板在 7152 端口。日志里应出现 <i>DATUM Server MOTD</i> 和我们的箴言；找到的区块会连同分账显示在这里。</p>',
-            '<p><b>连不上时。</b>日志出现 <i>DATUM not connected and configured for pooled mining only! Rejecting connection</i>，表示网关没有矿池会话，于是拒绝矿机（矿机固件会切到备用矿池）：检查 <code>pool_host</code>、<code>pool_port</code>，以及 <code>pool_pubkey</code> 是否是本页的完整公钥；公钥错误过不了握手。区块高度卡在 961,639 说明 Knots 版本过旧或连到了另一条链的节点。日志中出现带升级提示的 <i>Refused</i>，说明你的节点出过被链拒绝的区块；升级 Knots 后重连，会自动放行。</p>',
+            '<p><b>连不上时。</b>日志出现 <i>DATUM not connected and configured for pooled mining only! Rejecting connection</i>，表示网关没有矿池会话，于是拒绝矿机（矿机固件会切到备用矿池）：检查 <code>pool_host</code>、<code>pool_port</code>，以及 <code>pool_pubkey</code> 是否是本页的完整公钥；公钥错误过不了握手。区块高度卡在 961,639 说明 Knots 版本过旧或连到了 SHA-256 分叉链的节点。日志中出现带升级提示的 <i>Refused</i>，说明你的节点出过被链拒绝的区块；升级 Knots 后重连，会自动放行。</p>',
             '<p><b>我们的实测。</b>我们在 regtest 上用自己的 Prime 和 Knots 29.4.2 测试了这个网关，最近一次是 2026 年 10 月 9 日测试 <code>master</code> <code>280cf54</code>，蚂蚁 A3 和通用矿机找到的区块都付给了窗口里的全部 60 位矿工：握手与公钥校验、每个找到的区块都付给窗口里的所有矿工、<code>地址.worker</code> 与纯地址用户名、0% 的 DATUM 费用路径、断线重连、Prime 的模板检查与拒绝，全部通过。有一项没通过，而且目前所有 C 语言 DATUM 网关（包括 iohzrd 和 CONVOY）都有：每个新区块之后的片刻，以及矿池分账迟到的整个期间，网关可能下发一个只付给矿池的 coinbase 任务。一个小补丁可以修复：分账到达之前只发只含区块补贴的空任务，或者不发任务。它还没有进入 <code>master</code>（对 <code>280cf54</code> 仍可直接打上），所以请自己打上：<a href="https://github.com/AwokenLazarus/Lazarus-Pool/blob/main/lazarus/patches/datum-gateway-fte-late-coinbaser.patch" target="_blank" rel="noreferrer">datum-gateway-fte-late-coinbaser.patch</a>（在 <code>cmake</code> 之前 <code>patch -p1 &lt;</code>）。</p>',
         ]),
     },
@@ -6641,8 +6641,8 @@ Full reference: SITEPLACEHOLDER/api
 
 _LLMS_TXT = """# Lazarus Pool
 
-> A mining pool for Bitcoin (XBT / BTCB2), the BIP-110 Bitcoin fork that mines with BLAKE2b instead
-> of SHA-256d. Siacoin ASICs work unchanged. TIDES pays every miner inside the coinbase of each
+> A mining pool for Bitcoin (XBT / BTCB2), mined with BLAKE2b instead of SHA-256d since the BIP-110
+> split. Siacoin ASICs work unchanged. TIDES pays every miner inside the coinbase of each
 > block found, so the pool never holds anyone's coins.
 
 ## Firsts
@@ -6660,7 +6660,7 @@ _LLMS_TXT = """# Lazarus Pool
 - Rent BLAKE2b hashrate: {site}/rentals
 - Earnings calculator: {site}/calculator
 - Is it profitable: {site}/calculator
-- The BIP-110 fork: {site}/bip110
+- BIP-110 and the split: {site}/bip110
 - TIDES payouts: {site}/how
 - Mine with a Ratum gateway (ratum-gateway): {site}/ratum
 - Mine with the FlyTheElephant gateway: {site}/flytheelephant
@@ -6681,15 +6681,15 @@ _LLMS_TXT = """# Lazarus Pool
 
 Two separate events, often run together. BIP-110 is a proposal to restrict non-financial data in
 transactions; it needed 55% of hashrate, peaked near 2.6%, and its nodes began rejecting blocks that
-did not signal at height 961,632 on 8 August 2026 — that is the split, and this chain is the BIP-110
-branch. Then on 30 August 2026 this branch changed proof-of-work from SHA-256d to BLAKE2b with a
+did not signal at height 961,632 on 8 August 2026 — that is the split, and the chain the non-signaling SHA-256
+miners kept is the SHA-256 fork. Then on 30 August 2026 Bitcoin changed proof-of-work from SHA-256d to BLAKE2b with a
 Sia-style header: block 961,639 was the last SHA-256d block, 961,640 the first BLAKE2b one.
 
 Everything else — 21 million cap, halving schedule, script, addresses, and all history before the
 split — is Bitcoin. The chain is called Bitcoin, the ticker is XBT, and exchanges list it as BTCB2.
 It is not Bitcoin Cash, not a token, and not an altcoin on a new codebase; it is the same code with a
 different hash function, which is why the ASICs that mine Siacoin mine it too. Pre-split history is
-shared with Bitcoin, so use a fresh address here.
+shared with the SHA-256 fork, so use a fresh address here.
 
 ## Connect
 

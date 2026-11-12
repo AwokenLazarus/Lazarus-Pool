@@ -2,14 +2,14 @@ window.LZ_I18N_DICTS = window.LZ_I18N_DICTS || {};
 window.LZ_I18N_DICTS["zh-CN"] = {
   "meta": {
     "title": "Lazarus Pool — 用 Siacoin BLAKE2b 矿机挖比特币（XBT / BTCB2）的矿池",
-    "description": "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。本矿池是这条 BIP-110 比特币分叉主网上第一家用 TIDES 拆分 coinbase 支付的矿池。",
+    "description": "用任何能挖 Siacoin 的 BLAKE2b ASIC 挖比特币（XBT / BTCB2）——金贝 SC、iBeLink BM-S3、蚂蚁 A3。本矿池是比特币 BLAKE2b 主网上第一家用 TIDES 拆分 coinbase 支付的矿池。",
     "minerTitle": "矿工 — Lazarus Pool",
     "minerDescription": "Lazarus Pool 上某个地址的实时算力、矿机、TIDES 窗口份额以及每一笔 coinbase 支付。",
     "minerTitleAddr": "{short} — Lazarus Pool"
   },
   "skip": "跳到矿池状态",
   "nojs": {
-    "p1": "Lazarus Pool 是比特币矿池（交易代码为 XBT 与 BTCB2），挖的是改用 BLAKE2b 而非 SHA-256d 的 <a href=\"/zh/bip110\">BIP-110 比特币分叉链</a>。任何能挖 Siacoin 的 ASIC 都能挖。你用自己的 DATUM 网关挖矿，网关指向 <code>datum.lazarus-xbt.xyz:28915</code>，费率 0%。公共 stratum <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code>（用户名 = 你的收款地址，密码 <code>x</code>）是捐赠、验证与后备端点，费率 100%，并有 24 小时 / 96 小时、费率 25%、之后 100% 的宽限期，手续费全部归矿池。<a href=\"/zh/how\">TIDES</a> 在每个找到的区块的 coinbase 里直接付给每位矿工，矿池从不持有你的币。",
+    "p1": "Lazarus Pool 是比特币矿池（交易代码为 XBT 与 BTCB2），比特币自 <a href=\"/zh/bip110\">BIP-110 分链</a>之后改用 BLAKE2b 而非 SHA-256d 挖矿。任何能挖 Siacoin 的 ASIC 都能挖。你用自己的 DATUM 网关挖矿，网关指向 <code>datum.lazarus-xbt.xyz:28915</code>，费率 0%。公共 stratum <code>stratum+tcp://stratum.lazarus-xbt.xyz:23334</code>（用户名 = 你的收款地址，密码 <code>x</code>）是捐赠、验证与后备端点，费率 100%，并有 24 小时 / 96 小时、费率 25%、之后 100% 的宽限期，手续费全部归矿池。<a href=\"/zh/how\">TIDES</a> 在每个找到的区块的 coinbase 里直接付给每位矿工，矿池从不持有你的币。",
     "p2": "Lazarus Pool 是第一家被确认在 BLAKE2b 比特币主网上以拆分 coinbase 支付 TIDES 的矿池。自建 DATUM 网关的矿工自己组块，手续费 0%。",
     "p3": "没有任何东西被替你保管：收益是<a href=\"/zh/non-custodial\">区块本身的输出</a>，没有余额，不用提现。一旦自家 stratum 超过全网算力的 15%，矿池会<a href=\"/zh/self-cap\">把新矿工中继到另一家矿池</a>，而不是继续扩大。<a href=\"/zh/pools\">本链各矿池对比</a>。",
     "p4": "查看<a href=\"/zh/hardware\">能挖的 Siacoin BLAKE2b 矿机</a>及其预计收益，<a href=\"/zh/rentals\">租用 BLAKE2b 算力</a>指向你自己的节点，用<a href=\"/zh/calculator\">计算器</a>算出你的算力每天能挖多少，或阅读<a href=\"/zh/connect\">如何把矿机接入这里</a>。更完整的 DATUM 网关搭建：<a href=\"https://convoy.xyz/getstarted?lang=zh\">CONVOY 入门指南</a>。开发者：<a href=\"/stratum-protocol.md\">本链的 stratum 协议</a>与<a href=\"/zh/api\">公开 API</a>。区块浏览器：<a href=\"https://mempool.lazarus-xbt.xyz\">mempool.lazarus-xbt.xyz</a>。English：<a href=\"/\">English version</a>。"

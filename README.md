@@ -1,6 +1,6 @@
 # Bitcoin (BLAKE2b) — Lazarus Pool
 
-Code for [Lazarus Pool](https://pool.lazarus-xbt.xyz) on the BLAKE2b fork of Bitcoin (Knots, header v2, forked from SHA-256d at height 961640): the DATUM Prime, the stratum/DATUM gateway, the pool website and explorer front ends, the Electrum and node hooks, and a GPU miner. Copy the **design**; hosts, keys, firewall rules and operating details are deliberately not in this repo (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the general shape).
+Code for [Lazarus Pool](https://pool.lazarus-xbt.xyz) on Bitcoin (XBT), mined with BLAKE2b since height 961640 (Knots, header v2; before that height, SHA-256d): the DATUM Prime, the stratum/DATUM gateway, the pool website and explorer front ends, the Electrum and node hooks, and a GPU miner. Copy the **design**; hosts, keys, firewall rules and operating details are deliberately not in this repo (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the general shape).
 
 Since 2026-09-20 the pool runs on a dedicated bare-metal hub with two Knots nodes (one serves templates, one serves Electrum, the explorer and the hot wallet). Before that it ran on a homelab Umbrel node; the Umbrel-era files under `node/`, `scripts/` and `systemd/` are kept as reference.
 
