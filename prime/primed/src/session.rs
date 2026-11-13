@@ -754,6 +754,8 @@ struct Session {
     /// key. Such a session is never configured with its own payout: see
     /// [`Session::solo_script`].
     pins_script: bool,
+    /// Gateway set DRS_SCALED_REUSE; do not push a solo script.
+    scaled_reuse: bool,
     /// When this session last said what a coinbase it refused paid; see `note_refused_coinbase`.
     refused_coinbase_warned: Option<Instant>,
     /// What `class-budget` has learned of this gateway's coinbase sections; `None` without the
@@ -955,6 +957,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         fee_path: fee_path.into(),
         held_split: held_build.is_some(),
         pins_script,
+        scaled_reuse: hello.drs_flags & handshake::DRS_SCALED_REUSE != 0,
         class_budget_bytes: class_budget.as_ref().map(|_| None),
         class_budget_replies: class_budget.as_ref().map(|_| 0),
         workers: (!house).then(Default::default),
@@ -1002,6 +1005,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         split_ready: false,
         held: held_build.map(|_| HeldPayout::default()),
         pins_script,
+        scaled_reuse: false,
         refused_coinbase_warned: None,
         class_budget,
         last_split_prev: None,
@@ -1235,6 +1239,9 @@ impl Session {
     /// empty job and a late section 0 pay the pool, credited and owed back to the window, and
     /// the full job pays the split.
     fn solo_script(&self) -> Option<Vec<u8>> {
+        if self.scaled_reuse {
+            return None;
+        }
         self.gateway_script.clone().filter(|_| !self.pins_script)
     }
 
@@ -1304,6 +1311,7 @@ impl Session {
         }
         if changed
             && !self.pins_script
+            && !self.self_solo
             && !self.split_ready
             && !self.configured_as_gateway
             && self.restore_script_at.is_none()
