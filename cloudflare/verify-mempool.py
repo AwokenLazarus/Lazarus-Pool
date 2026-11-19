@@ -62,7 +62,7 @@ for label, hdr in (("en", {"Accept-Language": "en-US,en;q=0.9"}), ("zh", {"Accep
     same("/145.402fa264d97bba59.js", hdr, label)
 for p in ("/de/", "/de/mining", "/zh/block/abc", "/pt-BR/", "/resources/config.js", "/resources/customize.js", "/resources/mining-pools/lazarus.svg",
           "/resources/mining-pools/default.svg", "/resources/favicons/favicon.ico", "/lazarus/chi-rho.svg",
-          "/resources/pools-v2.json", "/robots.txt", "/resources/nope.png", "/resources/favicons/site.webmanifest"):
+          "/resources/pools-v2.json", "/resources/nope.png", "/resources/favicons/site.webmanifest"):
     same(p)
 # The footer links to the licence files (mempool is AGPL-3.0). The build ships them whether or
 # not the node's nginx serves them, so they are checked on the candidate alone.
@@ -82,6 +82,39 @@ for p in ("/lazarus/NOTICE", "/lazarus/LICENSE"):
     if not (st == 200 and body.strip() and "text/plain" in (hh.get("Content-Type") or "")):
         bad += 1
         print(f"DIFF {p}: {st}/{len(body)} {hh.get('Content-Type')}")
+# The worker answers robots.txt and the build writes the sitemaps; the node's nginx serves none of
+# them, so they are checked on the candidate alone, along with every page the sitemap lists.
+import sitemap
+from xml.etree import ElementTree as ET
+st, body, hh = get(cand, "/robots.txt")
+n += 1
+if not (st == 200 and f"Sitemap: {postprocess.SITE}/{sitemap.PAGES}" in body.decode().splitlines()):
+    bad += 1
+    print(f"DIFF /robots.txt: {st}, does not name {sitemap.PAGES}")
+for path, want in (("/sitemap.xml", [f"{postprocess.SITE}/{sitemap.PAGES}"]),
+                   ("/" + sitemap.PAGES, [postprocess.SITE + p for p in sitemap.indexable()])):
+    st, body, hh = get(cand, path)
+    n += 1
+    try:
+        locs = [e.text for e in ET.fromstring(body).iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
+    except ET.ParseError:
+        locs = None
+    if not (st == 200 and "xml" in (hh.get("Content-Type") or "") and locs == want):
+        bad += 1
+        print(f"DIFF {path}: {st} {hh.get('Content-Type')}, {'unparseable' if locs is None else f'{len(locs)} URLs'}")
+# Sitemap pages are indexable; everything else answers noindex (INDEXING.md).
+for p in sitemap.indexable():
+    st, _, hh = get(cand, p)
+    n += 1
+    if st != 200 or hh.get("X-Robots-Tag"):
+        bad += 1
+        print(f"DIFF {p}: in the sitemap, candidate answers {st} X-Robots-Tag {hh.get('X-Robots-Tag')}")
+for p in ("/graphs", "/graphs/mining/pools", "/about", "/docs/faq", "/rbf", "/de/mining", "/lazarus/NOTICE", "/lazarus/LICENSE", "/3rdpartylicenses.txt"):
+    st, _, hh = get(cand, p)
+    n += 1
+    if st != 200 or "noindex" not in (hh.get("X-Robots-Tag") or ""):
+        bad += 1
+        print(f"DIFF {p}: not in the sitemap, should be noindex, got {st} X-Robots-Tag {hh.get('X-Robots-Tag')}")
 # The pie's gateway bands read pool-tags.json, which the worker fetches live from the node
 # (pools-sync rewrites it every 3 min). A build-time copy would freeze the bands at deploy.
 import json, time
