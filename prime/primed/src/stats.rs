@@ -364,6 +364,11 @@ pub fn build(shared: &Shared) -> Value {
         "template_faults": shared.faults.all().into_iter().map(|(k, f)| serde_json::json!({"gateway": &k[..16.min(k.len())], "fault": f})).collect::<Vec<_>>(),
         "blocks": blocks,
     });
+    // Replies, and blocks found on one, that paid a gateway's own miner under `min-payout`
+    // (`own-min-payout`). Set here: the document above is as deep as `json!` expands.
+    doc["totals"]["own_floor_replies"] = json!(t.own_floor_replies.load(Ordering::Relaxed));
+    doc["totals"]["own_floor_blocks"] = json!(t.own_floor_blocks.load(Ordering::Relaxed));
+    doc["pool"]["own_min_payout"] = json!(shared.cfg.own_min_payout);
     // Apart from the document above, which is as deep as `json!` goes.
     doc["pool"]["gateway_key"] = json!(shared.cfg.gateway_key);
     doc["pool"]["revealed_keys"] = json!(shared.revealed.len());

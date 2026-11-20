@@ -285,6 +285,10 @@ pub struct Totals {
     pub template_checks_failed: AtomicU64,
     /// Coinbasers held to a session's class budget (`class-budget`).
     pub class_budget_replies: AtomicU64,
+    /// Coinbaser replies that placed at least one payee under `own-min-payout`.
+    pub own_floor_replies: AtomicU64,
+    /// Blocks whose coinbaser had placed a payee under `own-min-payout`.
+    pub own_floor_blocks: AtomicU64,
     /// Coinbasers a session's class budget would have held, issued at the pool's budget instead
     /// because carry was over `class-budget-carry-ceiling`.
     pub class_budget_ceiling_replies: AtomicU64,
@@ -728,6 +732,14 @@ impl Shared {
         out
     }
 
+    /// The payout an earlier session of this gateway key was last seen mining for. Good for
+    /// lowering that payout's floor in the key's own splits (`own-min-payout`), which pays an
+    /// address nothing but its own balance; not for what `HeldPayout` declines to trust it with.
+    pub fn lookup_gateway_identity(&self, key_hex: &str) -> Option<String> {
+        let map = self.gateway_payouts.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(key_hex).map(|p| p.identity.clone())
+    }
+
     pub fn lookup_gateway_script(&self, key_hex: &str) -> Option<Vec<u8>> {
         let map = self.gateway_payouts.lock().unwrap_or_else(|e| e.into_inner());
         map.get(key_hex).and_then(|p| hex::decode(&p.script_hex).ok())
@@ -850,6 +862,9 @@ mod tests {
                 stale_after: 0,
                 stale_min_payout: 10_000,
                 stale_max_outputs: 25,
+                own_min_payout: 0,
+                own_max_outputs: 20,
+                own: Vec::new(),
             },
             pool_script: address::to_script(&cfg.payout_address, Network::Mainnet).unwrap(),
             pool: Identity::generate(),

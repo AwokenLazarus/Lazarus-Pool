@@ -69,6 +69,17 @@ pub struct SplitParams {
     /// Most stale balances one coinbase pays. A backlog is paid down over blocks rather than
     /// by one coinbase several times the size of any the gateways have been handed before.
     pub stale_max_outputs: usize,
+    /// The floor for the identities in `own`, in place of `min_payout`: the gateway this split
+    /// is handed to mines for them, so a block on it is one of theirs, and it pays them what
+    /// they are owed although that is under the pool's floor. 0: no identity's floor is
+    /// lowered. Never raises a floor.
+    pub own_min_payout: u64,
+    /// Most outputs one split places under `own_min_payout`, largest first. A gateway with a
+    /// thousand usernames does not get a thousand small outputs.
+    pub own_max_outputs: usize,
+    /// The identities the asking gateway's own shares have named. Empty in the pool's shared
+    /// parameters: each reply is computed with the asking session's.
+    pub own: Vec<String>,
 }
 
 impl SplitParams {
@@ -79,6 +90,12 @@ impl SplitParams {
         } else {
             self.min_payout
         }
+    }
+
+    /// The floor for one of the asking gateway's own identities: `own_min_payout` where that
+    /// is lower than the floor it has anyway.
+    fn own_floor_for(&self, m: &MinerStat, now: u32) -> u64 {
+        self.own_min_payout.min(self.floor_for(m, now))
     }
 
     /// No work in the window, and none credited for `stale_after` seconds. `last_ts` 0 is
@@ -102,6 +119,9 @@ impl Default for SplitParams {
             stale_after: 0,
             stale_min_payout: 546,
             stale_max_outputs: 25,
+            own_min_payout: 0,
+            own_max_outputs: 20,
+            own: Vec::new(),
         }
     }
 }
@@ -145,7 +165,8 @@ pub struct Split {
     pub value: u64,
     pub fee_sats: u64,
     pub total_work: u64,
-    /// Paid outputs, largest first.
+    /// Paid outputs: those placed under the asking gateway's own floor (`own_placed` of them),
+    /// then everyone else, each largest first.
     pub payees: Vec<Payee>,
     /// Identities that will not get an output, with the sats they would have.
     pub unpaid: Vec<Unpaid>,
@@ -154,6 +175,10 @@ pub struct Split {
     pub pool_sats: u64,
     /// Carry from earlier blocks included in `payees` (comes out of the pool's remainder).
     pub carry_paid: u64,
+    /// How many of `payees` are there only because the split was computed for their own
+    /// gateway (`SplitParams::own`): under the floor every other split holds them to.
+    #[serde(default)]
+    pub own_placed: usize,
     /// DATUM rebate this block credits, identity → sats: its share of the stratum fee plus any
     /// `rebate_owed`, pro rata by payable DATUM work. Joins each identity's carry when the
     /// block is found (see [`Split::carry_delta`]).
@@ -388,12 +413,31 @@ pub fn compute(
     // are in. Ties keep the window's order (by work), so with no carry nothing changes.
     let mut queue: Vec<((MinerStat, Option<Vec<u8>>), u64)> = miners.into_iter().zip(scripts).zip(shares).collect();
     queue.sort_by_key(|((m, _), earned)| std::cmp::Reverse(earned.saturating_add(m.carry)));
+    // The asking gateway's own identities that only a lowered floor places (`own_min_payout`)
+    // go first, largest first: a block on this split is one they found, and neither the output
+    // cap nor the byte budget is to be what leaves its finder out of it. There are at most
+    // `own_max_outputs` of them, so that is also the most the smallest regular payees can be
+    // set back by, and those are carried, as by any full coinbase. An own identity that clears
+    // its ordinary floor is an ordinary payee and keeps its place.
+    let own: std::collections::HashSet<&str> =
+        if p.own_min_payout > 0 { p.own.iter().map(String::as_str).collect() } else { Default::default() };
+    let lowered = |m: &MinerStat, has_script: bool, total: u64| {
+        has_script
+            && own.contains(m.identity.as_str())
+            && total >= p.own_floor_for(m, now)
+            && total < p.floor_for(m, now)
+    };
+    if !own.is_empty() {
+        // stable: within each half the order above is kept
+        queue.sort_by_key(|((m, script), earned)| !lowered(m, script.is_some(), earned.saturating_add(m.carry)));
+    }
     // Two passes, because the room to pay carry from is the pool's remainder, and that is
     // only known once it is known who is not placed: an identity this block does not place
     // leaves its earned share with the pool. Deciding both in one walk made a payee's carry
     // depend on whether the miners left out happened to come before it or after.
     let mut placed = Vec::new();
     let mut stale_placed = 0usize;
+    let mut own_placed = 0usize;
     for ((m, script), earned) in queue {
         let total = earned.saturating_add(m.carry);
         if total == 0 {
@@ -408,7 +452,10 @@ pub fn compute(
             continue;
         };
         let need = 8 + 1 + script.len();
-        let reason = if total < p.floor_for(&m, now) {
+        // Past `own_max_outputs` an own identity is held to the floor everyone has.
+        let is_own = own_placed < p.own_max_outputs && lowered(&m, true, total);
+        let floor = if is_own { p.own_floor_for(&m, now) } else { p.floor_for(&m, now) };
+        let reason = if total < floor {
             Some(UnpaidReason::BelowMinimum)
         } else if placed.len() >= p.max_outputs
             || bytes + need > p.output_budget_bytes
@@ -425,14 +472,16 @@ pub fn compute(
         }
         bytes += need;
         stale_placed += usize::from(p.is_stale(&m, now));
-        placed.push((m, script, earned));
+        own_placed += usize::from(is_own);
+        placed.push((m, script, earned, floor, is_own));
     }
-    for (m, script, earned) in placed {
+    let mut own_placed = 0usize;
+    for (m, script, earned, floor, is_own) in placed {
         let carry = m.carry.min(carry_room);
         let sats = earned + carry;
         // A stale balance is paid whole or not at all: what a part payment left behind would
         // be under even the stale floor, with nothing ever to be added to it.
-        if sats < p.floor_for(&m, now) || (p.is_stale(&m, now) && carry < m.carry) {
+        if sats < floor || (p.is_stale(&m, now) && carry < m.carry) {
             // it cleared the floor only with carry there is no room to pay this block
             carry_room = carry_room.saturating_add(earned);
             let total = earned.saturating_add(m.carry);
@@ -442,6 +491,7 @@ pub fn compute(
         carry_room -= carry;
         paid += sats;
         carry_paid += carry;
+        own_placed += usize::from(is_own);
         payees.push(Payee { identity: m.identity, work: m.work, sats, carry, script });
     }
     // `paid` cannot exceed `value` (every payee's earned share is budgeted, and carry only
@@ -455,6 +505,7 @@ pub fn compute(
         unpaid,
         pool_sats: value.saturating_sub(paid),
         carry_paid,
+        own_placed,
         rebate_credits,
         rebate_sats,
         rebate_owed_credited,
@@ -1248,6 +1299,230 @@ mod tests {
                 assert_eq!(u128::from(paid), most, "{dbg}\n{s:?}");
                 let credited = s.rebate_credits.iter().any(|c| c.0 == m.identity);
                 assert!(!credited || dw > 0, "stratum work, in grace or not, earns no DATUM rebate: {dbg}");
+            }
+        }
+    }
+
+    /// Production-shaped: free DATUM, a 0.01 floor, and the asking gateway's own miners paid
+    /// from 1 000 sats.
+    fn own_params(own: &[&str]) -> SplitParams {
+        SplitParams {
+            fee_bps: 0,
+            stratum_fee_bps: 10_000,
+            min_payout: 1_000_000,
+            own_min_payout: 1_000,
+            own: own.iter().map(|s| s.to_string()).collect(),
+            ..SplitParams::default()
+        }
+    }
+
+    /// A window of two large miners, three small ones, and stratum work whose fee is the room
+    /// carry is paid from. Of 100 000 work and a 1 XBT reward, a unit of work earns 1 000 sats.
+    fn own_window() -> Vec<MinerStat> {
+        vec![
+            miner("big1", 50_000),
+            miner("big2", 30_000),
+            miner_stratum("stratum", 19_889),
+            miner_carry("small", 100, 40_000),
+            miner("tiny", 10),
+            miner("dust", 1),
+        ]
+    }
+    const OWN_VALUE: u64 = 100_000_000;
+
+    fn paid<'a>(s: &'a Split, id: &str) -> Option<&'a Payee> {
+        s.payees.iter().find(|p| p.identity == id)
+    }
+
+    /// The split a gateway is handed pays its own miner what it is owed, under the pool's floor;
+    /// the split every other gateway is handed does not. Nobody else's output changes.
+    #[test]
+    fn a_gateways_own_miner_is_paid_under_the_floor_in_its_own_split_only() {
+        let others = compute(own_window(), 100_000, OWN_VALUE, &own_params(&[]), 0, 0, script);
+        assert!(paid(&others, "small").is_none());
+        assert_eq!(others.own_placed, 0);
+        let u = others.unpaid.iter().find(|u| u.identity == "small").unwrap();
+        assert_eq!((u.reason, u.earned, u.sats), (UnpaidReason::BelowMinimum, 100_000, 140_000));
+
+        let own = compute(own_window(), 100_000, OWN_VALUE, &own_params(&["small"]), 0, 0, script);
+        let small = paid(&own, "small").expect("in the coinbase of a block it finds");
+        // this block's share and its carry: what it is owed, and not a sat of bonus
+        assert_eq!((small.sats, small.carry), (140_000, 40_000));
+        assert_eq!(own.own_placed, 1);
+        assert_eq!(own.payees[0].identity, "small", "placed first, so no budget leaves the finder out");
+        for big in ["big1", "big2"] {
+            assert_eq!(paid(&own, big).unwrap().sats, paid(&others, big).unwrap().sats, "{big} is paid as before");
+        }
+        // it comes out of the pool's remainder, which is where it was
+        assert_eq!(own.pool_sats, others.pool_sats - 140_000);
+        assert_eq!(own.pool_sats + own.paid_sats(), OWN_VALUE);
+        assert_eq!(own.carry_paid, 40_000);
+        // and the books move as for any payee: its carry leaves, nothing is deferred for it
+        let delta = own.carry_delta(|_| true);
+        assert!(delta.contains(&("small".to_string(), -40_000)));
+        assert!(!own.unpaid.iter().any(|u| u.identity == "small"));
+    }
+
+    /// The lowered floor is still a floor: an output worth less than it costs to spend is not
+    /// made, for its finder or anyone.
+    #[test]
+    fn own_floor_still_leaves_out_what_is_under_it() {
+        let s = compute(own_window(), 100_000, OWN_VALUE, &own_params(&["small", "tiny", "dust"]), 0, 0, script);
+        assert_eq!(paid(&s, "tiny").map(|p| p.sats), Some(10_000));
+        assert_eq!(s.own_placed, 3);
+        // `dust` earned exactly 1 000: at the floor it is paid, one under it is not
+        let at = SplitParams { own_min_payout: 1_001, ..own_params(&["dust"]) };
+        let s = compute(own_window(), 100_000, OWN_VALUE, &at, 0, 0, script);
+        assert!(paid(&s, "dust").is_none());
+        let u = s.unpaid.iter().find(|u| u.identity == "dust").unwrap();
+        assert_eq!((u.reason, u.defers()), (UnpaidReason::BelowMinimum, true));
+        let at = SplitParams { own_min_payout: 1_000, ..own_params(&["dust"]) };
+        let s = compute(own_window(), 100_000, OWN_VALUE, &at, 0, 0, script);
+        assert_eq!(paid(&s, "dust").map(|p| p.sats), Some(1_000));
+    }
+
+    /// Off unless configured, and it never raises anyone's floor.
+    #[test]
+    fn own_floor_is_off_at_zero_and_never_raises_a_floor() {
+        let plain = compute(own_window(), 100_000, OWN_VALUE, &own_params(&[]), 0, 0, script);
+        let off = SplitParams { own_min_payout: 0, ..own_params(&["small", "big1"]) };
+        assert_eq!(compute(own_window(), 100_000, OWN_VALUE, &off, 0, 0, script), plain);
+        // a figure above the pool's floor is not a floor for the gateway's own large miner
+        let high = SplitParams { own_min_payout: 80_000_000, ..own_params(&["big1", "big2"]) };
+        assert_eq!(compute(own_window(), 100_000, OWN_VALUE, &high, 0, 0, script), plain);
+        // and an own miner over the pool's floor is an ordinary payee in its ordinary place
+        let s = compute(own_window(), 100_000, OWN_VALUE, &own_params(&["big2"]), 0, 0, script);
+        assert_eq!(s, plain);
+    }
+
+    /// A gateway many miners share has only so many of them paid early, the largest first.
+    #[test]
+    fn own_floor_places_at_most_own_max_outputs_largest_first() {
+        let mut window = vec![miner("big", 90_000)];
+        let names: Vec<String> = (0..10).map(|i| format!("w{i}")).collect();
+        for (i, n) in names.iter().enumerate() {
+            window.push(miner(n, 100 + i as u64));
+        }
+        let total: u64 = window.iter().map(|m| m.work).sum();
+        let own: Vec<&str> = names.iter().map(String::as_str).collect();
+        let p = SplitParams { own_max_outputs: 3, ..own_params(&own) };
+        let s = compute(window.clone(), total, OWN_VALUE, &p, 0, 0, script);
+        assert_eq!(s.own_placed, 3);
+        let first: Vec<&str> = s.payees.iter().take(3).map(|x| x.identity.as_str()).collect();
+        assert_eq!(first, ["w9", "w8", "w7"]);
+        assert_eq!(s.payees.len(), 4);
+        assert!(s.unpaid.iter().filter(|u| u.reason == UnpaidReason::BelowMinimum && u.defers()).count() == 7);
+        assert_eq!(s.pool_sats + s.paid_sats(), OWN_VALUE);
+        let none = SplitParams { own_max_outputs: 0, ..own_params(&own) };
+        assert_eq!(compute(window, total, OWN_VALUE, &none, 0, 0, script).own_placed, 0);
+    }
+
+    /// When the coinbase is full it is the smallest ordinary payee that waits, not the finder.
+    #[test]
+    fn a_full_coinbase_keeps_the_finder_and_carries_the_smallest_payee() {
+        let p = SplitParams { max_outputs: 2, ..own_params(&["small"]) };
+        let s = compute(own_window(), 100_000, OWN_VALUE, &p, 0, 0, script);
+        let ids: Vec<&str> = s.payees.iter().map(|x| x.identity.as_str()).collect();
+        assert_eq!(ids, ["small", "big1"]);
+        let u = s.unpaid.iter().find(|u| u.identity == "big2").unwrap();
+        assert_eq!((u.reason, u.earned, u.defers()), (UnpaidReason::OverBudget, 30_000_000, true));
+        assert_eq!(s.pool_sats + s.paid_sats(), OWN_VALUE);
+        // the same by bytes: room for two 12-byte outputs
+        let p = SplitParams { output_budget_bytes: 24, ..own_params(&["small"]) };
+        let s = compute(own_window(), 100_000, OWN_VALUE, &p, 0, 0, script);
+        assert_eq!(s.payees.iter().map(|x| x.identity.as_str()).collect::<Vec<_>>(), ["small", "big1"]);
+    }
+
+    /// A name that is not an address is not paid for being the gateway's own, and one the
+    /// gateway names without mining for is paid its own balance and nothing else.
+    #[test]
+    fn own_floor_pays_only_addresses_and_only_their_own_balance() {
+        let mut window = own_window();
+        window.push(miner("bad-name", 500));
+        window.push(miner_carry("victim", 0, 250_000));
+        let p = own_params(&["bad-name", "victim", "nobody-here"]);
+        let s = compute(window, 100_500, OWN_VALUE, &p, 0, 0, script);
+        assert!(paid(&s, "bad-name").is_none());
+        assert_eq!(s.unpaid.iter().find(|u| u.identity == "bad-name").unwrap().reason, UnpaidReason::NoScript);
+        let v = paid(&s, "victim").unwrap();
+        assert_eq!((v.sats, v.carry, v.script.clone()), (250_000, 250_000, script("victim").unwrap()));
+        assert!(paid(&s, "nobody-here").is_none());
+        assert_eq!(s.own_placed, 1);
+        assert_eq!(s.pool_sats + s.paid_sats(), OWN_VALUE);
+    }
+
+    /// With no room to pay carry from, the finder is still paid this block's share if that
+    /// alone clears its floor; its carry stays carry.
+    #[test]
+    fn own_floor_pays_the_earned_share_when_there_is_no_room_for_carry() {
+        // no stratum fee and everyone placed: the pool's remainder is rounding
+        let window = vec![miner("big", 99_900), miner_carry("small", 100, 40_000)];
+        let s = compute(window.clone(), 100_000, OWN_VALUE, &own_params(&["small"]), 0, 0, script);
+        let small = paid(&s, "small").unwrap();
+        assert_eq!((small.sats, small.carry), (100_000, 0));
+        assert_eq!(s.pool_sats + s.paid_sats(), OWN_VALUE);
+        assert!(!s.carry_delta(|_| true).iter().any(|(i, _)| i == "small"), "its carry is untouched");
+        // owed only carry, and no room for any of it: not placed, nothing lost
+        let window = vec![miner("big", 100_000), miner_carry("small", 0, 40_000)];
+        let s = compute(window, 100_000, OWN_VALUE, &own_params(&["small"]), 0, 0, script);
+        assert!(paid(&s, "small").is_none());
+        assert_eq!(s.own_placed, 0);
+        assert_eq!(s.pool_sats + s.paid_sats(), OWN_VALUE);
+    }
+
+    /// Whatever the window and whoever is named, the outputs sum to the reward, no payee is
+    /// paid more than it is owed, and everyone not named is paid exactly as without the key.
+    #[test]
+    fn own_floor_conserves_the_reward_and_changes_only_who_is_named() {
+        let mut seed = 0x9e37_79b9_7f4a_7c15u64;
+        let mut next = move |n: u64| {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed % n
+        };
+        for round in 0..300 {
+            let n = 2 + next(40) as usize;
+            let mut window = Vec::new();
+            for i in 0..n {
+                let work = if next(3) == 0 { 1 + next(1_000_000) } else { 1 + next(500) };
+                let mut m =
+                    miner_carry(&format!("{}{i}", (b'a' + (i % 26) as u8) as char), work, next(3) * next(900_000));
+                if next(5) == 0 {
+                    m.stratum_work = m.work;
+                }
+                window.push(m);
+            }
+            let total: u64 = window.iter().map(|m| m.work).sum();
+            let own: Vec<String> = window.iter().filter(|_| next(3) == 0).map(|m| m.identity.clone()).collect();
+            let base = SplitParams {
+                max_outputs: 1 + next(40) as usize,
+                own_max_outputs: next(6) as usize,
+                ..own_params(&[])
+            };
+            let with = SplitParams { own: own.clone(), ..base.clone() };
+            let value = 300_000_000 + next(50_000_000);
+            let plain = compute(window.clone(), total, value, &base, 0, 0, script);
+            let s = compute(window.clone(), total, value, &with, 0, 0, script);
+            assert_eq!(s.pool_sats + s.paid_sats(), value, "round {round}");
+            assert!(s.own_placed <= with.own_max_outputs, "round {round}");
+            assert_eq!(s.fee_sats, plain.fee_sats);
+            for p in &s.payees {
+                let m = window.iter().find(|m| m.identity == p.identity).unwrap();
+                assert!(p.carry <= m.carry && p.sats >= 1_000, "round {round}: {p:?}");
+                assert!(p.sats >= 1_000_000 || own.contains(&p.identity), "round {round}: {p:?} is not the gateway's");
+                // earned share is the same figure in both splits, paid or deferred
+                let earned_plain = paid(&plain, &p.identity)
+                    .map(|q| q.sats - q.carry)
+                    .or_else(|| plain.unpaid.iter().find(|u| u.identity == p.identity).map(|u| u.earned));
+                assert_eq!(Some(p.sats - p.carry), earned_plain, "round {round}: {p:?}");
+            }
+            for (i, p) in s.payees.iter().enumerate() {
+                assert_eq!(
+                    i < s.own_placed,
+                    p.sats < 1_000_000,
+                    "round {round}: the own-floor payees are the first ones"
+                );
             }
         }
     }

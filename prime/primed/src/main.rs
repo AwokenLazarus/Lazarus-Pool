@@ -309,6 +309,10 @@ fn run(cfg: Config) -> i32 {
             stale_after: if cfg.stale_coinbase { cfg.stale_after_secs() } else { 0 },
             stale_min_payout: cfg.stale_min_payout,
             stale_max_outputs: cfg.stale_per_block,
+            own_min_payout: cfg.own_min_payout,
+            own_max_outputs: cfg.own_per_block,
+            // each reply is computed with the asking session's (`Session::own_params`)
+            own: Vec::new(),
         },
         pool_script,
         pool,

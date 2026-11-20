@@ -296,6 +296,35 @@ and paid one of two ways, never both:
   and closes the hold only when it has 3 confirmations and pays every held script in full.
   `release` turns a hold back into carry. Every change is appended to `payouts/payouts.jsonl`.
 
+**A gateway's own miners (`own-min-payout`).** A miner too small to clear `min-payout` is in
+no coinbase, that of a block it finds included: the block pays everyone but its finder, whose
+share goes to carry. Every gateway is handed its own split, though, and Prime knows whom a
+gateway mines for from its accepted shares. With `own-min-payout` set, the split handed to a
+gateway lowers the floor to that figure for the payouts that gateway's shares have named this
+session (and the one its key was last seen mining for, so that a gateway back from a restart
+is covered before its first share). Whoever finds a block on that gateway is then in it.
+
+* *It is the same money, sooner.* The output is this block's earned share plus carry, the sum
+  every split already works out, and it comes out of the pool's output, where it was. No other
+  payee's output changes and no other gateway's split does.
+* *Naming an address gains nothing.* A lowered floor pays an address its own balance. A gateway
+  that submits shares under an address it does not mine for has that address paid what it was
+  owed.
+* *Placed first, and few.* These outputs lead the list, largest first, so neither the output
+  cap, the byte budget nor a size class that keeps a prefix of the list leaves the finder out;
+  at most `own-per-block` (20) are placed, which is also the most the smallest ordinary payees
+  can be set back by, and those are carried as by any full coinbase. A gateway shared by more
+  miners than that has its largest balances paid.
+* *Settled like any payee.* The block record lists the output in `split`, its carry in
+  `carry_paid`, and a coinbase that dropped it owes it (`owed_sats`), which the make-good pays.
+  A second block found on the same list before the gateway asks for another pays the carry
+  twice; that is `carry_shortfall_sats` on the record and debt on the miner's books, taken from
+  what it earns next, as for any payee.
+* *Not covered:* a balance under `own-min-payout`; a gateway's first shares of a first session,
+  before any names a payout; miners past `own-per-block` on a shared gateway; the house
+  gateway, whose usernames are the public stratum's. `stats.json` counts the replies and blocks
+  (`totals.own_floor_replies`, `totals.own_floor_blocks`).
+
 Stock gateways build several coinbase sizes and hand small miners those with room for only
 the first few outputs, or none at all while a coinbaser reply is in flight. The Prime
 classifies every share's coinbase as **Split** (every issued miner output paid), **Partial**

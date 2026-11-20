@@ -56,6 +56,17 @@ pub struct Config {
     /// Most stale balances one coinbase pays; a backlog drains over blocks.
     #[serde(default = "d_stale_per_block")]
     pub stale_per_block: usize,
+    /// Floor, sats, for the payouts a gateway's own shares name, in the splits handed to that
+    /// gateway only: a miner who finds a block on its own gateway is paid in it what it is owed,
+    /// though that is under `min-payout`. Nobody is paid more, only sooner, and the splits of
+    /// every other gateway are as they were. 0 (the default) turns it off. Not below the dust
+    /// limit.
+    #[serde(default)]
+    pub own_min_payout: u64,
+    /// Most outputs one split places under `own-min-payout`: a gateway that many miners share
+    /// has this many of them paid by a block of its own, the largest balances first.
+    #[serde(default = "d_own_per_block")]
+    pub own_per_block: usize,
     #[serde(default)]
     pub fee_bps: u32,
     /// Fee on an upgraded empty-solo coinbase (gateway + pool), basis points. Default 750
@@ -292,6 +303,9 @@ fn d_min_payout() -> u64 {
 fn d_stale_per_block() -> usize {
     25
 }
+fn d_own_per_block() -> usize {
+    20
+}
 fn d_stale_after_days() -> u32 {
     7
 }
@@ -400,6 +414,12 @@ impl Config {
         }
         if c.stale_min_payout < 546 {
             return Err("stale-min-payout cannot be below the dust limit (546)".into());
+        }
+        if c.own_min_payout != 0 && c.own_min_payout < 546 {
+            return Err("own-min-payout cannot be below the dust limit (546); 0 turns it off".into());
+        }
+        if c.own_per_block > 64 {
+            return Err("own-per-block is at most 64".into());
         }
         if c.stale_after_days > 3650 {
             return Err("stale-after-days is in days (3650 at most; 0 disables)".into());

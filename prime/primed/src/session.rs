@@ -324,6 +324,15 @@ fn class_params(pool: &SplitParams, budget: Option<usize>) -> Cow<'_, SplitParam
     }
 }
 
+/// `params` with the asking session's own identities, for `own-min-payout`. Borrowed as it was
+/// when the key is off or the session has none: the split is then the one every gateway gets.
+fn own_params<'a>(params: Cow<'a, SplitParams>, own: Vec<String>) -> Cow<'a, SplitParams> {
+    if params.own_min_payout == 0 || params.own_max_outputs == 0 || own.is_empty() {
+        return params;
+    }
+    Cow::Owned(SplitParams { own, ..params.into_owned() })
+}
+
 /// The list a coinbaser reply carries for `split`.
 fn coinbaser_outputs(split: &Split, pool_script: &[u8]) -> Vec<Output> {
     let mut outputs: Vec<Output> =
@@ -442,6 +451,9 @@ struct IssuedCoinbaser {
     rebate_deferred: u64,
     /// The class budget it was held to (`class-budget`), if any.
     class_budget: Option<usize>,
+    /// How many of `payees`, the first ones, are under the pool's floor and placed because the
+    /// gateway mines for them (`own-min-payout`).
+    own_placed: usize,
 }
 
 /// The parts of a coinbaser a found block settles against: one we still hold, or a fresh split
@@ -737,6 +749,10 @@ struct Session {
     identity_work: HashMap<String, u64>,
     gateway_script: Option<Vec<u8>>,
     gateway_identity: Option<String>,
+    /// The payout an earlier session of this gateway's key mined for (`gateway-scripts.json`).
+    /// Only ever one of the session's own identities for `own-min-payout`, so that a gateway
+    /// back from a restart has its floor lowered before its first share lands.
+    known_identity: Option<String>,
     /// When to send configure(gateway) — only while this tip has no split yet
     /// (just learned the identity). Once a coinbaser lands they stay on pool.
     restore_script_at: Option<tokio::time::Instant>,
@@ -892,6 +908,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         }
     }
     let known_script = shared.lookup_gateway_script(&gateway_key);
+    let known_identity = shared.lookup_gateway_identity(&gateway_key);
     let house = house_stratum(&shared.cfg, remote, &gateway_key);
     let front = stratum_front(&shared.cfg, remote, &gateway_key);
     let fee_path = if front || house { "stratum" } else { "datum" };
@@ -997,6 +1014,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         identity_work: HashMap::new(),
         gateway_script: known_script,
         gateway_identity: None,
+        known_identity,
         restore_script_at: None,
         configured_as_gateway: false,
         split_ready: false,
@@ -1266,6 +1284,25 @@ impl Session {
 
     fn gateway_key_hex(&self) -> String {
         hex::encode(self.hello.identity_sign_pk)
+    }
+
+    /// The identities this gateway mines for, whose floor `own-min-payout` lowers in the splits
+    /// it is handed: every payout its accepted shares have named this session, and the one its
+    /// key was last seen mining for. A block on one of its splits is found by one of these.
+    ///
+    /// None for the house gateway. Its usernames are the public stratum's, not one operator's
+    /// miners, and stratum work earns a fee class of its own; a block there is the pool's.
+    /// Lowering a floor pays an address its own balance and nothing else, so a gateway that
+    /// names an address it does not mine for gains nothing by it, and neither does the address.
+    fn own_identities(&self) -> Vec<String> {
+        if self.shared.split_params.own_min_payout == 0 || self.is_house_stratum() {
+            return Vec::new();
+        }
+        let mut own: Vec<String> = self.identity_work.keys().cloned().collect();
+        if let Some(known) = self.known_identity.as_ref().filter(|k| !self.identity_work.contains_key(*k)) {
+            own.push(known.clone());
+        }
+        own
     }
 
     fn note_identity(&mut self, identity: &str, work: u64) {
@@ -1582,7 +1619,7 @@ impl Session {
             base.miners.clone(),
             base.total_work,
             value,
-            &class_params(&self.shared.split_params, budget),
+            &own_params(class_params(&self.shared.split_params, budget), self.own_identities()),
             base.rebate_owed,
             now() as u32,
             |ident| base.script_for(ident),
@@ -1615,6 +1652,9 @@ impl Session {
             total_work,
             target
         );
+        if split.own_placed > 0 {
+            self.shared.totals.add(&self.shared.totals.own_floor_replies, 1);
+        }
         if budget.is_some() {
             self.shared.totals.add(&self.shared.totals.class_budget_replies, 1);
             self.shared.client_update(self.id, |c| *c.class_budget_replies.get_or_insert(0) += 1);
@@ -1633,6 +1673,7 @@ impl Session {
             rebate_owed_credited: split.rebate_owed_credited,
             rebate_deferred: split.rebate_deferred,
             class_budget: budget,
+            own_placed: split.own_placed,
         });
         while self.coinbasers.len() > COINBASERS_KEPT {
             self.coinbasers.pop_front();
@@ -2493,6 +2534,22 @@ impl Session {
         // what the window is owed if this coinbase did not pay the full split
         let job_cb = self.slots[usize::from(s.job_id)].job.as_ref().map(|j| (j.coinbaser_id, j.prev_hash, j.height));
         let issued = job_cb.and_then(|(id, prev, height)| self.issued_for(id, &prev, height));
+        if let Some(c) = issued.filter(|c| c.own_placed > 0) {
+            // Settled like any payee below: what the coinbase paid them leaves their carry, and
+            // what it dropped is owed. Said here so a block that pays under the pool's floor is
+            // explained by the log that records it.
+            let own: Vec<String> =
+                c.payees.iter().take(c.own_placed).map(|p| format!("{}={}", p.identity, p.sats)).collect();
+            log::info!(
+                "[{}] block candidate height={} on coinbaser #{} with {} own-floor payee(s): {}",
+                self.id,
+                v.height,
+                c.id,
+                c.own_placed,
+                own.join(" ")
+            );
+            self.shared.totals.add(&self.shared.totals.own_floor_blocks, 1);
+        }
         let fee = tides::split::fee_for(v.coinbase_value, self.shared.cfg.fee_bps);
         // Carry accounting for this block: minus the carry each placed output included, plus
         // what every identity the split could not place earned. Applied now — the next
@@ -3203,6 +3260,7 @@ mod tests {
             rebate_owed_credited: 0,
             rebate_deferred: 0,
             class_budget: None,
+            own_placed: 0,
         }
     }
 
@@ -3554,6 +3612,24 @@ mod tests {
         assert!(told.contains("700000 to 1 listed scripts, 300000 to 1 scripts neither"), "{told}");
     }
 
+    /// `own-min-payout` changes the parameters of a reply only for a session with payouts of its
+    /// own, and only with the key set: every other reply borrows the pool's, untouched.
+    #[test]
+    fn own_params_are_the_pools_unless_the_key_is_set_and_the_session_has_payouts() {
+        let pool = pool_params();
+        let own = || vec!["a".to_string(), "b".to_string()];
+        assert!(matches!(own_params(Cow::Borrowed(&pool), own()), Cow::Borrowed(_)), "key unset");
+        let on = SplitParams { own_min_payout: 1_000, ..pool_params() };
+        assert!(matches!(own_params(Cow::Borrowed(&on), Vec::new()), Cow::Borrowed(_)), "no payout known");
+        let none = SplitParams { own_max_outputs: 0, ..on.clone() };
+        assert!(matches!(own_params(Cow::Borrowed(&none), own()), Cow::Borrowed(_)), "none allowed");
+        let got = own_params(Cow::Borrowed(&on), own());
+        assert_eq!(*got, SplitParams { own: own(), ..on.clone() });
+        // on top of a class budget, which stays
+        let got = own_params(class_params(&on, Some(527)), own());
+        assert_eq!(*got, SplitParams { own: own(), output_budget_bytes: 527, ..on.clone() });
+    }
+
     fn pool_params() -> SplitParams {
         SplitParams {
             fee_bps: 0,
@@ -3567,6 +3643,9 @@ mod tests {
             stale_after: 0,
             stale_min_payout: 10_000,
             stale_max_outputs: 25,
+            own_min_payout: 0,
+            own_max_outputs: 20,
+            own: Vec::new(),
         }
     }
 
