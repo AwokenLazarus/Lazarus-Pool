@@ -1930,7 +1930,10 @@ impl Session {
             }
         }
 
-        let issued_outputs = self.issued_for(coinbaser_id, &prev_hash, height).map(|c| c.outputs.clone());
+        let (issued_outputs, issued_own) = match self.issued_for(coinbaser_id, &prev_hash, height) {
+            Some(c) => (Some(c.outputs.clone()), c.own_placed),
+            None => (None, 0),
+        };
         let pool_script = self.shared.pool_script.clone();
         let gateway_script = self.gateway_script.clone();
         let policy = Policy {
@@ -1945,6 +1948,7 @@ impl Session {
             uncommitted_pot: self.shared.cfg.uncommitted_pot,
             held_split: self.held.is_some(),
             gateway_keys: self.gateway_keys,
+            issued_own,
         };
         // A key a block has shown is no blind: the hasher has the raw hashes and now the mask.
         // Work on the found block's own parent or below is stale anyway; past it, it is reuse.
@@ -3571,6 +3575,7 @@ mod tests {
                 uncommitted_pot: 20,
                 held_split: false,
                 gateway_keys: false,
+                issued_own: 0,
             }
         }
         let (pool, gw, payee, stranger) = (wpkh(1), tr(2), wpkh(3), wpkh(4));
@@ -3690,6 +3695,7 @@ mod tests {
             uncommitted_pot: 20,
             held_split: false,
             gateway_keys: false,
+            issued_own: 0,
         }
     }
 

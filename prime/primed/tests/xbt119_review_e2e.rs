@@ -108,6 +108,7 @@ fn block_hash(issued: &[Output], s: &PowSubmit) -> Hash {
         uncommitted_pot: 20,
         held_split: false,
         gateway_keys: false,
+        issued_own: 0,
     };
     let mut slot = JobSlot::default();
     slot.absorb(s).unwrap();

@@ -42,12 +42,16 @@ fn unix_now() -> u32 {
 }
 
 fn node() -> MockNode {
+    node_at(REGTEST_BITS)
+}
+
+fn node_at(bits: u32) -> MockNode {
     MockNode::start(Chain {
         height: HEIGHT - 1,
         tip: node_hex(&TIP),
         parent: node_hex(&[0x41; 32]),
-        bits: REGTEST_BITS,
-        next_bits: Some(REGTEST_BITS),
+        bits,
+        next_bits: Some(bits),
     })
 }
 
@@ -170,6 +174,7 @@ fn block_hash(issued: &[Output], s: &PowSubmit) -> Hash {
         uncommitted_pot: 20,
         held_split: false,
         gateway_keys: false,
+        issued_own: 0,
     };
     let mut slot = JobSlot::default();
     slot.absorb(s).unwrap();
@@ -269,4 +274,76 @@ fn a_small_miner_is_paid_in_the_block_it_finds_and_a_second_block_on_the_same_li
     let st = settled_stats(&primed);
     assert_eq!(st["window"]["carry_debt_sats"], SMALL_CARRY, "and owed back by the miner it was paid to: {st}");
     assert_eq!(st["window"]["carry_debt_holders"], 1, "{st}");
+}
+
+/// A difficulty at which a diff-1 share is a share and not a block.
+const TIP_BITS: u32 = 0x1903_a30c;
+
+fn client_row(p: &Primed, gateway: &Identity) -> serde_json::Value {
+    let st = settled_stats(p);
+    let hex = hex::encode(&gateway.sign_pk()[..8]);
+    st["clients"].as_array().unwrap().iter().find(|r| r["gateway"] == hex.as_str()).cloned().unwrap_or_default()
+}
+
+/// Production, 2026-11-21. A gateway that keeps a job's script from when the job was made builds
+/// its first full job of a tip on its own script, and with the split in hand that job pays the
+/// outputs its section keeps and sends the rest to the gateway. With no lowered floor the
+/// gateway's script is not in its list and that is its own solo work: accepted, not credited.
+/// With the floor lowered the list names the script, and the build before this fix refused the
+/// share as a listed payee paid past its amount. Run against that build to see it refused:
+///
+///     PRIMED_BIN=/path/to/primed-ownfloor-06e97f18 cargo test --release -p primed --test own_floor_e2e \
+///         a_job_that_kept -- --ignored --nocapture
+#[test]
+#[ignore]
+fn a_job_that_kept_the_gateways_own_script_is_its_solo_work_and_not_refused() {
+    let node = node_at(TIP_BITS);
+    let small_gw = Identity::generate();
+    let pool = Identity::generate();
+    let issued = {
+        let (probe, port) = start(&node, &pool, true, &small_gw);
+        let mut gw = Gateway::connect(port, &pool, &small_gw);
+        let out = gw.request_coinbaser_outputs(VALUE, &TIP).1;
+        drop(probe);
+        out
+    };
+    assert_eq!(hex::encode(&issued[0].script), SMALL_SCRIPT, "the list names the gateway's own script");
+    assert_eq!(hex::encode(&issued[1].script), BIG_SCRIPT);
+
+    // The section keeps the list's first two outputs and pays what it dropped (here the pool's
+    // remainder) to the script the job was made with: the gateway's own.
+    let kept: u64 = issued[..2].iter().map(|o| o.sats).sum();
+    let outs = vec![
+        TxOut { value: issued[0].sats, script: issued[0].script.clone() },
+        TxOut { value: issued[1].sats, script: issued[1].script.clone() },
+        TxOut { value: VALUE - kept, script: hex::decode(SMALL_SCRIPT).unwrap() },
+    ];
+    let mut share = pool_only_share(1, HEIGHT, TIP, TIP_BITS, 0, unix_now());
+    let (cb, tidx, split_at) = coinbase::build(HEIGHT, b"Lazarus", &outs, 0);
+    share.coinbase = Some(CoinbaseSection {
+        coinbase_id: 0,
+        coinb1: cb[..split_at].to_vec(),
+        coinb2: cb[split_at + coinbase::EXTRANONCE_SLOT..].to_vec(),
+    });
+    share.job.as_mut().unwrap().target_byte_index = tidx as u16;
+    share.username = format!("{SMALL}.rig");
+    grind_diff1(&mut share);
+
+    let (primed, port) = start(&node, &pool, true, &small_gw);
+    let mut gw = Gateway::connect(port, &pool, &small_gw);
+    let (id, outputs) = gw.request_coinbaser_outputs(VALUE, &TIP);
+    assert_eq!(outputs, issued);
+    share.job.as_mut().unwrap().coinbaser_id = id;
+    let answer = gw.submit(&share);
+    eprintln!("answer to the share on the gateway's own script: {answer:?}");
+    assert_ne!(answer.0, mining::REJECTED, "refused with code {}", answer.1);
+
+    let r = client_row(&primed, &small_gw);
+    assert_eq!(
+        (r["solo_full_shares"].as_u64(), r["work"].as_u64(), r["rejected"].as_u64()),
+        (Some(1), Some(0), Some(0)),
+        "the gateway's own solo work, accepted and not credited in the window: {r}"
+    );
+    let st = settled_stats(&primed);
+    assert_eq!(st["totals"]["shares_rejected"], 0, "{st}");
 }

@@ -253,6 +253,13 @@ pub struct Policy<'a> {
     /// This Prime takes jobs blinded with the gateway's own key, and told this gateway so
     /// ([`mining::CONFIG_MARKER_GATEWAY_KEY`]).
     pub gateway_keys: bool,
+    /// How many of [`Policy::issued`], the first ones, are payees placed only because the list
+    /// was computed for their own gateway (primed's `own-min-payout`): under the floor every other
+    /// list holds them to. A gateway script that is in the list for that reason alone is a miner
+    /// the pool would not otherwise be paying, so a coinbase that sends that script the remainder
+    /// is what it was before the list named it: the gateway's own solo work, accepted and not
+    /// credited, and not a listed payee paid past its amount, which is refused. 0: nobody is.
+    pub issued_own: usize,
 }
 
 /// Bits of a difficulty-1 share: the top 32 of a hash. A share at `2^pot` is `32 + pot`.
@@ -469,8 +476,21 @@ fn classify_outputs(
         // below). A gateway script the list itself pays is a miner output like any other, held
         // to its issued amount further down.
         let gateway_listed = p.gateway_script.is_some_and(|g| iss.iter().any(|i| i.script == g));
-        if gateway_paid && !gateway_listed {
-            let excess = actual_value.saturating_sub(issued_value).min(issued_value / 16);
+        // Listed only under its own gateway's lowered floor (`Policy::issued_own`), and by no
+        // entry past those: what the list issues it, and beyond that it is unlisted, as it was
+        // before the floor was lowered. Left out, lowering a gateway's floor turned every
+        // coinbase it builds on its own script with the list in hand (a job that kept the
+        // script from before the split arrived, a section that sends what it dropped to the
+        // gateway) from its own solo work into a refusal.
+        let own_issued: Option<u64> = p.gateway_script.and_then(|g| {
+            let own = iss.iter().take(p.issued_own).filter(|i| i.script == g);
+            let sats = own.clone().fold(0u64, |a, i| a.saturating_add(i.sats));
+            let elsewhere = iss.iter().skip(p.issued_own).any(|i| i.script == g);
+            (own.count() > 0 && !elsewhere).then_some(sats)
+        });
+        let gateway_excess = actual_value.saturating_sub(issued_value).min(issued_value / 16);
+        if gateway_paid && (!gateway_listed || own_issued.is_some()) {
+            let excess = gateway_excess.saturating_add(cap(own_issued.unwrap_or(0)));
             if gateway_sats > excess.saturating_add(slack) {
                 // Not refused: a stock gateway still configured with its own script that
                 // builds a small coinbase class does this by accident, sending the outputs it
@@ -501,7 +521,11 @@ fn classify_outputs(
                 if paid.saturating_add(tolerance) < owed(i.sats) {
                     shorted = true;
                 }
-                let ceiling = cap(issued_to.get(i.script.as_slice()).copied().unwrap_or(i.sats));
+                let mut ceiling = cap(issued_to.get(i.script.as_slice()).copied().unwrap_or(i.sats));
+                if own_issued.is_some() && is_gateway(&i.script, p.gateway_script) {
+                    // the template's few extra fees, which an unlisted gateway script may take
+                    ceiling = ceiling.saturating_add(gateway_excess);
+                }
                 if paid > ceiling.saturating_add(slack) {
                     return CoinbaseKind::Foreign;
                 }
@@ -721,10 +745,8 @@ pub fn verify_with_target(
     // Under a gateway's key the raw hash says nothing about a block: every share's top bits are
     // clear, so at regtest's target it "is" one whatever the mask does to the rest. Only the
     // masked hash decides, and without the key there is none to read.
-    let block_hash = share_key
-        .as_ref()
-        .and_then(|k| k.key.map(|key| pow::masked_hash_le(&hash, key, k.clear_bits)))
-        .unwrap_or(hash);
+    let block_hash =
+        share_key.as_ref().and_then(|k| k.key.map(|key| pow::masked_hash_le(&hash, key, k.clear_bits))).unwrap_or(hash);
     let readable = share_key.as_ref().is_none_or(|k| k.key.is_some());
     let is_block_candidate = readable
         && pow::nbits_to_target_le(commitment.nbits).map(|t| pow::meets_target(&block_hash, &t)).unwrap_or(false);
@@ -969,6 +991,7 @@ mod tests {
             uncommitted_pot: 20,
             held_split: false,
             gateway_keys: false,
+            issued_own: 0,
         }
     }
 
@@ -1564,6 +1587,7 @@ mod tests {
             uncommitted_pot: 20,
             held_split: false,
             gateway_keys: false,
+            issued_own: 0,
         };
         let v = check(&mut slot, &s, &p).expect("pool-only is valid work");
         assert_eq!(v.coinbase_kind, CoinbaseKind::PoolOnly);
@@ -1696,6 +1720,7 @@ mod tests {
             uncommitted_pot: 20,
             held_split: false,
             gateway_keys: false,
+            issued_own: 0,
         }
     }
 
@@ -2123,8 +2148,7 @@ mod tests {
         let outs = gateway_outputs(iss, pool, VALUE);
         let mut s = share(0, 4, 1, &outs, &txids(2), pot, [0; 8], [0; 8]);
         s.job.as_mut().unwrap().nbits = nbits.to_le_bytes();
-        s.gateway_key =
-            Some(mining::GatewayKey { clear_bits: 32 + pot, key_hash: pow::xor_key_hash(&KEY) });
+        s.gateway_key = Some(mining::GatewayKey { clear_bits: 32 + pot, key_hash: pow::xor_key_hash(&KEY) });
         grind(slot, &mut s);
         s
     }
@@ -2328,5 +2352,110 @@ mod tests {
             verify_with_target(&mut slot, &s, &policy(&iss, &pool), &[0xff; 32]),
             Err(mining::REJECT_BAD_JOB_ID)
         );
+    }
+
+    /// A list computed for a gateway under its own lowered floor: the gateway's small balance
+    /// first, then the window's miners, then the pool.
+    fn own_floor_list(pool: &[u8], gw: &[u8]) -> Vec<Output> {
+        let mut iss = vec![Output { sats: 5_000, script: gw.to_vec() }];
+        iss.extend(split());
+        let fee = VALUE - iss.iter().map(|o| o.sats).sum::<u64>();
+        iss.push(Output { sats: fee, script: pool.to_vec() });
+        iss
+    }
+
+    /// Production, 2026-11-21: with a gateway's floor lowered its own script is in its list,
+    /// and a coinbase that sends that script what a section did not place (a job that kept the
+    /// gateway's script from before the split arrived) became a listed payee paid past its
+    /// amount, refused, where it had been the gateway's own solo work. `issued_own` says the
+    /// listing is the lowered floor's, and the coinbase is what it was.
+    #[test]
+    fn a_gateway_listed_only_under_its_own_floor_is_still_unlisted_for_the_remainder() {
+        let pool = pool_script();
+        let gw = gw_script();
+        let iss = own_floor_list(&pool, &gw);
+        let pay = |o: &Output| TxOut { value: o.sats, script: o.script.clone() };
+        let to = |script: &[u8], value: u64| TxOut { value, script: script.to_vec() };
+        let own = Policy { gateway_script: Some(&gw), issued_own: 1, ..policy(&iss, &pool) };
+        let blind = Policy { gateway_script: Some(&gw), issued_own: 0, ..policy(&iss, &pool) };
+
+        // the list as issued: the split, and the gateway's own output is one of its payees
+        let whole: Vec<TxOut> = iss.iter().map(pay).chain([wc()]).collect();
+        assert_eq!(kind_of(&whole, &own), Ok(CoinbaseKind::Split));
+        assert_eq!(kind_of(&whole, &blind), Ok(CoinbaseKind::Split));
+
+        // a section that keeps the first two outputs and sends the rest to the gateway
+        let kept: u64 = iss[..2].iter().map(|o| o.sats).sum();
+        let class = vec![pay(&iss[0]), pay(&iss[1]), to(&gw, VALUE - kept), wc()];
+        assert_eq!(kind_of(&class, &blind), Err(mining::REJECT_BAD_COINBASE_OUTPUTS), "what production refused");
+        assert_eq!(kind_of(&class, &own), Ok(CoinbaseKind::GatewaySolo));
+        // the same with the remainder and the gateway's own output as one output
+        let merged = vec![pay(&iss[1]), to(&gw, VALUE - iss[1].sats), wc()];
+        assert_eq!(kind_of(&merged, &own), Ok(CoinbaseKind::GatewaySolo));
+        // and the whole reward to the gateway, as section 0 pays it
+        assert_eq!(kind_of(&[to(&gw, VALUE), wc()], &own), Ok(CoinbaseKind::GatewaySolo));
+        assert_eq!(kind_of(&[to(&gw, VALUE), wc()], &blind), Err(mining::REJECT_BAD_COINBASE_OUTPUTS));
+
+        // it is exactly what the coinbase was before the list named the gateway
+        let mut unlisted = iss[1..].to_vec();
+        unlisted.last_mut().unwrap().sats += iss[0].sats;
+        let before = Policy { gateway_script: Some(&gw), ..policy(&unlisted, &pool) };
+        let class_before = vec![pay(&iss[1]), to(&gw, VALUE - iss[1].sats), wc()];
+        assert_eq!(kind_of(&class_before, &before), Ok(CoinbaseKind::GatewaySolo));
+    }
+
+    /// The lowered floor gives the gateway's script its issued amount and nothing else: a sat
+    /// past it (beyond the rounding slack) is not a split, and never credited as one.
+    #[test]
+    fn an_own_floor_listing_does_not_let_the_gateway_take_more_than_it_was_issued() {
+        let pool = pool_script();
+        let gw = gw_script();
+        let iss = own_floor_list(&pool, &gw);
+        let pay = |o: &Output| TxOut { value: o.sats, script: o.script.clone() };
+        let own = Policy { gateway_script: Some(&gw), issued_own: 1, ..policy(&iss, &pool) };
+        let slack = own.tolerance + iss.len() as u64;
+        let with_gateway_at = |sats: u64| -> Vec<TxOut> {
+            let mut outs: Vec<TxOut> = iss.iter().map(pay).collect();
+            outs[0].value = sats;
+            let last = outs.len() - 1;
+            outs[last].value = VALUE - outs[..last].iter().map(|o| o.value).sum::<u64>();
+            outs.push(wc());
+            outs
+        };
+        assert_eq!(kind_of(&with_gateway_at(5_000 + slack), &own), Ok(CoinbaseKind::Split));
+        // taken from the pool's remainder: not the split, and not window work
+        assert_eq!(kind_of(&with_gateway_at(5_000 + slack + 1), &own), Ok(CoinbaseKind::GatewaySolo));
+        assert_eq!(kind_of(&with_gateway_at(2_000_000), &own), Ok(CoinbaseKind::GatewaySolo));
+        // short of its amount it is shorted like any payee, which is no split either
+        assert_ne!(kind_of(&with_gateway_at(4_000), &own), Ok(CoinbaseKind::Split));
+    }
+
+    /// A gateway the list pays as an ordinary window miner is held to its amount as before,
+    /// whatever `issued_own` says of the outputs ahead of it.
+    #[test]
+    fn a_gateway_listed_as_a_window_miner_is_refused_the_remainder_as_before() {
+        let pool = pool_script();
+        let gw = gw_script();
+        let pay = |o: &Output| TxOut { value: o.sats, script: o.script.clone() };
+        let to = |script: &[u8], value: u64| TxOut { value, script: script.to_vec() };
+        // another miner's small balance leads the list; the gateway is the 200 000 000 payee
+        let mut iss = vec![Output { sats: 5_000, script: p2wpkh(0x77) }];
+        iss.extend(split());
+        iss[1].script = gw.clone();
+        let fee = VALUE - iss.iter().map(|o| o.sats).sum::<u64>();
+        iss.push(Output { sats: fee, script: pool.clone() });
+        for issued_own in [0, 1] {
+            let p = Policy { gateway_script: Some(&gw), issued_own, ..policy(&iss, &pool) };
+            let whole: Vec<TxOut> = iss.iter().map(pay).chain([wc()]).collect();
+            assert_eq!(kind_of(&whole, &p), Ok(CoinbaseKind::Split));
+            let class = vec![pay(&iss[0]), to(&gw, VALUE - iss[0].sats), wc()];
+            assert_eq!(kind_of(&class, &p), Err(mining::REJECT_BAD_COINBASE_OUTPUTS));
+        }
+        // listed under the lowered floor and again as a window miner: an ordinary payee
+        let mut twice = own_floor_list(&pool, &gw);
+        twice[2].script = gw.clone();
+        let p = Policy { gateway_script: Some(&gw), issued_own: 1, ..policy(&twice, &pool) };
+        let class = vec![pay(&twice[1]), to(&gw, VALUE - twice[1].sats), wc()];
+        assert_eq!(kind_of(&class, &p), Err(mining::REJECT_BAD_COINBASE_OUTPUTS));
     }
 }
