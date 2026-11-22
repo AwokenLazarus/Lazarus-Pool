@@ -312,6 +312,8 @@
   @media (max-width: 640px) {
     .softfork-row { padding-block: 0.55rem; }
     .softfork-text { display: none; }
+    /* A miner's own warning says what to do; a title alone leaves a phone reader guessing. */
+    #minerwarn .softfork-text { display: block; margin: 0.3rem 0 0.5rem; font-size: 0.86rem; }
     .softfork-actions .btn.ghost { display: none; }
   }
   .promo {

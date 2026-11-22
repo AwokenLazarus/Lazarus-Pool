@@ -76,7 +76,7 @@ window.LZ_I18N_DICTS["en"] = {
   "minerwarn": {
     "kicker": "Action needed",
     "title": "Your gateway is producing bad coinbases",
-    "text": "This address mines through a DATUM gateway that is producing improperly split coinbases (pool-only or partial). From block {height}, while this notice shows, {pct}% of what the pool pays you for those coinbases is kept as a fee for custodying them. <b>Run a current build</b> (CONVOY v0.5.0beta, not v0.4.1-beta); the notice clears once your gateway’s next block splits correctly. Miners whose gateways split correctly are paid in full.",
+    "text": "This address mines through a DATUM gateway that is producing improperly split coinbases (pool-only or partial). From block {height}, while this notice shows, {pct}% of what the pool pays you for those coinbases is kept as a fee for custodying them. <b>Run a current build</b> (CONVOY v0.5.0beta, not v0.4.1-beta); the notice clears once your gateway’s next block splits correctly. <b>Already on a current build?</b> Then a full block left no room for the whole split: set <code>blockmaxweight=736000</code> in your node’s <code>bitcoin.conf</code> and restart the node. Miners whose gateways split correctly are paid in full.",
     "textFee": "A make-good to this address in the last 7 days carried the {pct}% custody fee. From block {height}, that fee falls only on miners whose own gateway is producing pool-only or partial coinbases. <b>Update to a current DATUM gateway</b> and you are paid in full.",
     "setup": "Update your gateway →",
     "discord": "Ask for help on Discord"
@@ -867,14 +867,14 @@ window.LZ_I18N_DICTS["en"] = {
     "stStratum": "online · public stratum",
     "windowRamp": "Your hashrate is {hp} of the pool right now, but you hold {wp} of the {n}-block payout window. New hash ramps in as work accumulates and older work ages out — that gap is expected, not a missing payout.",
     "windowPay": "Next-block pay is the window % ({wp}), not hashrate. The window is {n} network-blocks of accepted work (TIDES). A newly connected high-hashrate miner does not take a matching slice of the next block.",
-    "nextUnder": "under the {floor}minimum output this block · your share is carried forward, not forfeited{path}",
+    "nextUnder": "under the {floor}minimum output this block · your share is carried forward, not forfeited · paid in the block if your own gateway finds it{path}",
     "nextCarry": "your output in the coinbase Prime dictates now · includes carry from earlier blocks as room allows{path}",
     "nextNow": "your output in the coinbase Prime dictates now{path}",
     "pathStratum": " · your window work is on the {fee} public-stratum rate",
     "pathStratumGrace": " · grace at {fee} until {until}, then 100%",
     "pathGw": " · your window work is on the {fee} own-gateway rate",
     "carry": "Carried forward",
-    "carrySub": "earned in earlier blocks, under the minimum output · paid on top of your next output that clears it",
+    "carrySub": "earned in earlier blocks, under the minimum output · paid on top of your next output that clears it, or in a block your own gateway finds",
     "carryMakegood": " · the carry you held before block {height} became a {amt} make-good, see below — it was not lost",
     "makegood": "Make-good",
     "makegoodTitle": "Owed to this address by a partial or pool-only block; paid from the pool's reserved output once that coinbase matures",
@@ -1003,7 +1003,7 @@ window.LZ_I18N_DICTS["en"] = {
     "plusCarry": " · plus carry as room allows",
     "estFee": "after the {fee} fee at current difficulty",
     "noBalance": "The pool keeps no balance for you and there is nothing to withdraw. Every block the pool finds pays this address directly in its coinbase; the output becomes spendable once it has {n} confirmations. The one exception is a partial or pool-only block: when the gateway that finds it leaves miners out of its coinbase, their share lands in the pool's output and the pool pays it on once that output matures.{carry}",
-    "carryNote": " <strong>{amt}</strong> you earned in earlier blocks was under the minimum output and is carried forward: it is added to your next output that clears the floor, paid out of the pool's share.",
+    "carryNote": " <strong>{amt}</strong> you earned in earlier blocks was under the minimum output and is carried forward: it is added to your next output that clears the floor, paid out of the pool's share. If your own gateway finds a block, it is paid in that block from 1,000 sats up.",
     "pendingLabel": {
       "one": "Maturing · {n} block",
       "other": "Maturing · {n} blocks"

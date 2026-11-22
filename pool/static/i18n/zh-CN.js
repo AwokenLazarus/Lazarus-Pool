@@ -76,7 +76,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
   "minerwarn": {
     "kicker": "需要处理",
     "title": "你的网关正在产生不正确的 coinbase",
-    "text": "此地址正通过一个产生不正确 coinbase 分账（仅矿池或部分分账）的 DATUM 网关挖矿。自区块 {height} 起，在此提示显示期间，矿池为这类 coinbase 付给你的金额中，有 {pct}% 将作为代管费用被保留。<b>请使用当前版本</b>（CONVOY v0.5.0beta，而不是 v0.4.1-beta）；你的网关下一个区块分账正确后，此提示会自动消失。网关分账正确的矿工照常全额到账。",
+    "text": "此地址正通过一个产生不正确 coinbase 分账（仅矿池或部分分账）的 DATUM 网关挖矿。自区块 {height} 起，在此提示显示期间，矿池为这类 coinbase 付给你的金额中，有 {pct}% 将作为代管费用被保留。<b>请使用当前版本</b>（CONVOY v0.5.0beta，而不是 v0.4.1-beta）；你的网关下一个区块分账正确后，此提示会自动消失。<b>已经是当前版本？</b>那就是满块时没有给完整分账留出空间：在节点的 <code>bitcoin.conf</code> 里设置 <code>blockmaxweight=736000</code>，然后重启节点。网关分账正确的矿工照常全额到账。",
     "textFee": "最近 7 天内付给此地址的一笔补付被收取了 {pct}% 的托管费。自区块 {height} 起，此费只由自身网关产生仅矿池或部分分账 coinbase 的矿工承担。<b>更新到当前版本的 DATUM 网关</b>，即可全额到账。",
     "setup": "更新你的网关 →",
     "discord": "到 Discord 寻求帮助"
@@ -867,14 +867,14 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "stStratum": "在线 · 公共 stratum",
     "windowRamp": "你此刻占矿池算力 {hp}，但只持有 {n} 块支付窗口的 {wp}。新算力随工作累积、旧工作滚出而爬升——这个缺口是预期的，不是漏付。",
     "windowPay": "下一块支付看的是窗口 %（{wp}），不是算力。窗口是 {n} 个全网区块的已接受工作（TIDES）。刚连上的高算力矿机不会立刻拿走下一块里相应的一块。",
-    "nextUnder": "本块低于 {floor}最低输出 · 你的份额会结转，不会没收{path}",
+    "nextUnder": "本块低于 {floor}最低输出 · 你的份额会结转，不会没收 · 如果是你自己的网关出块，则在该块内支付{path}",
     "nextCarry": "Prime 此刻规定的 coinbase 输出 · 在有空间时包含更早区块的结转{path}",
     "nextNow": "Prime 此刻规定的 coinbase 输出{path}",
     "pathStratum": " · 你的窗口工作按 {fee} 公共 stratum 费率",
     "pathStratumGrace": " · 宽限期费率 {fee}，至 {until}，之后为 100%",
     "pathGw": " · 你的窗口工作按 {fee} 自建网关费率",
     "carry": "结转",
-    "carrySub": "更早区块挣得、未达最低输出 · 加在下一笔跨过门槛的输出上支付",
+    "carrySub": "更早区块挣得、未达最低输出 · 加在下一笔跨过门槛的输出上支付，或在你自己网关挖到的区块里支付",
     "carryMakegood": " · 你在区块 {height} 之前持有的结转已变为 {amt} 的补付，见下方 — 并未丢失",
     "makegood": "补付",
     "makegoodTitle": "部分分账或仅矿池区块欠此地址的款项；该 coinbase 成熟后由矿池预留输出支付",
@@ -1000,7 +1000,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "plusCarry": " · 有空间时外加结转",
     "estFee": "扣除 {fee} 手续费，按当前难度",
     "noBalance": "矿池不为你保管余额，也没有需要提取的东西。矿池找到的每个区块都在其 coinbase 里直接付给此地址；输出满 {n} 个确认后可花费。唯一的例外是部分分账或仅矿池区块：找到该区块的网关未把部分矿工写进 coinbase 时，他们的份额会进入矿池的输出，待该输出成熟后由矿池补付。{carry}",
-    "carryNote": " 你在更早区块挣得的 <strong>{amt}</strong> 未达最低输出，已结转：会加在下一笔跨过门槛的输出上，从矿池份额中支付。",
+    "carryNote": " 你在更早区块挣得的 <strong>{amt}</strong> 未达最低输出，已结转：会加在下一笔跨过门槛的输出上，从矿池份额中支付。如果你自己的网关挖到区块，满 1,000 sats 就在该块内支付。",
     "pendingLabel": {
       "one": "成熟中 · {n} 块",
       "other": "成熟中 · {n} 块"
