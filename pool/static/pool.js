@@ -1599,7 +1599,7 @@
   let lastPays = { payouts: [], prime_blocks: [] };
   // Optional tip, separate from the path fee: a percentage for an address that tips, a dash
   // for one that does not.
-  const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(1).replace(/\.0$/, "")}%</span>` : "\u2014");
+  const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(2).replace(/\.?0+$/, "")}%</span>` : "\u2014");
   let lastBlocks = { blocks: [] };
   async function refresh() {
     // A tab nobody is looking at has no one to refresh for; it catches up when it is shown.

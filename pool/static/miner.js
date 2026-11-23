@@ -124,7 +124,7 @@
       tipChip.hidden = !own;
       if (own) {
         const on = Number(d.tip_btc_block) > 0;
-        chip("mc-tip", on ? Number(d.tip_percent || 0).toFixed(1).replace(/\.0$/, "") + "%" : "0%");
+        chip("mc-tip", on ? Number(d.tip_percent || 0).toFixed(2).replace(/\.?0+$/, "") + "%" : "0%");
         tipChip.classList.toggle("tip-on", on);
       }
     }
