@@ -531,6 +531,8 @@ pub struct Shared {
     /// Gateway keys whose jobs keep the script they were made under; see
     /// [`Shared::remember_pinned_script`].
     pub pinned_scripts: Mutex<HashSet<String>>,
+    /// How good the hashes of credited shares are, by gateway build; see [`Quality`].
+    pub quality: Mutex<Quality>,
     /// Parents gateways build on that are not our tip, as our node judges them.
     pub parents: crate::validity::ParentBook,
     /// Gateways whose templates our node found invalid; their shares earn nothing until one passes.
@@ -547,6 +549,44 @@ pub struct Shared {
 pub struct GatewayPayout {
     pub identity: String,
     pub script_hex: String,
+}
+
+/// Luck study (2026-11-23): over 47 days the pool found 6.5% fewer blocks than its credited work
+/// predicts, and nothing in how a share is credited accounts for it. A hash is uniform, so among
+/// credited shares half should have one more leading zero bit than any given level, a quarter two
+/// more, and so on up to a block. This counts credited shares by how many zero bits their hash has
+/// past the base 32 ([`datum_wire::pow::hash_pot`]), per gateway build. A build, firmware or proxy
+/// that loses its best hashes shows as a tail that falls off faster than by halves.
+#[derive(Default)]
+pub struct Quality {
+    by_build: HashMap<String, Box<[u64; Quality::LEVELS]>>,
+}
+
+impl Quality {
+    /// `hash_pot` 0 to 47, and one last bucket for anything past that (a block is about 33).
+    pub const LEVELS: usize = 49;
+    /// Shares at this `hash_pot` or better are also logged one by one, with their worker: about
+    /// one share in 4 000 at the pool's usual share difficulty, a few thousand lines a day.
+    pub const LOG_FROM: u32 = 26;
+    /// Builds counted apart; a user agent is the gateway's to choose, so the rest share a row.
+    const MAX_BUILDS: usize = 128;
+
+    pub fn note(&mut self, build: &str, hash_pot: u32) {
+        let key: String = build.chars().take(72).collect();
+        let key = if self.by_build.contains_key(&key) || self.by_build.len() < Self::MAX_BUILDS {
+            key
+        } else {
+            "(other)".into()
+        };
+        let row = self.by_build.entry(key).or_insert_with(|| Box::new([0; Self::LEVELS]));
+        row[(hash_pot as usize).min(Self::LEVELS - 1)] += 1;
+    }
+
+    pub fn snapshot(&self) -> Vec<(String, Vec<u64>)> {
+        let mut v: Vec<(String, Vec<u64>)> = self.by_build.iter().map(|(k, r)| (k.clone(), r.to_vec())).collect();
+        v.sort_by_key(|(_, r)| std::cmp::Reverse(r.iter().sum::<u64>()));
+        v
+    }
 }
 
 /// Gateway keys whose payout script is remembered across restarts; see `Shared::remember_gateway`.
@@ -888,6 +928,7 @@ mod tests {
             coinbaser_base: Mutex::new(None),
             gateway_payouts: Mutex::new(Default::default()),
             pinned_scripts: Mutex::new(Default::default()),
+            quality: Mutex::new(Default::default()),
             parents: Default::default(),
             revealed: Default::default(),
             faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
@@ -1263,6 +1304,25 @@ mod quarantine_backoff_tests {
     /// on its own: first_secs doubled per strike, capped.
     fn span(first_secs: u64, cap_secs: u64, strikes: u32) -> u64 {
         first_secs.saturating_mul(1u64 << (strikes - 1).min(20)).min(cap_secs.max(first_secs))
+    }
+
+    #[test]
+    fn quality_counts_by_build_and_level_and_bounds_both() {
+        let mut q = super::Quality::default();
+        q.note("v1/abc", 0);
+        q.note("v1/abc", 0);
+        q.note("v1/abc", 33);
+        q.note("v1/abc", 200);
+        for i in 0..300 {
+            q.note(&format!("made-up/{i}"), 1);
+        }
+        let snap = q.snapshot();
+        assert!(snap.len() <= super::Quality::MAX_BUILDS + 1, "{}", snap.len());
+        let (_, row) = snap.iter().find(|(b, _)| b == "v1/abc").unwrap();
+        assert_eq!((row[0], row[33], row[super::Quality::LEVELS - 1], row.len()), (2, 1, 1, super::Quality::LEVELS));
+        let (_, other) = snap.iter().find(|(b, _)| b == "(other)").unwrap();
+        assert_eq!(other[1], 300 - (super::Quality::MAX_BUILDS as u64 - 1));
+        assert_eq!(snap.iter().map(|(_, r)| r.iter().sum::<u64>()).sum::<u64>(), 304, "every share is counted once");
     }
 
     #[test]

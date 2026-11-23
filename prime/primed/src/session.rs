@@ -2072,6 +2072,24 @@ impl Session {
         if !credited {
             return self.reject(&s, mining::REJECT_BAD_USERNAME).await;
         }
+        // The luck study's count (`state::Quality`): window work whose difficulty the hash
+        // commits to, and not blinded, so the hash is the one a block would be judged by.
+        if !solo && v.work > 0 && v.target_committed && !v.keyed {
+            let q = datum_wire::pow::hash_pot(&v.hash);
+            self.shared.quality.lock().unwrap_or_else(|e| e.into_inner()).note(&self.hello.user_agent, q);
+            if q >= crate::state::Quality::LOG_FROM {
+                log::info!(
+                    "[{}] quality hash_pot={q} share_pot={} height={} block={} gateway={} ua={:?} user={:?}",
+                    self.id,
+                    v.target_pot,
+                    v.height,
+                    v.is_block_candidate,
+                    self.gateway_hex,
+                    self.hello.user_agent,
+                    s.username
+                );
+            }
+        }
         self.shared.totals.add(&self.shared.totals.accepted, 1);
         if v.keyed {
             // What an audit of blocks against work per gateway reads: Prime cannot tell a win

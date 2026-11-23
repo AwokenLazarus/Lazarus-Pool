@@ -369,6 +369,10 @@ pub fn build(shared: &Shared) -> Value {
     doc["totals"]["own_floor_replies"] = json!(t.own_floor_replies.load(Ordering::Relaxed));
     doc["totals"]["own_floor_blocks"] = json!(t.own_floor_blocks.load(Ordering::Relaxed));
     doc["pool"]["own_min_payout"] = json!(shared.cfg.own_min_payout);
+    // Credited shares by the zero bits of their hash past 32, per gateway build (`state::Quality`).
+    let quality = shared.quality.lock().unwrap_or_else(|e| e.into_inner()).snapshot();
+    doc["quality"] =
+        json!(quality.into_iter().map(|(build, bits)| json!({"build": build, "bits": bits})).collect::<Vec<_>>());
     // Apart from the document above, which is as deep as `json!` goes.
     doc["pool"]["gateway_key"] = json!(shared.cfg.gateway_key);
     doc["pool"]["revealed_keys"] = json!(shared.revealed.len());

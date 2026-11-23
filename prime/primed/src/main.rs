@@ -336,6 +336,7 @@ fn run(cfg: Config) -> i32 {
         coinbaser_base: Mutex::new(None),
         gateway_payouts: Mutex::new(Shared::load_gateway_payouts(&cfg.data_dir)),
         pinned_scripts: Mutex::new(Default::default()),
+        quality: Mutex::new(Default::default()),
         parents: Default::default(),
         revealed: Default::default(),
         faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
