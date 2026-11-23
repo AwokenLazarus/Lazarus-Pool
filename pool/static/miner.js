@@ -116,6 +116,18 @@
         ? t("miner.makegoodExact", { amt: amtExact(mgBtc), n: mgPend, height: num(d.makegood_next_payable_at || 0) })
         : t("miner.makegoodTitle");
     }
+    // Optional tip: shown for an address on its own gateway, 0% when it does not tip. The
+    // public stratum pays the stratum fee and has no tip.
+    const tipChip = $("mc-tip");
+    if (tipChip) {
+      const own = (d.via === "prime" || d.via === "gateway") && String(d.fee_path || "").toLowerCase() !== "stratum";
+      tipChip.hidden = !own;
+      if (own) {
+        const on = Number(d.tip_btc_block) > 0;
+        chip("mc-tip", on ? Number(d.tip_percent || 0).toFixed(1).replace(/\.0$/, "") + "%" : "0%");
+        tipChip.classList.toggle("tip-on", on);
+      }
+    }
     $("nav-live").hidden = false;
     custodyWarning(d);
   }
