@@ -1086,6 +1086,7 @@
     line-height: 1.5;
   }
   .tipband b { color: var(--ink); }
+  .tip-on, .chip.tip-on b { color: #3fb26b; }
   .payout-blurb { margin-bottom: 0.35rem; }
 
   /* ---- Buttons and inputs. */

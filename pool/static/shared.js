@@ -667,6 +667,7 @@
     ["window", "miner.dtWindow", "figure"],
     ["payoutWin", "miner.dtPayoutWin", "figure"],
     ["est", "miner.dtEst", "figure"],
+    ["tipRate", "miner.dtTip", "figure"],
     ["earned", "miner.earned24", "figure"],
     ["next", "miner.dtNext", "figure"],
     ["carry", "miner.carry", "figure"],
@@ -904,6 +905,14 @@
     // Optional tips: shown to an address mining through its own gateway (the public stratum
     // pays the stratum fee and does not tip). Says the fee is 0% and how to tip, or, for an
     // address that tips, what it gives. Hidden like any panel from "customize".
+    // The tip as a figure of its own, beside the fee and not part of it.
+    const tipRateCell = (() => {
+      if (!isPrimePath(m.via) || String(m.fee_path || "").toLowerCase() === "stratum") return "";
+      const on = Number(m.tip_btc_block) > 0;
+      const rate = on ? Number(m.tip_percent || 0).toFixed(1).replace(/\.0$/, "") + "%" : "0%";
+      const sub = on ? t("miner.tipSubOn", { amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) }) : t("miner.tipSubOff");
+      return panelBox("tipRate", `<dt>${t("miner.dtTip")}</dt><dd title="${esc(t("miner.tipTitle"))}"${on ? ' class="tip-on"' : ""}>${rate}<small>${sub}</small></dd>`);
+    })();
     const tipCard = (() => {
       if (!isPrimePath(m.via) || String(m.fee_path || "").toLowerCase() === "stratum") return "";
       const tipping = Number(m.tip_btc_block) > 0;
@@ -953,6 +962,7 @@
           ${panelBox("window", `<dt>${t("miner.dtWindow")}</dt><dd>${winShareCell(m)}<small>${Number(m.window_shares) > 0 ? t("miner.winWork", { n: num(m.window_work) }) : t("miner.winNone")}</small></dd>`)}
           ${panelBox("payoutWin", `<dt>${t("miner.dtPayoutWin")}</dt><dd>${pctSmart(wp)}<small>${t("miner.winPay", { n: num(m.window_work) })}</small></dd>`)}
           ${panelBox("est", `<dt>${t("miner.dtEst")}</dt><dd title="${amtExact(estDay)}">${amt(estDay)}${money(estDay)}<small>${estDayNote}</small></dd>`)}
+          ${tipRateCell}
           ${earnedCell()}
           ${panelBox("next", `<dt>${t("miner.dtNext")}</dt><dd title="${amtExact(m.block_payout_btc)}">${amt(m.block_payout_btc)}${money(m.block_payout_btc)}<small>${nextBlockNote(m)}</small></dd>`)}
           ${carryCell(m)}

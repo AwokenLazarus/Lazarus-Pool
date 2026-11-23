@@ -1597,6 +1597,9 @@
   let refreshBusy = false;
   let lastHeavy = 0;
   let lastPays = { payouts: [], prime_blocks: [] };
+  // Optional tip, separate from the path fee: a percentage for an address that tips, a dash
+  // for one that does not.
+  const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(1).replace(/\.0$/, "")}%</span>` : "\u2014");
   let lastBlocks = { blocks: [] };
   async function refresh() {
     // A tab nobody is looking at has no one to refresh for; it catches up when it is shown.
@@ -1625,11 +1628,12 @@
       const firstOf = (m, i) => online.findIndex((x) => x.address === m.address) === i;
       table(
         $("online"),
-        [t("miners.thAddress"), t("miners.thWorker"), t("miners.thPath"), t("miners.thHr"), t("miners.thSession"), t("miners.thAccepted"), t("miners.thWinShares"), t("miners.thWinPct"), t("miners.thNext"), t("miners.thLast")],
+        [t("miners.thAddress"), t("miners.thWorker"), t("miners.thPath"), t("miners.thTip"), t("miners.thHr"), t("miners.thSession"), t("miners.thAccepted"), t("miners.thWinShares"), t("miners.thWinPct"), t("miners.thNext"), t("miners.thLast")],
         online.map((m, i) => [
           `<a href="#${esc(m.address)}">${short(m.address)}</a>`,
           m.worker === "window" ? `<span class="faint">${t("miners.viaGw")}</span>` : (Number(m.sessions) > 1 ? t("miners.nWorkers", { n: num(m.sessions) }) : esc(m.worker || "\u2014")),
           pathPill(m.fee_path, m.via, m.gateway_name),
+          tipCell(m),
           fmtHr(firstOf(m, i) ? (m.credited_hr_ghs || m.hr_ghs) : m.hr_ghs),
           sessCell(m.via, m.shares_session),
           num(m.shares_lifetime ?? m.shares_acc ?? m.window_work),
@@ -1638,7 +1642,7 @@
           firstOf(m, i) && m.window_sats ? amtSats(m.window_sats) : "\u2014",
           Number.isFinite(Number(m.last_share_s)) ? Number(m.last_share_s).toFixed(0) + t("miner.s") : "\u2014",
         ]),
-        [null, null, null, "num", "num", "num", "num", "num", "num", "num"],
+        [null, null, null, "num", "num", "num", "num", "num", "num", "num", "num"],
         t("miners.emptyOnline")
       );
       const onlineAddrs = new Set(online.map((m) => m.address));
@@ -1650,17 +1654,18 @@
       const seen = seenAll.slice(0, SEEN_ROWS);
       table(
         $("seen"),
-        [t("miners.thAddress"), t("miners.thPath"), t("miners.thAccepted"), t("miners.thWinShares"), t("miners.thWinPct"), t("miners.thNext"), t("miners.thLastSeen")],
+        [t("miners.thAddress"), t("miners.thPath"), t("miners.thTip"), t("miners.thAccepted"), t("miners.thWinShares"), t("miners.thWinPct"), t("miners.thNext"), t("miners.thLastSeen")],
         seen.map((m) => [
           `<a href="#${esc(m.address)}">${short(m.address)}</a>`,
           m.window_work ? pathPill(m.fee_path, null, m.gateway_name) : "\u2014",
+          tipCell(m),
           num(m.shares_lifetime ?? m.shares_acc ?? m.window_work),
           winShareCell(m),
           m.window_work ? pct(m.window_percent) : "\u2014",
           m.window_sats ? amtSats(m.window_sats) : "\u2014",
           ago(m.last_ts),
         ]),
-        [null, null, "num", "num", "num", "num", "num"],
+        [null, null, "num", "num", "num", "num", "num", "num"],
         t("miners.emptySeen")
       );
       relayedTable(miners.relayed, miners.overflow);

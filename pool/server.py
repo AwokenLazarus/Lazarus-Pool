@@ -1650,6 +1650,8 @@ def datum_side_record(addr, gw, info, path_hr, last_s=None):
         "gateway": gw.get("gateway") or "",
         "window_work": ww,
         "window_percent": float(info.get("window_percent") or 0),
+        # Optional tip, as a percentage of what the address earns; 0 if it does not tip.
+        "tip_percent": _tip_percent(info),
         "window_sats": int(info.get("window_sats") or 0),
         "window_shares": int(info.get("window_shares") or info.get("credits") or 0),
     }
@@ -1758,6 +1760,8 @@ def prime_worker_records(addr, info, book, fallback_gw=None):
             "gateway": w["gateway"] or fallback_gw.get("gateway") or "",
             "window_work": ww,
             "window_percent": float(info.get("window_percent") or 0),
+            # Optional tip, as a percentage of what the address earns; 0 if it does not tip.
+            "tip_percent": _tip_percent(info),
             "window_sats": int(info.get("window_sats") or 0),
             "window_shares": int(info.get("window_shares") or info.get("credits") or 0),
         }
@@ -1879,6 +1883,8 @@ def merge_prime_online(miners):
             "via": "prime",
             "window_work": ww,
             "window_percent": float(info.get("window_percent") or 0),
+            # Optional tip, as a percentage of what the address earns; 0 if it does not tip.
+            "tip_percent": _tip_percent(info),
             "window_sats": int(info.get("window_sats") or 0),
             "window_shares": int(info.get("window_shares") or info.get("credits") or 0),
             "worker_names_missing": prime_worker_names_missing(addr, workers.get(addr)),
