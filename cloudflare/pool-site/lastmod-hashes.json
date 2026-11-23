@@ -1,7 +1,7 @@
 {
  "/": {
-  "lastmod": "2026-11-12",
-  "sha256": "a537aaf86673798de1bb86ac7a2191b58357e64f0817e6ad90fed781352fce17"
+  "lastmod": "2026-11-23",
+  "sha256": "41815cb2f6ac61378d6780f2a33c8d55a049ff5668df3ebcdda7d6e9d235835d"
  },
  "/api": {
   "lastmod": "2026-10-30",
@@ -20,8 +20,8 @@
   "sha256": "38999952c39694e33e83ece8b8fadebf95be6f40658c1f3e7cd60d7e439a4b0c"
  },
  "/connect": {
-  "lastmod": "2026-11-12",
-  "sha256": "2a9ab1a37615cac8ae59b8053e9838aa08900d72ee34caf41458271f28f8984a"
+  "lastmod": "2026-11-23",
+  "sha256": "7748447f977df74c129f3345bf735dd26bf5126297196605abe2d20a2c67d52b"
  },
  "/flytheelephant": {
   "lastmod": "2026-11-12",
@@ -32,15 +32,15 @@
   "sha256": "050ebc57011abe4601f6d4b0f60badef5783d441388182fb4e404a77f65afca7"
  },
  "/how": {
-  "lastmod": "2026-11-03",
+  "lastmod": "2026-11-23",
   "sha256": "921d66a1e9d962ea0ea4d5b1e4d445a3da93c732dab4517ca6631594c035f9a1"
  },
  "/non-custodial": {
-  "lastmod": "2026-11-03",
-  "sha256": "315a656fb04cd8a149e930a818652c8ad184e349e4ff81d40d7b4597ae069d98"
+  "lastmod": "2026-11-23",
+  "sha256": "dd1ad003aa15a4956028ab99d609168a691a56f348f3ccc18835ffd7b2a16f55"
  },
  "/pools": {
-  "lastmod": "2026-11-03",
+  "lastmod": "2026-11-23",
   "sha256": "7cc0a6c1b8fb8a2bc24635384125716406da2ac0908c8a82a66cf6987ade4389"
  },
  "/ratum": {
@@ -56,8 +56,8 @@
   "sha256": "ed851132e877a848831ba5acac4519879220a09cda798723b7f61f777783d99c"
  },
  "/zh/": {
-  "lastmod": "2026-11-12",
-  "sha256": "32b2291b085f19251632152b6f93fdbd8951848a954df50588bc6454075e53d2"
+  "lastmod": "2026-11-23",
+  "sha256": "6fefdba98eb2cf2b5bc3d0737bad154f810faa94c7cdcb483f6566d406bc54b0"
  },
  "/zh/api": {
   "lastmod": "2026-10-30",
@@ -76,8 +76,8 @@
   "sha256": "b1eb8bc0f3a50340878b54b80d82c168d347481cf6460a05ce03356651bfcd2e"
  },
  "/zh/connect": {
-  "lastmod": "2026-11-12",
-  "sha256": "9bddd8b596e0c3c651bb3b747272d5e76a8322ca30e7ed349404435383b9f2db"
+  "lastmod": "2026-11-23",
+  "sha256": "8e74bb5cb659ac586f1e85090ffbedbc013f55c2f9c38fab099f2c302083928c"
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-11-12",
@@ -88,16 +88,16 @@
   "sha256": "c3349f665c043ba2b1057575a203024b561e3d49b494c5fa1648428ec52b6f10"
  },
  "/zh/how": {
-  "lastmod": "2026-11-03",
-  "sha256": "c08150de334ffeb0026d2bbbaafa5db74dfec3331222c7d0a5a0e406e46a22e1"
+  "lastmod": "2026-11-23",
+  "sha256": "bc27e9ff7755d942a04e6a46804ae9f0653f26dd0628cf170dccf2c6ef795ede"
  },
  "/zh/non-custodial": {
-  "lastmod": "2026-11-03",
-  "sha256": "65b8dbfa6047a171774c08af1425ae159888a990e6faae4467cf211a12191825"
+  "lastmod": "2026-11-23",
+  "sha256": "3c52c9ee8886313fe24e03bd4817f5f560881af2c86777ffdbd5371218fe10f6"
  },
  "/zh/pools": {
-  "lastmod": "2026-11-03",
-  "sha256": "9f6bd648e988c1ef1a10fc31c321460c06e4a3b4d7241b9bf1292bc5c5d3febc"
+  "lastmod": "2026-11-23",
+  "sha256": "7801adda30e0e5ef61db2269b1ec83ce59d8e80e8f0fc7a972bd1bbe1487d9ca"
  },
  "/zh/ratum": {
   "lastmod": "2026-11-04",
