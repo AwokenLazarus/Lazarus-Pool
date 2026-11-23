@@ -440,7 +440,8 @@ def pool_share_totals():
 
 def _tip_percent(pinfo):
     """The tip an address gives the pool, as a percentage of what its window share earns: the
-    tip in Prime's sample split over that share of the sample reward. One decimal; 0 if none."""
+    tip in Prime's sample split over that share of the sample reward, so an address with one
+    machine of four tipping 1% shows 0.25. Two decimals; 0 if none."""
     try:
         tip = int((pinfo or {}).get("tip_sats") or 0)
         share = float((pinfo or {}).get("window_percent") or 0) / 100.0
@@ -449,7 +450,7 @@ def _tip_percent(pinfo):
         return 0.0
     if tip <= 0 or share <= 0:
         return 0.0
-    return round(min(100.0, 100.0 * tip / (share * value)), 1)
+    return round(min(100.0, 100.0 * tip / (share * value)), 2)
 
 
 def fetch_prime_window():

@@ -789,17 +789,28 @@
         : w.worker_unnamed
           ? `<span class="faint">${t("miner.workerUnnamed")}</span>`
           : esc(w.worker || "\u2014");
+    // A worker's own tip, read from its name the way Prime reads it: the number after a final
+    // ".tip", as a percentage, 5 at most, and none under a tenth of a percent.
+    const workerTip = (w) => {
+      if (w.via === "stratum" || Number(w.worker_overflow) > 0 || w.worker_unnamed) return "\u2014";
+      const name = "." + String(w.worker || "").toLowerCase();
+      const at = name.lastIndexOf(".tip");
+      const digits = at < 0 ? "" : name.slice(at + 4);
+      if (!digits || digits.length > 6 || !/^[\d.]+$/.test(digits) || !Number.isFinite(Number(digits))) return "\u2014";
+      const permille = Math.min(50, Math.round(Number(digits) * 10));
+      return permille >= 1 ? `<span class="tip-on">${(permille / 10).toFixed(1).replace(/\.0$/, "")}%</span>` : "\u2014";
+    };
     const namesNote = m.worker_names_missing ? `<p class="note callout">${t("miner.workerNamesMissing")}</p>` : "";
     const relayed = m.relayed || [];
     const workers = (m.workers || [])
       .map(
         (w) =>
-          `<tr><td>${workerCell(w)}</td><td>${pathLabel(w.via, w.gateway_name || m.gateway_name)}</td><td class="num">${fmtHr(workerHr(w))}</td><td class="num">${sessCell(w.via, w.shares_session)}</td><td class="num">${num(w.shares_lifetime ?? w.shares_acc ?? w.window_work)}</td><td class="num">${num(w.shares_rej)}</td><td class="num">${Number.isFinite(Number(w.last_share_s)) ? Number(w.last_share_s).toFixed(0) + t("miner.s") : "\u2014"}</td></tr>`
+          `<tr><td>${workerCell(w)}</td><td>${pathLabel(w.via, w.gateway_name || m.gateway_name)}</td><td class="num">${workerTip(w)}</td><td class="num">${fmtHr(workerHr(w))}</td><td class="num">${sessCell(w.via, w.shares_session)}</td><td class="num">${num(w.shares_lifetime ?? w.shares_acc ?? w.window_work)}</td><td class="num">${num(w.shares_rej)}</td><td class="num">${Number.isFinite(Number(w.last_share_s)) ? Number(w.last_share_s).toFixed(0) + t("miner.s") : "\u2014"}</td></tr>`
       )
       .concat(
         relayed.map(
           (r) =>
-            `<tr><td>${esc(r.worker || "\u2014")}</td><td>${t("miner.relayedTo", { pool: poolLink(r.upstream, r.miner_url || r.upstream_url) })}</td><td class="num">\u2014</td><td class="num">\u2014</td><td class="num">${num(r.accepted)} <span class="faint">${t("miner.there")}</span></td><td class="num">\u2014</td><td class="num">${dur(Number(r.connected_s) || 0)}</td></tr>`
+            `<tr><td>${esc(r.worker || "\u2014")}</td><td>${t("miner.relayedTo", { pool: poolLink(r.upstream, r.miner_url || r.upstream_url) })}</td><td class="num">\u2014</td><td class="num">\u2014</td><td class="num">\u2014</td><td class="num">${num(r.accepted)} <span class="faint">${t("miner.there")}</span></td><td class="num">\u2014</td><td class="num">${dur(Number(r.connected_s) || 0)}</td></tr>`
         )
       )
       .join("");
@@ -909,7 +920,7 @@
     const tipRateCell = (() => {
       if (!isPrimePath(m.via) || String(m.fee_path || "").toLowerCase() === "stratum") return "";
       const on = Number(m.tip_btc_block) > 0;
-      const rate = on ? Number(m.tip_percent || 0).toFixed(1).replace(/\.0$/, "") + "%" : "0%";
+      const rate = on ? Number(m.tip_percent || 0).toFixed(2).replace(/\.?0+$/, "") + "%" : "0%";
       const sub = on ? t("miner.tipSubOn", { amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) }) : t("miner.tipSubOff");
       return panelBox("tipRate", `<dt>${t("miner.dtTip")}</dt><dd title="${esc(t("miner.tipTitle"))}"${on ? ' class="tip-on"' : ""}>${rate}<small>${sub}</small></dd>`);
     })();
@@ -918,7 +929,7 @@
       const tipping = Number(m.tip_btc_block) > 0;
       const first = (m.workers || []).map((w) => String(w.worker || w.name || "")).find((n) => n && !/\.tip[\d.]*$/i.test(n) && /^[\w-]{1,24}$/.test(n));
       const body = tipping
-        ? t("tip.mBodyOn", { pct: Number(m.tip_percent || 0).toFixed(1).replace(/\.0$/, ""), amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) })
+        ? t("tip.mBodyOn", { pct: Number(m.tip_percent || 0).toFixed(2).replace(/\.?0+$/, ""), amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) })
         : t("tip.mBodyOff", { ex: esc((first || "rig1") + ".tip1") });
       const more = `<a href="${document.documentElement.lang.startsWith("zh") ? "/zh/" : "/"}#tip">${t("tip.more")}</a>`;
       return panelBox("tip", `<aside class="tipbox ${tipping ? "on" : ""}"><p class="tipbox-kicker">${t("tip.kicker")}</p><h3 class="tipbox-title">${t(tipping ? "tip.mTitleOn" : "tip.mTitleOff")}</h3><p class="tipbox-body">${body} ${more}</p></aside>`);
@@ -980,7 +991,7 @@
         ${relayNote}
         ${namesNote}
         <p class="note">${t("miner.workersNote")}</p>
-        <div data-scrollbox="workers" class="scroll tall"><table><thead><tr><th>${t("miner.thWorker")}</th><th>${t("miner.thPath")}</th><th class="num">${t("miner.thHr")}</th><th class="num">${t("miner.thSess")}</th><th class="num">${t("miner.thAcc")}</th><th class="num">${t("miner.thRej")}</th><th class="num">${t("miner.thLast")}</th></tr></thead><tbody>${workers || `<tr><td colspan="7" class="empty">${t("miner.offlineRow")}</td></tr>`}</tbody></table></div>
+        <div data-scrollbox="workers" class="scroll tall"><table><thead><tr><th>${t("miner.thWorker")}</th><th>${t("miner.thPath")}</th><th class="num">${t("miner.thTip")}</th><th class="num">${t("miner.thHr")}</th><th class="num">${t("miner.thSess")}</th><th class="num">${t("miner.thAcc")}</th><th class="num">${t("miner.thRej")}</th><th class="num">${t("miner.thLast")}</th></tr></thead><tbody>${workers || `<tr><td colspan="8" class="empty">${t("miner.offlineRow")}</td></tr>`}</tbody></table></div>
         </div>
       </div>`;
 
