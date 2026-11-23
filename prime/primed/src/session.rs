@@ -454,6 +454,8 @@ struct IssuedCoinbaser {
     /// How many of `payees`, the first ones, are under the pool's floor and placed because the
     /// gateway mines for them (`own-min-payout`).
     own_placed: usize,
+    /// `Split::tips`: what each tipping identity gives the pool out of its own share.
+    tips: Vec<(String, u64)>,
 }
 
 /// The parts of a coinbaser a found block settles against: one we still hold, or a fresh split
@@ -1674,6 +1676,7 @@ impl Session {
             rebate_deferred: split.rebate_deferred,
             class_budget: budget,
             own_placed: split.own_placed,
+            tips: split.tips,
         });
         while self.coinbasers.len() > COINBASERS_KEPT {
             self.coinbasers.pop_front();
@@ -2062,7 +2065,13 @@ impl Session {
                     } else {
                         ledger.source_for(&identity, ts as u32, self.is_house_stratum(), &self.shared.cfg.grace())
                     };
-                    if let Err(e) = ledger.credit(&identity, v.work, v.height, ts as u32, source) {
+                    // A tip is the share's own to give (`address::tip_permille_of`), and on
+                    // DATUM work only: stratum work pays the stratum fee already.
+                    let tip = if source == tides::SOURCE_DATUM { address::tip_permille_of(&s.username) } else { 0 };
+                    if tip > 0 {
+                        self.shared.totals.add(&self.shared.totals.tipped_shares, 1);
+                    }
+                    if let Err(e) = ledger.credit_tipped(&identity, v.work, v.height, ts as u32, source, tip) {
                         log::error!("ledger write failed: {e}");
                     }
                 }
@@ -2596,6 +2605,13 @@ impl Session {
         } else {
             None
         };
+        // What the tipping identities gave in this coinbaser, for the record. Their figures in
+        // the split are already net of it.
+        let block_tips: Vec<(String, u64)> = match (issued, live.as_ref()) {
+            (Some(c), _) => c.tips.clone(),
+            (None, Some(sp)) => sp.tips.clone(),
+            (None, None) => Vec::new(),
+        };
         let cb = match (issued, live.as_ref()) {
             (Some(c), _) => Some(Coinbaser {
                 value: c.value,
@@ -2719,6 +2735,7 @@ impl Session {
             books: Some(books),
             carry_shortfall_sats,
             carry_reserved_sats: carry_reserved,
+            tips: block_tips,
         };
         self.shared.record_block(record);
 
@@ -3283,6 +3300,7 @@ mod tests {
             rebate_deferred: 0,
             class_budget: None,
             own_placed: 0,
+            tips: vec![],
         }
     }
 
@@ -3688,6 +3706,7 @@ mod tests {
                 credits: 1,
                 last_ts: 0,
                 carry,
+                tip_weight: 0,
             });
         }
         (miners, scripts)

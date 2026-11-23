@@ -325,6 +325,20 @@ is covered before its first share). Whoever finds a block on that gateway is the
   gateway, whose usernames are the public stratum's. `stats.json` counts the replies and blocks
   (`totals.own_floor_replies`, `totals.own_floor_blocks`).
 
+**Tips.** DATUM work pays no fee, and a miner who wants to give something can: a username
+that ends in `.tip` and a percentage (`bc1q….rig1.tip1`, `bc1q….tip0.5`) tips that share of
+what the work credited under it earns, 0.1% to 5%, anything higher read as 5%. The rate is
+stored on each credit row (the byte after `source`), so it is exact per share and changing or
+dropping it changes only the work that follows. In the split a tipping identity's earned share
+is lower by its tip and the pool's output higher; nobody else's figure moves, and carry, the
+lowered floor and make-goods all work from the figure after the tip. Stratum work, which pays
+the stratum fee, does not tip. A block record lists the tips in its coinbaser (`tips`), and
+`stats.json` has the shares that asked (`totals.tipped_shares`) and what a block found now
+would give (`window.tips`, `window.sample_tip_sats`). A build from before tips reads the byte
+as padding and pays the work in full, so the data directory moves either way. A gateway that
+forwards no worker names (`pool_pass_workers` and `pool_pass_full_users` both off) cannot
+carry the suffix.
+
 Stock gateways build several coinbase sizes and hand small miners those with room for only
 the first few outputs, or none at all while a coinbaser reply is in flight. The Prime
 classifies every share's coinbase as **Split** (every issued miner output paid), **Partial**

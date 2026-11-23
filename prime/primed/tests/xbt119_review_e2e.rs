@@ -383,6 +383,7 @@ fn a_data_directory_moves_between_the_hub_s_build_and_this_one() {
             books: Some(Books { credits_live: true, ..books }),
             carry_shortfall_sats: 4_000,
             carry_reserved_sats: 0,
+            tips: vec![],
         };
         BlockLog::open(&keep).append(&rec).unwrap();
     }

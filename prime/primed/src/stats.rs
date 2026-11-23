@@ -116,6 +116,7 @@ pub fn build(shared: &Shared) -> Value {
     let sample_value = 312_500_000u64;
     let grace = shared.cfg.grace();
     let split = w.split(sample_value, &shared.split_params, ts as u32, |i| address::to_script(i, shared.network));
+    let sample_tips = split.tips.clone();
     let payouts: std::collections::HashMap<&str, u64> =
         split.payees.iter().map(|p| (p.identity.as_str(), p.sats)).collect();
     let rebates: std::collections::HashMap<&str, u64> =
@@ -369,6 +370,13 @@ pub fn build(shared: &Shared) -> Value {
     doc["totals"]["own_floor_replies"] = json!(t.own_floor_replies.load(Ordering::Relaxed));
     doc["totals"]["own_floor_blocks"] = json!(t.own_floor_blocks.load(Ordering::Relaxed));
     doc["pool"]["own_min_payout"] = json!(shared.cfg.own_min_payout);
+    // Tips: shares that asked to tip since start, and what a block found now would give the pool
+    // out of the tipping identities' own shares (the sample split above).
+    doc["totals"]["tipped_shares"] = json!(t.tipped_shares.load(Ordering::Relaxed));
+    doc["window"]["sample_tip_sats"] = json!(sample_tips.iter().map(|t| t.1).sum::<u64>());
+    doc["window"]["tips"] =
+        json!(sample_tips.iter().map(|(i, s)| json!({"identity": i, "sats": s})).collect::<Vec<_>>());
+    doc["pool"]["max_tip_percent"] = json!(f64::from(tides::MAX_TIP_PERMILLE) / 10.0);
     // Credited shares by the zero bits of their hash past 32, per gateway build (`state::Quality`).
     let quality = shared.quality.lock().unwrap_or_else(|e| e.into_inner()).snapshot();
     doc["quality"] =
@@ -613,6 +621,7 @@ mod legacy_tests {
                 work: u64::from(i) * 4_096 + 1,
                 height: 982_000 + i / 50,
                 source: (i % 4) as u8,
+                tip_permille: 0,
             })
             .collect();
         let rows = LegacyRows {

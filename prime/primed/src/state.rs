@@ -285,6 +285,8 @@ pub struct Totals {
     pub template_checks_failed: AtomicU64,
     /// Coinbasers held to a session's class budget (`class-budget`).
     pub class_budget_replies: AtomicU64,
+    /// Credited shares whose username asked to tip (`address::tip_permille_of`).
+    pub tipped_shares: AtomicU64,
     /// Coinbaser replies that placed at least one payee under `own-min-payout`.
     pub own_floor_replies: AtomicU64,
     /// Blocks whose coinbaser had placed a payee under `own-min-payout`.

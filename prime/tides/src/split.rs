@@ -195,6 +195,14 @@ pub struct Split {
     /// `rebate_owed` when the block is found.
     #[serde(default)]
     pub rebate_deferred: u64,
+    /// Tips: what each identity that asked to tip gives the pool out of its own share of this
+    /// block, identity → sats (`MinerStat::tip_weight`). Already off that identity's output or
+    /// deferred earnings, and inside the pool's; nobody else's figure moves.
+    #[serde(default)]
+    pub tips: Vec<(String, u64)>,
+    /// Sum of `tips`.
+    #[serde(default)]
+    pub tip_sats: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -369,6 +377,7 @@ pub fn compute(
     // Each miner's share of this block: the fee-adjusted proportional part.
     let mut fee_sats = 0u64;
     let mut earned_payable = 0u64;
+    let mut tips: Vec<(String, u64)> = Vec::new();
     let mut shares: Vec<u64> = Vec::with_capacity(miners.len());
     for (m, script) in miners.iter().zip(&scripts) {
         let (earned, fee) = if total_work > 0 && m.work > 0 {
@@ -376,7 +385,16 @@ pub fn compute(
             let keep = u128::from(sw) * u128::from(10_000 - stratum_bps)
                 + u128::from(gw) * u128::from(10_000 - grace_bps)
                 + u128::from(dw) * u128::from(10_000 - p.fee_bps);
-            let earned = (u128::from(value) * keep / u128::from(total_work) / 10_000) as u64;
+            let untipped = (u128::from(value) * keep / u128::from(total_work) / 10_000) as u64;
+            // A tip is a share of what the identity's own DATUM work earns after the pool's
+            // fee, in tenths of a percent, and never more than the cap on every unit of it.
+            // It comes off this identity's figure and stays in the pool's output with the fee.
+            let tip_weight = u128::from(m.tip_weight).min(u128::from(dw) * u128::from(crate::MAX_TIP_PERMILLE));
+            let tip_keep = tip_weight * u128::from(10_000 - p.fee_bps) / 1_000;
+            let earned = (u128::from(value) * (keep - tip_keep.min(keep)) / u128::from(total_work) / 10_000) as u64;
+            if script.is_some() && untipped > earned {
+                tips.push((m.identity.clone(), untipped - earned));
+            }
             let fee = (u128::from(value)
                 * (u128::from(sw) * u128::from(stratum_bps)
                     + u128::from(gw) * u128::from(grace_bps)
@@ -508,6 +526,8 @@ pub fn compute(
         own_placed,
         rebate_credits,
         rebate_sats,
+        tip_sats: tips.iter().map(|t| t.1).sum(),
+        tips,
         rebate_owed_credited,
         rebate_deferred,
     }
@@ -525,15 +545,42 @@ mod tests {
     use super::*;
 
     fn miner(id: &str, work: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: 0, grace_work: 0, credits: 1, last_ts: 0, carry: 0 }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: 0,
+            grace_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry: 0,
+            tip_weight: 0,
+        }
     }
 
     fn miner_stratum(id: &str, work: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: work, grace_work: 0, credits: 1, last_ts: 0, carry: 0 }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: work,
+            grace_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry: 0,
+            tip_weight: 0,
+        }
     }
 
     fn miner_carry(id: &str, work: u64, carry: u64) -> MinerStat {
-        MinerStat { identity: id.into(), work, stratum_work: 0, grace_work: 0, credits: 1, last_ts: 0, carry }
+        MinerStat {
+            identity: id.into(),
+            work,
+            stratum_work: 0,
+            grace_work: 0,
+            credits: 1,
+            last_ts: 0,
+            carry,
+            tip_weight: 0,
+        }
     }
 
     fn script(id: &str) -> Option<Vec<u8>> {
@@ -948,6 +995,7 @@ mod tests {
                     credits: 1,
                     last_ts: 0,
                     carry: rnd(50_000),
+                    tip_weight: 0,
                 });
             }
             let total: u64 = miners.iter().map(|m| m.work).sum();
@@ -1032,7 +1080,16 @@ mod tests {
     }
 
     fn gone(id: &str, carry: u64, last_ts: u32) -> MinerStat {
-        MinerStat { identity: id.into(), work: 0, stratum_work: 0, grace_work: 0, credits: 0, last_ts, carry }
+        MinerStat {
+            identity: id.into(),
+            work: 0,
+            stratum_work: 0,
+            grace_work: 0,
+            credits: 0,
+            last_ts,
+            carry,
+            tip_weight: 0,
+        }
     }
 
     /// A miner who left with less than the floor is paid once it has been gone long enough.
@@ -1078,6 +1135,7 @@ mod tests {
                 credits: 1,
                 last_ts: old,
                 carry: 20_000,
+                tip_weight: 0,
             },
             gone("crumb", 9_999, old),
             gone("bad-name", 50_000, old),
@@ -1137,6 +1195,7 @@ mod tests {
             credits: 1,
             last_ts: 0,
             carry: 0,
+            tip_weight: 0,
         }
     }
 
@@ -1524,6 +1583,130 @@ mod tests {
                     "round {round}: the own-floor payees are the first ones"
                 );
             }
+        }
+    }
+
+    fn tipper(id: &str, work: u64, permille: u64) -> MinerStat {
+        MinerStat { tip_weight: work * permille, ..miner(id, work) }
+    }
+
+    /// A tip comes off the tipper's own output and lands in the pool's; nobody else's moves.
+    #[test]
+    fn a_tip_is_taken_from_the_tippers_own_share_and_from_nobody_elses() {
+        let p = SplitParams { min_payout: 1, ..SplitParams::default() };
+        let value = 100_000_000;
+        let plain = compute(vec![miner("a", 600), miner("b", 300), miner("c", 100)], 1_000, value, &p, 0, 0, script);
+        let tipped =
+            compute(vec![miner("a", 600), tipper("b", 300, 10), miner("c", 100)], 1_000, value, &p, 0, 0, script);
+        assert_eq!(paid(&plain, "b").unwrap().sats, 30_000_000);
+        assert_eq!(paid(&tipped, "b").unwrap().sats, 29_700_000, "1% of its own 30 000 000");
+        for other in ["a", "c"] {
+            assert_eq!(paid(&tipped, other).unwrap().sats, paid(&plain, other).unwrap().sats);
+        }
+        assert_eq!(tipped.tips, vec![("b".to_string(), 300_000)]);
+        assert_eq!(tipped.tip_sats, 300_000);
+        assert_eq!(tipped.pool_sats, plain.pool_sats + 300_000);
+        assert_eq!(tipped.pool_sats + tipped.paid_sats(), value);
+        assert!(plain.tips.is_empty() && plain.tip_sats == 0);
+    }
+
+    /// The cap holds whatever the window says, the pool's fee comes first, and work on the
+    /// stratum, which pays the stratum fee, does not tip.
+    #[test]
+    fn a_tip_is_capped_comes_after_the_fee_and_is_on_datum_work_only() {
+        let p = SplitParams { min_payout: 1, ..SplitParams::default() };
+        let value = 100_000_000;
+        // a weight far past 5% on every unit is 5%
+        let wild = MinerStat { tip_weight: u64::MAX / 2, ..miner("b", 300) };
+        let s = compute(vec![miner("a", 700), wild], 1_000, value, &p, 0, 0, script);
+        assert_eq!(paid(&s, "b").unwrap().sats, 28_500_000);
+        assert_eq!(s.tip_sats, 1_500_000);
+        // with a 2% pool fee the tip is 1% of what is left after it
+        let fee = SplitParams { fee_bps: 200, min_payout: 1, ..SplitParams::default() };
+        let s = compute(vec![miner("a", 700), tipper("b", 300, 10)], 1_000, value, &fee, 0, 0, script);
+        assert_eq!(paid(&s, "b").unwrap().sats, 29_400_000 - 294_000);
+        assert_eq!((s.fee_sats, s.tip_sats), (2_000_000, 294_000));
+        assert_eq!(s.pool_sats + s.paid_sats(), value);
+        // all of its work on the stratum: the weight has nothing to act on
+        let st = SplitParams { stratum_fee_bps: 1_000, min_payout: 1, ..SplitParams::default() };
+        let on_stratum = MinerStat { tip_weight: 300 * 50, ..miner_stratum("b", 300) };
+        let s = compute(vec![miner("a", 700), on_stratum], 1_000, value, &st, 0, 0, script);
+        assert_eq!(paid(&s, "b").unwrap().sats, 27_000_000);
+        assert!(s.tips.is_empty());
+    }
+
+    /// A tipper under the floor defers what is left after the tip, and the tip is still the
+    /// pool's; an identity that cannot be paid at all gives no tip, for it has nothing to give.
+    #[test]
+    fn a_tip_from_a_miner_under_the_floor_is_kept_and_the_rest_is_carried() {
+        let p = SplitParams { min_payout: 5_000_000, ..SplitParams::default() };
+        let value = 100_000_000;
+        let s =
+            compute(vec![miner("a", 990), tipper("b", 10, 50), tipper("bad", 5, 50)], 1_005, value, &p, 0, 0, script);
+        assert!(paid(&s, "b").is_none());
+        let u = s.unpaid.iter().find(|u| u.identity == "b").unwrap();
+        let untipped = 100_000_000u64 * 10 / 1_005;
+        assert_eq!(u.earned, untipped - s.tips[0].1);
+        assert_eq!(s.tips.len(), 1, "the unpayable name tips nothing: {:?}", s.tips);
+        assert!(s.tips[0].1 >= untipped / 20 - 1 && s.tips[0].1 <= untipped / 20 + 1);
+        assert_eq!(s.pool_sats + s.paid_sats(), value);
+    }
+
+    /// Whatever the window, with tips the outputs still sum to the reward, every non-tipper is
+    /// paid to the sat what it is paid without them, and no tipper gives more than 5%.
+    #[test]
+    fn tips_conserve_the_reward_and_touch_only_tippers() {
+        let mut seed = 0x2545_f491_4f6c_dd1du64;
+        let mut next = move |n: u64| {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed % n
+        };
+        for round in 0..300 {
+            let n = 2 + next(30) as usize;
+            let mut plain = Vec::new();
+            let mut tipped = Vec::new();
+            for i in 0..n {
+                let work = 1 + next(1_000_000);
+                let mut m =
+                    miner_carry(&format!("{}{i}", (b'a' + (i % 26) as u8) as char), work, next(2) * next(500_000));
+                if next(4) == 0 {
+                    m.stratum_work = next(work + 1);
+                }
+                plain.push(m.clone());
+                if next(2) == 0 {
+                    m.tip_weight = (work - m.stratum_work) * (1 + next(50));
+                }
+                tipped.push(m);
+            }
+            let total: u64 = plain.iter().map(|m| m.work).sum();
+            let p = SplitParams {
+                fee_bps: next(3) as u32 * 50,
+                stratum_fee_bps: 10_000,
+                min_payout: 1 + next(2) * 1_000_000,
+                ..SplitParams::default()
+            };
+            let value = 300_000_000 + next(50_000_000);
+            let a = compute(plain.clone(), total, value, &p, 0, 0, script);
+            let b = compute(tipped.clone(), total, value, &p, 0, 0, script);
+            assert_eq!(b.pool_sats + b.paid_sats(), value, "round {round}");
+            assert_eq!(b.fee_sats, a.fee_sats, "round {round}");
+            let earned = |s: &Split, id: &str| {
+                paid(s, id)
+                    .map(|x| x.sats - x.carry)
+                    .or_else(|| s.unpaid.iter().find(|u| u.identity == id).map(|u| u.earned))
+            };
+            for m in &tipped {
+                let (was, now) = (earned(&a, &m.identity).unwrap_or(0), earned(&b, &m.identity).unwrap_or(0));
+                let tip = b.tips.iter().find(|t| t.0 == m.identity).map_or(0, |t| t.1);
+                assert_eq!(was, now + tip, "round {round}: {m:?}");
+                if m.tip_weight == 0 {
+                    assert_eq!(tip, 0, "round {round}: {m:?} did not ask to tip");
+                }
+                assert!(tip <= was / 20 + 1, "round {round}: {tip} is more than 5% of {was}");
+            }
+            assert_eq!(b.tip_sats, b.tips.iter().map(|t| t.1).sum::<u64>());
         }
     }
 }

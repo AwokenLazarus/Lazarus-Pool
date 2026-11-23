@@ -139,6 +139,32 @@ pub fn identity_of(username: &str) -> &str {
     &u[..end]
 }
 
+/// The tip a share's username asks for, in tenths of a percent, 0 for none: the number after
+/// a final `.tip` in the worker part, as a percentage. `bc1q….rig1.tip1` tips 1% of what that
+/// work earns and `bc1q….tip0.5` half a percent. Anything that is not a number there is a
+/// worker called "tip" something, and no tip. More than the cap is the cap
+/// ([`tides::MAX_TIP_PERMILLE`], 5%): a slip of the hand must not cost a miner its income.
+/// Less than a tenth of a percent is none.
+pub fn tip_permille_of(username: &str) -> u8 {
+    let u = username.trim();
+    let worker = &u[identity_of(u).len()..];
+    let lower = worker.to_ascii_lowercase();
+    let Some(at) = lower.rfind(".tip") else { return 0 };
+    let digits = &lower[at + 4..];
+    if digits.is_empty() || digits.len() > 6 || !digits.bytes().all(|b| b.is_ascii_digit() || b == b'.') {
+        return 0;
+    }
+    let Ok(percent) = digits.parse::<f64>() else { return 0 };
+    if !percent.is_finite() || percent <= 0.0 {
+        return 0;
+    }
+    let permille = (percent * 10.0).round();
+    if permille < 1.0 {
+        return 0;
+    }
+    permille.min(f64::from(tides::MAX_TIP_PERMILLE)) as u8
+}
+
 /// The form an identity is interned and paid under. Bech32 is case-insensitive, so `BC1Q…`
 /// and `bc1q…` are one payout address and must be one TIDES row: split as two they can each
 /// fall under `min-payout` and be paid nothing, and when they do pay they burn two coinbase
@@ -155,6 +181,41 @@ pub fn canonical_identity(ident: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tip_is_the_number_after_a_final_dot_tip_and_never_more_than_the_cap() {
+        let a = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4";
+        let tip = |worker: &str| super::tip_permille_of(&format!("{a}{worker}"));
+        assert_eq!(tip(""), 0);
+        assert_eq!(tip(".rig1"), 0);
+        assert_eq!(tip(".rig1.tip1"), 10);
+        assert_eq!(tip(".tip1"), 10);
+        assert_eq!(tip(".tip0.5"), 5);
+        assert_eq!(tip(".rig.TIP2.5"), 25);
+        assert_eq!(tip(".tip0.1"), 1);
+        assert_eq!(tip(".tip5"), 50);
+        // a slip of the hand is the cap, not the miner's income
+        assert_eq!(tip(".tip50"), 50);
+        assert_eq!(tip(".tip100"), 50);
+        assert_eq!(tip(".tip999999"), 50);
+        // too small to be a tenth of a percent, or not a number: no tip
+        assert_eq!(tip(".tip0"), 0);
+        assert_eq!(tip(".tip0.04"), 0);
+        assert_eq!(tip(".tip"), 0);
+        assert_eq!(tip(".tipper"), 0);
+        assert_eq!(tip(".tip1x"), 0);
+        assert_eq!(tip(".tip-1"), 0);
+        assert_eq!(tip(".tip1e3"), 0);
+        assert_eq!(tip(".tip1.2.3"), 0);
+        assert_eq!(tip(".tip1234567"), 0);
+        // only the last one counts, and only in the worker part
+        assert_eq!(tip(".tip5.rig1"), 0);
+        assert_eq!(tip(".tip5.tip1"), 10);
+        assert_eq!(super::tip_permille_of("tip5"), 0);
+        assert_eq!(super::tip_permille_of(&format!("{a}~mod.tip2")), 20);
+        // the identity credited is the address either way
+        assert_eq!(super::identity_of(&format!("{a}.rig1.tip1")), a);
+    }
 
     #[test]
     fn segwit_and_legacy() {
