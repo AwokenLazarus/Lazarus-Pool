@@ -330,6 +330,20 @@ window.LZ_I18N_DICTS["en"] = {
     "carryFwdAmt": " + {amt} carried forward",
     "carryBackAmt": " − {amt} carry paid back"
   },
+  "tip": {
+    "kicker": "Optional",
+    "title": "0% fee on DATUM. Tip the pool if you want to.",
+    "body": "Lazarus Pool takes <b>no fee</b> from mining through your own DATUM gateway, and that is not changing. If you want to help keep the pool running, you can tip: add <code>.tip</code> and a percentage to the end of a miner’s username.",
+    "ex1": "tips 1% of what that machine earns",
+    "ex2": "tips half a percent",
+    "fine": "Anything from 0.1% to 5%; a larger number is read as 5%. It comes off your own payout only, shows on your miner page, and stops as soon as you remove it.",
+    "band": "<b>0% fee on DATUM mining.</b> Want to support the pool? <a href=\"#tip\">Add an optional tip</a> to a worker name, like <code>rig1.tip1</code>.",
+    "mTitleOn": "You are tipping the pool. Thank you.",
+    "mBodyOn": "About <strong>{pct}%</strong> of what this address earns, {amt} a block right now. It comes off your own payout only. To stop, remove <code>.tip</code> and the number from the worker name.",
+    "mTitleOff": "0% fee on your DATUM mining",
+    "mBodyOff": "The pool takes nothing from this address. If you want to support it, add <code>.tip1</code> to the end of a worker name (<code>{ex}</code> tips 1% of that machine’s earnings). Anything from 0.1% to 5% works, and you can remove it at any time.",
+    "more": "How tipping works"
+  },
   "connect": {
     "eyebrow": "Get connected",
     "title": "One username: your address.",
@@ -389,7 +403,6 @@ window.LZ_I18N_DICTS["en"] = {
     "step2": "Build the gateway, merge the <code>stratum</code> and <code>datum</code> sections above into its config, and set <code>mining.pool_address</code> to <em>your</em> payout address. Keep <code>stratum.vardiff_min</code> at 4096: stock DATUM defaults to 16384, and Prime cannot lower it.",
     "step3": "Point miners at your gateway’s stratum (usually <code>stratum+tcp://127.0.0.1:23334</code>). Username: just a machine name, like <code>rig1</code>. Payouts go to <code>mining.pool_address</code>.",
     "step4": "Watch your gateway appear under <a href=\"#gateways\">Gateways</a> and your address under <a href=\"#miners\">Miners</a>. Running an older FlyTheElephant / OCEAN-lineage <code>v0.4.1-beta</code> build (no <code>+lazarus-split</code>)? Update it: it can leave the window out of a block.",
-    "tip": "<b>Optional: tip the pool.</b> The pool takes no fee from DATUM mining. If you want to help keep it running, end a miner’s username with <code>.tip</code> and a percentage: <code>rig1.tip1</code> gives 1% of what that machine earns, <code>rig1.tip0.5</code> half a percent. Anything from 0.1% to 5% works, and a larger number is read as 5%. It comes off your own payout only, it shows on your miner page, and it stops as soon as you remove it.",
     "whoSummary": "Who gets paid, by gateway setting",
     "thSetting": "Gateway setting",
     "thUser": "Username the pool receives",
@@ -950,6 +963,7 @@ window.LZ_I18N_DICTS["en"] = {
     "panelMakegood": "Make-goods",
     "panelPaid": "Paid outputs",
     "panelFound": "Blocks found",
+    "panelTip": "Tip the pool",
     "panelWorkers": "Workers",
     "hrAvg": "1h avg {h1} · 24h avg {h24}",
     "hrBest": "best {hr}",
@@ -1004,7 +1018,6 @@ window.LZ_I18N_DICTS["en"] = {
     "plusCarry": " · plus carry as room allows",
     "estFee": "after the {fee} fee at current difficulty",
     "noBalance": "The pool keeps no balance for you and there is nothing to withdraw. Every block the pool finds pays this address directly in its coinbase; the output becomes spendable once it has {n} confirmations. The one exception is a partial or pool-only block: when the gateway that finds it leaves miners out of its coinbase, their share lands in the pool's output and the pool pays it on once that output matures.{carry}",
-    "tipNote": " You are tipping the pool about <strong>{pct}%</strong> of what this address earns ({amt} a block right now). Thank you. Remove <code>.tip</code> and the number from the worker name to stop.",
     "carryNote": " <strong>{amt}</strong> you earned in earlier blocks was under the minimum output and is carried forward: it is added to your next output that clears the floor, paid out of the pool's share. If your own gateway finds a block, it is paid in that block from 1,000 sats up.",
     "pendingLabel": {
       "one": "Maturing · {n} block",

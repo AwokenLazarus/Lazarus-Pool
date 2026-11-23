@@ -1047,6 +1047,45 @@
     color: color-mix(in oklch, var(--ink) 86%, var(--muted));
   }
   .callout strong { color: var(--ink); }
+  /* Optional tips: a card of its own, so "0% fee, tip if you want to" is read and not skimmed
+     past as a footnote. On the home page under the setup steps, and on the miner page. */
+  .tipbox {
+    margin: 1.1rem 0;
+    padding: 1.05rem 1.2rem 1.1rem;
+    border: 1px solid color-mix(in oklch, var(--brass) 45%, var(--line));
+    border-left: 4px solid var(--brass);
+    border-radius: var(--r);
+    background: color-mix(in oklch, var(--brass) 9%, var(--bg-card));
+    box-shadow: var(--shadow-card);
+  }
+  .tipbox-kicker {
+    margin: 0 0 0.3rem;
+    color: var(--brass);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .tipbox-title { margin: 0 0 0.45rem; font-family: var(--serif); font-size: 1.35rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); }
+  .tipbox-body { margin: 0; color: color-mix(in oklch, var(--ink) 88%, var(--muted)); font-size: 0.97rem; line-height: 1.55; }
+  .tipbox-body b, .tipbox-body strong { color: var(--ink); }
+  .tipbox-ex { display: grid; gap: 0.35rem; margin: 0.75rem 0 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--ink); }
+  .tipbox-ex code { margin-right: 0.45rem; font-size: 1rem; color: var(--brass); }
+  .tipbox-fine { margin: 0.7rem 0 0; color: var(--muted); font-size: 0.86rem; line-height: 1.5; }
+  .tipbox.on { border-left-color: #3fb26b; }
+  .tipbox.on .tipbox-kicker { color: #3fb26b; }
+  .mpanel .tipbox { margin: 0 0 1rem; }
+  .tipband {
+    margin: 0.8rem 0 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in oklch, var(--brass) 40%, var(--line));
+    border-radius: var(--r);
+    background: color-mix(in oklch, var(--brass) 8%, var(--bg-card));
+    color: color-mix(in oklch, var(--ink) 88%, var(--muted));
+    font-size: 0.97rem;
+    line-height: 1.5;
+  }
+  .tipband b { color: var(--ink); }
   .payout-blurb { margin-bottom: 0.35rem; }
 
   /* ---- Buttons and inputs. */

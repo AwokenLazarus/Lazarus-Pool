@@ -674,6 +674,7 @@
     ["maturing", "miner.dtPending", "figure"],
     ["paid", "miner.dtPaid", "figure"],
     ["found", "miner.dtFound", "figure"],
+    ["tip", "miner.panelTip", "section"],
     ["workers", "miner.panelWorkers", "section"],
     ["maturingTable", "miner.panelMaturing", "section"],
     ["makegoodTable", "miner.panelMakegood", "section"],
@@ -900,6 +901,19 @@
         ? `<p class="note callout rebate-callout">${t("miner.pitch", { fee: feePct(billedFee), datum: amt(datumDay), datumUsd: money(datumDay), now: amt(m.est_btc_day), nowUsd: money(m.est_btc_day) })}</p>`
         : "";
     const nWorkers = (m.workers || []).length + relayed.length;
+    // Optional tips: shown to an address mining through its own gateway (the public stratum
+    // pays the stratum fee and does not tip). Says the fee is 0% and how to tip, or, for an
+    // address that tips, what it gives. Hidden like any panel from "customize".
+    const tipCard = (() => {
+      if (!isPrimePath(m.via) || String(m.fee_path || "").toLowerCase() === "stratum") return "";
+      const tipping = Number(m.tip_btc_block) > 0;
+      const first = (m.workers || []).map((w) => String(w.worker || w.name || "")).find((n) => n && !/\.tip[\d.]*$/i.test(n) && /^[\w-]{1,24}$/.test(n));
+      const body = tipping
+        ? t("tip.mBodyOn", { pct: Number(m.tip_percent || 0).toFixed(1).replace(/\.0$/, ""), amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) })
+        : t("tip.mBodyOff", { ex: esc((first || "rig1") + ".tip1") });
+      const more = `<a href="${document.documentElement.lang.startsWith("zh") ? "/zh/" : "/"}#tip">${t("tip.more")}</a>`;
+      return panelBox("tip", `<aside class="tipbox ${tipping ? "on" : ""}"><p class="tipbox-kicker">${t("tip.kicker")}</p><h3 class="tipbox-title">${t(tipping ? "tip.mTitleOn" : "tip.mTitleOff")}</h3><p class="tipbox-body">${body} ${more}</p></aside>`);
+    })();
     const nPending = Number(m.immature_blocks) || (m.blocks_found || []).filter((b) => payStatus(b) === "immature").length;
     const nPaid = (m.blocks_found || []).length - (m.blocks_found || []).filter((b) => payStatus(b) === "immature").length;
 
@@ -931,6 +945,7 @@
         ${relayNote}
         ${switchPitch}
         ${windowNote}
+        ${tipCard}
         <dl class="ticker">
           ${panelBox("hr", `<dt>${t("miner.dtHr")}</dt><dd>${fmtHr(m.hr_ghs || 0)}<small>${Number(m.hr_1h_ghs) > 0 ? t("miner.hrAvg", { h1: fmtHr(m.hr_1h_ghs), h24: fmtHr(m.hr_24h_ghs) }) : t("miner.hrBest", { hr: fmtHr(m.best_hr_ghs || 0) })}${t("miner.ofPoolSub", { pct: pctSmart(hp) })}</small></dd>`)}
           ${panelBox("accepted", `<dt>${t("miner.dtAccepted")}</dt><dd>${num(m.shares_lifetime ?? m.shares_acc)}<small>${t("miner.acceptedSub")}</small></dd>`)}
@@ -969,7 +984,7 @@
           ${panelBox("next", `<dt>${t("miner.dtNext")}</dt><dd title="${amtExact(m.block_payout_btc)}">${amt(m.block_payout_btc)}${money(m.block_payout_btc)}<small>${t("miner.nextWin", { wp: pctSmart(wp), carry: Number(m.carry_btc) > 0 ? t("miner.plusCarry") : "" })}</small></dd>`)}
           ${panelBox("est", `<dt>${t("miner.dtEst")}</dt><dd title="${amtExact(estDay)}">${amt(estDay)}${money(estDay)}<small>${t("miner.estFee", { fee: feePct(billedFee) })}</small></dd>`)}
         </dl>
-        <p class="note callout">${t("miner.noBalance", { n: num(m.maturity_confs || 100), carry: Number(m.carry_btc) > 0 ? t("miner.carryNote", { amt: amt(m.carry_btc) }) : "" })}${Number(m.tip_btc_block) > 0 ? t("miner.tipNote", { pct: Number(m.tip_percent || 0).toFixed(1).replace(/\.0$/, ""), amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) }) : ""}${mgPend.length ? t("miner.mgNote", { amt: satsExact(mgPendSats), n: mgPend.length, height: num(mgNextAt) }) : ""}</p>
+        <p class="note callout">${t("miner.noBalance", { n: num(m.maturity_confs || 100), carry: Number(m.carry_btc) > 0 ? t("miner.carryNote", { amt: amt(m.carry_btc) }) : "" })}${mgPend.length ? t("miner.mgNote", { amt: satsExact(mgPendSats), n: mgPend.length, height: num(mgNextAt) }) : ""}</p>
         ${payoutTables(m, ctx)}
       </div>`;
 
