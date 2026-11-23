@@ -330,6 +330,20 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "carryFwdAmt": " + {amt} 结转至后续",
     "carryBackAmt": " − {amt} 已付回结转"
   },
+  "tip": {
+    "kicker": "自愿",
+    "title": "DATUM 挖矿 0% 手续费。愿意的话，可以给矿池小费。",
+    "body": "通过自己的 DATUM 网关挖矿，Lazarus Pool <b>不收任何手续费</b>，这一点不会变。如果你愿意支持矿池运行，可以给小费：在矿机用户名末尾加上 <code>.tip</code> 和一个百分比。",
+    "ex1": "把这台矿机收益的 1% 给矿池",
+    "ex2": "给 0.5%",
+    "fine": "0.1% 到 5% 都可以，填更大的数字按 5% 计算。小费只从你自己的收益里扣，会显示在你的矿工页面上，去掉后缀就立即停止。",
+    "band": "<b>DATUM 挖矿 0% 手续费。</b>想支持矿池？可以在矿机名后面<a href=\"#tip\">加上自愿小费</a>，例如 <code>rig1.tip1</code>。",
+    "mTitleOn": "你正在给矿池小费，谢谢。",
+    "mBodyOn": "约为此地址收益的 <strong>{pct}%</strong>，目前每个区块 {amt}。只从你自己的收益里扣。想停止，把矿机名里的 <code>.tip</code> 和后面的数字去掉即可。",
+    "mTitleOff": "你的 DATUM 挖矿手续费为 0%",
+    "mBodyOff": "矿池不从此地址收取任何费用。如果你愿意支持矿池，可以在矿机名末尾加上 <code>.tip1</code>（<code>{ex}</code> 表示把这台矿机收益的 1% 给矿池）。0.1% 到 5% 都可以，随时可以去掉。",
+    "more": "小费怎么用"
+  },
   "connect": {
     "eyebrow": "接入",
     "title": "用户名只有一个：你的地址。",
@@ -389,7 +403,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "step2": "编译网关，把上面的 <code>stratum</code> 和 <code>datum</code> 段合并进配置，并把 <code>mining.pool_address</code> 设为<em>你的</em>收款地址。<code>stratum.vardiff_min</code> 请设为 4096：原版 DATUM 默认 16384，Prime 无法调低。",
     "step3": "把矿机指向你网关的 stratum（通常是 <code>stratum+tcp://127.0.0.1:23334</code>）。用户名只填矿机名，例如 <code>rig1</code>。收益付到 <code>mining.pool_address</code>。",
     "step4": "在 <a href=\"#gateways\">网关</a> 下看到你的网关，在 <a href=\"#miners\">矿工</a> 下看到你的地址。还在用旧的 FlyTheElephant / OCEAN 系 <code>v0.4.1-beta</code> 构建（没有 <code>+lazarus-split</code>）？请更新：它可能在区块里漏掉窗口。",
-    "tip": "<b>可选：给矿池小费。</b>矿池不从 DATUM 挖矿收取任何手续费。如果你愿意支持矿池运行，可以在矿机用户名末尾加上 <code>.tip</code> 和一个百分比：<code>rig1.tip1</code> 表示把这台矿机收益的 1% 给矿池，<code>rig1.tip0.5</code> 表示 0.5%。0.1% 到 5% 都可以，填更大的数字按 5% 计算。小费只从你自己的收益里扣，会显示在你的矿工页面上，去掉后缀就立即停止。",
     "whoSummary": "按网关设置，钱付给谁",
     "thSetting": "网关设置",
     "thUser": "矿池收到的用户名",
@@ -950,6 +963,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "panelMakegood": "补付",
     "panelPaid": "已支付的输出",
     "panelFound": "已找到区块",
+    "panelTip": "给矿池小费",
     "panelWorkers": "矿机",
     "hrAvg": "1 小时均 {h1} · 24 小时均 {h24}",
     "hrBest": "最佳 {hr}",
@@ -1001,7 +1015,6 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "plusCarry": " · 有空间时外加结转",
     "estFee": "扣除 {fee} 手续费，按当前难度",
     "noBalance": "矿池不为你保管余额，也没有需要提取的东西。矿池找到的每个区块都在其 coinbase 里直接付给此地址；输出满 {n} 个确认后可花费。唯一的例外是部分分账或仅矿池区块：找到该区块的网关未把部分矿工写进 coinbase 时，他们的份额会进入矿池的输出，待该输出成熟后由矿池补付。{carry}",
-    "tipNote": " 你正在把此地址收益的约 <strong>{pct}%</strong> 作为小费给矿池（目前每个区块 {amt}）。谢谢。从矿机名里去掉 <code>.tip</code> 和后面的数字即可停止。",
     "carryNote": " 你在更早区块挣得的 <strong>{amt}</strong> 未达最低输出，已结转：会加在下一笔跨过门槛的输出上，从矿池份额中支付。如果你自己的网关挖到区块，满 1,000 sats 就在该块内支付。",
     "pendingLabel": {
       "one": "成熟中 · {n} 块",

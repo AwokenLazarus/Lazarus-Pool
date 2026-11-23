@@ -57,7 +57,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap"></noscript>
-<link rel="stylesheet" href="/static/pool.css?v=fi1">
+<link rel="stylesheet" href="/static/pool.css?v=ft2">
 <link rel="stylesheet" href="/static/app.css?v=fork1">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/static/favicon-48.png" sizes="48x48" type="image/png">
@@ -237,9 +237,10 @@
       <p class="note callout" id="overflow-note" hidden></p>
       <ul class="pillars" data-i18n-aria="status.pillarsAria" aria-label="What makes Lazarus different">
         <li data-i18n-html="status.p1"><b>Paid in the block itself.</b> No pool balance, no withdrawals. When a block is found, its coinbase pays your address directly. <a href="#payout">See the next payout</a>.</li>
-        <li><span data-i18n-html="status.p2a"><b>Your own gateway: 0% fee.</b> Your node builds the block; the pool only sets the split.</span> <a href="#connect" data-i18n="nav.connect">Connect</a></li>
+        <li><span data-i18n-html="status.p2a"><b>Your own gateway: 0% fee.</b> Your node builds the block; the pool only sets the split. A tip is optional.</span> <a href="#connect" data-i18n="nav.connect">Connect</a></li>
         <li data-i18n-html="status.p3"><b>Verifiable end to end.</b> Every share is rebuilt and hashed; every block found is on the <a href="https://mempool.lazarus-xbt.xyz/mining/pool/lazarus" target="_blank" rel="noreferrer">Lazarus Mempool</a>. Source on <a href="https://github.com/AwokenLazarus/Bitcoin" target="_blank" rel="noreferrer">GitHub</a>.</li>
       </ul>
+      <p class="tipband" data-i18n-html="tip.band"><b>0% fee on DATUM mining.</b> Want to support the pool? <a href="#tip">Add an optional tip</a> to a worker name, like <code>rig1.tip1</code>.</p>
     </div>
   </section>
 
@@ -426,7 +427,16 @@
             <li data-i18n-html="connect.step3">Point miners at your gateway’s stratum (usually <code>stratum+tcp://127.0.0.1:23334</code>). Username: just a machine name, like <code>rig1</code>. Payouts go to <code>mining.pool_address</code>.</li>
             <li data-i18n-html="connect.step4">Watch your gateway appear under <a href="#gateways">Gateways</a> and your address under <a href="#miners">Miners</a>. Running an older FlyTheElephant / OCEAN-lineage <code>v0.4.1-beta</code> build (no <code>+lazarus-split</code>)? Update it: it can leave the window out of a block.</li>
           </ol>
-          <p class="note" data-i18n-html="connect.tip"><b>Optional: tip the pool.</b> The pool takes no fee from DATUM mining. If you want to help keep it running, end a miner’s username with <code>.tip</code> and a percentage: <code>rig1.tip1</code> gives 1% of what that machine earns, <code>rig1.tip0.5</code> half a percent. Anything from 0.1% to 5% works, and a larger number is read as 5%. It comes off your own payout only, it shows on your miner page, and it stops as soon as you remove it.</p>
+          <aside class="tipbox" id="tip" aria-labelledby="tip-title">
+            <p class="tipbox-kicker" data-i18n="tip.kicker">Optional</p>
+            <h3 class="tipbox-title" id="tip-title" data-i18n="tip.title">0% fee on DATUM. Tip the pool if you want to.</h3>
+            <p class="tipbox-body" data-i18n-html="tip.body">Lazarus Pool takes <b>no fee</b> from mining through your own DATUM gateway, and that is not changing. If you want to help keep the pool running, you can tip: add <code>.tip</code> and a percentage to the end of a miner’s username.</p>
+            <ul class="tipbox-ex">
+              <li><code>rig1.tip1</code> <span data-i18n="tip.ex1">tips 1% of what that machine earns</span></li>
+              <li><code>rig1.tip0.5</code> <span data-i18n="tip.ex2">tips half a percent</span></li>
+            </ul>
+            <p class="tipbox-fine" data-i18n="tip.fine">Anything from 0.1% to 5%; a larger number is read as 5%. It comes off your own payout only, shows on your miner page, and stops as soon as you remove it.</p>
+          </aside>
           <details class="fold">
             <summary data-i18n="connect.whoSummary">Who gets paid, by gateway setting</summary>
             <div class="scroll">
@@ -869,10 +879,10 @@
 </nav>
 
 <script src="/static/i18n.js?v=seo2"></script>
-<script src="/static/i18n/en.js?v=fi1"></script>
-<script src="/static/i18n/zh-CN.js?v=fi1"></script>
+<script src="/static/i18n/en.js?v=ft2"></script>
+<script src="/static/i18n/zh-CN.js?v=ft2"></script>
 <script>LZ_I18N.boot();</script>
-<script src="/static/shared.js?v=ft1"></script>
+<script src="/static/shared.js?v=ft2"></script>
 <script src="/static/app.js?v=fork2"></script>
 <script src="/static/pool.js?v=ks1"></script>
 <script src="/static/chart.js?v=app4"></script>
