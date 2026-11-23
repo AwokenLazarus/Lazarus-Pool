@@ -438,12 +438,34 @@ def pool_share_totals():
     return (int(tot["a"]), int(tot["r"])) if tot else (0, 0)
 
 
+def _tip_percent(pinfo):
+    """The tip an address gives the pool, as a percentage of what its window share earns: the
+    tip in Prime's sample split over that share of the sample reward. One decimal; 0 if none."""
+    try:
+        tip = int((pinfo or {}).get("tip_sats") or 0)
+        share = float((pinfo or {}).get("window_percent") or 0) / 100.0
+        value = int((state.get("prime_meta") or {}).get("sample_value") or 0) or 312_500_000
+    except (TypeError, ValueError):
+        return 0.0
+    if tip <= 0 or share <= 0:
+        return 0.0
+    return round(min(100.0, 100.0 * tip / (share * value)), 1)
+
+
 def fetch_prime_window():
     """Per-identity view of the TIDES window plus the Prime-wide figures, from primed's stats."""
     data = prime_doc()
     win = data.get("window") or {}
     pool = data.get("pool") or {}
     by = {}
+    # Optional tips (primed `window.tips`): what a block found now would give the pool out of
+    # each tipping identity's own share. Empty on a Prime from before tips.
+    tips = {}
+    for t in win.get("tips") or []:
+        try:
+            tips[str(t.get("identity") or "").strip()] = int(t.get("sats") or 0)
+        except (TypeError, ValueError, AttributeError):
+            continue
     for m in win.get("miners") or []:
         ident = (m.get("identity") or "").strip()
         if not ident:
@@ -460,6 +482,9 @@ def fetch_prime_window():
             # floor, or no room). Prime pays it on top of the next output that fits, so it
             # is already inside window_sats when it is; this is what is still waiting.
             "carry_sats": int(m.get("carry_sats") or 0),
+            # What this identity tips the pool per block at the moment, out of its own share
+            # (a username ending `.tip<percent>`); 0 for an identity that does not tip.
+            "tip_sats": tips.get(ident, 0),
             # DATUM rebate the next found block credits to this identity's balance (carry):
             # its share of the public stratum's fee point. Paid with a later output once the
             # balance clears the floor, so it is not part of window_sats.
@@ -5419,6 +5444,10 @@ def miner_payload(address, payouts_offset=0, payouts_limit=PAYOUTS_PAGE):
         # Earned in earlier blocks, not yet placed; paid on top of the next output that
         # clears the floor. Zero once it has been paid.
         "carry_btc": int(pinfo.get("carry_sats") or 0) / 1e8,
+        # Optional tip: what this address gives the pool per block right now, already off
+        # block_payout_btc, and that as a percentage of what its window share earns.
+        "tip_btc_block": int(pinfo.get("tip_sats") or 0) / 1e8,
+        "tip_percent": _tip_percent(pinfo),
         # DATUM rebate the next found block credits to this address's balance (0 for stratum
         # work, or when the rebate is off). Not inside block_payout_btc.
         "rebate_btc": int(pinfo.get("rebate_sats") or 0) / 1e8,
@@ -6753,7 +6782,8 @@ Fees are the least of it. What differs is custody, what happens to the transacti
 block, and whether a pool limits its own share. As each pool published its own terms on 18 September
 2026:
 
-- Lazarus Pool: 0% with your own DATUM gateway. Public stratum is a donation, validation and fallback endpoint at 100%,
+- Lazarus Pool: 0% with your own DATUM gateway (a tip is optional: a worker name ending .tip1 gives 1% of that
+  machine's earnings, 0.1% to 5%). Public stratum is a donation, validation and fallback endpoint at 100%,
   with a 24 h / 96 h grace at 25%, then 100%. TIDES, window of 8x difficulty. No custody at all — the block's
   coinbase pays your address, so there is no balance or withdrawal (outputs under 0.01 XBT carry
   forward to the next block, or are paid in a block the miner's own gateway finds). The block's

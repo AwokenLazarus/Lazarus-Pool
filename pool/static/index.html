@@ -426,6 +426,7 @@
             <li data-i18n-html="connect.step3">Point miners at your gateway’s stratum (usually <code>stratum+tcp://127.0.0.1:23334</code>). Username: just a machine name, like <code>rig1</code>. Payouts go to <code>mining.pool_address</code>.</li>
             <li data-i18n-html="connect.step4">Watch your gateway appear under <a href="#gateways">Gateways</a> and your address under <a href="#miners">Miners</a>. Running an older FlyTheElephant / OCEAN-lineage <code>v0.4.1-beta</code> build (no <code>+lazarus-split</code>)? Update it: it can leave the window out of a block.</li>
           </ol>
+          <p class="note" data-i18n-html="connect.tip"><b>Optional: tip the pool.</b> The pool takes no fee from DATUM mining. If you want to help keep it running, end a miner’s username with <code>.tip</code> and a percentage: <code>rig1.tip1</code> gives 1% of what that machine earns, <code>rig1.tip0.5</code> half a percent. Anything from 0.1% to 5% works, and a larger number is read as 5%. It comes off your own payout only, it shows on your miner page, and it stops as soon as you remove it.</p>
           <details class="fold">
             <summary data-i18n="connect.whoSummary">Who gets paid, by gateway setting</summary>
             <div class="scroll">
@@ -871,7 +872,7 @@
 <script src="/static/i18n/en.js?v=fi1"></script>
 <script src="/static/i18n/zh-CN.js?v=fi1"></script>
 <script>LZ_I18N.boot();</script>
-<script src="/static/shared.js?v=ks1"></script>
+<script src="/static/shared.js?v=ft1"></script>
 <script src="/static/app.js?v=fork2"></script>
 <script src="/static/pool.js?v=ks1"></script>
 <script src="/static/chart.js?v=app4"></script>
