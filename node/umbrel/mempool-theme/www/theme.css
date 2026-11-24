@@ -496,6 +496,9 @@ footer .lz-footer-endpoint code { font-size: 0.78rem; color: var(--lz-ink); word
 footer .lz-footer-note { font-size: 0.74rem; color: var(--lz-faint) !important; }
 footer .lz-source-note a { color: var(--lz-brass) !important; }
 app-tx-features .lz-replay { margin-left: 0.25rem; font-weight: 500; }
+/* Address page: the spendable / locked row the theme adds under the confirmed balance. */
+app-address tr.lz-spend td { border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+app-address tr.lz-spend .lz-spend-note { display: block; margin-top: 0.15rem; font-size: 0.8rem; opacity: 0.7; white-space: normal; }
 .lz-fork-note, .lz-about-source {
   margin: 0.75rem 0 1rem;
   padding: 0.7rem 0.9rem;

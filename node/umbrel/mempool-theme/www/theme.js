@@ -909,6 +909,57 @@
       .catch(function () { delete replayCache[txid + ':p']; });
   }
 
+  /* Address page: the balance as spendable and locked.
+   *
+   * The explorer shows one confirmed balance. On this chain a mined coin is locked for 6,480 or
+   * 25,920 blocks, so for a miner most of that figure cannot be spent yet. The pool site works
+   * the two out from the node (/api/spendable/<address>: which unspent outputs are coinbase
+   * outputs, and how deep each is); this adds them as a row of the page's own table. Angular
+   * re-renders the table on every websocket update, so the row is put back from the cached
+   * answer. An address with no mined coin still locked gets no row: its balance is spendable. */
+  var spendCache = {};
+  function fmtCoin(sats) { return (Number(sats || 0) / 1e8).toFixed(8); }
+  function addressSpendable() {
+    var m = /\/address\/([A-Za-z0-9]{20,100})\/?$/.exec(location.pathname);
+    if (!m) return;
+    var addr = m[1];
+    var body = document.querySelector('app-address table.address-table tbody');
+    if (!body) return;
+    var have = body.querySelector('tr.lz-spend');
+    if (have && have.getAttribute('data-addr') === addr) return;
+    if (have) have.remove();
+    var hit = spendCache[addr];
+    if (hit && hit.doc && Date.now() - hit.at < 60000) {
+      var d = hit.doc, row = null;
+      if (d.too_many) {
+        row = el('tr', { class: 'lz-spend', 'data-addr': addr },
+          '<td>Spendable</td><td class="wrap-cell" colspan="4"><span class="lz-spend-note">not broken down: this address holds more than '
+          + Number(d.utxo_cap || 0).toLocaleString('en-US') + ' coins</span></td>');
+      } else if (Number(d.locked_sats) > 0) {
+        var when = d.next_unlock_height
+          ? ' <span class="lz-spend-note">' + Number(d.locked_utxos).toLocaleString('en-US') + ' mined coin' + (Number(d.locked_utxos) === 1 ? '' : 's')
+            + ' maturing &middot; next at block ' + Number(d.next_unlock_height).toLocaleString('en-US') + '</span>'
+          : '';
+        row = el('tr', { class: 'lz-spend', 'data-addr': addr },
+          '<td>Spendable</td><td class="wrap-cell">\u200e' + fmtCoin(d.spendable_sats) + ' <span class="symbol">BTC</span></td>'
+          + '<td class="spacer"></td><td>Locked</td><td class="wrap-cell">\u200e' + fmtCoin(d.locked_sats) + ' <span class="symbol">BTC</span>' + when + '</td>');
+        row.title = 'Mined coins are locked until the chain has built 6,480 blocks on them (blocks 973,440 to 979,918) or 25,920 (from 979,919). Everything else is spendable once confirmed.';
+      }
+      if (row && body.firstElementChild) body.insertBefore(row, body.firstElementChild.nextSibling);
+      return;
+    }
+    // one request at a time, and after a failure not again for half a minute
+    if (hit && (hit.pending || (hit.failed && Date.now() - hit.failed < 30000))) return;
+    spendCache[addr] = { pending: true };
+    fetch(POOL + '/api/spendable/' + addr, { mode: 'cors' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (doc) {
+        if (!doc) { spendCache[addr] = { failed: Date.now() }; return; }
+        spendCache[addr] = { at: Date.now(), doc: doc };
+        schedule();
+      })
+      .catch(function () { spendCache[addr] = { failed: Date.now() }; });
+  }
+
   function forkBanner() {
     var title = document.querySelector('.title-block h1, .block-title, h1');
     var onFork = /\/block\/961640\/?$/.test(location.pathname)
@@ -1740,6 +1791,7 @@
     try { paintClockFiat(); } catch (e) { /* never break the explorer */ }
     try { replayBadge(); } catch (e) { /* never break the explorer */ }
     try { forkBanner(); } catch (e) { /* never break the explorer */ }
+    try { addressSpendable(); } catch (e) { /* never break the explorer */ }
     try { specialBlockBlink(); } catch (e) { /* never break the explorer */ }
     try { aboutCite(); } catch (e) { /* never break the explorer */ }
     try { headerV2Rows(); } catch (e) { /* never break the explorer */ }
