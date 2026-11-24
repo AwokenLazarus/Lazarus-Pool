@@ -772,6 +772,14 @@ struct Session {
     /// key. Such a session is never configured with its own payout: see
     /// [`Session::solo_script`].
     pins_script: bool,
+    /// The gateway offered DRS scaled reuse (hello bit 0x04) and this Prime acked it. While a
+    /// tip has no split yet such a gateway stretches its last split over the new value, so it
+    /// has no pool-only gap for its own script to cover, and a configure(gateway) only breaks
+    /// the stretch: it is left on the pool's script through every tip, as a `pins_script`
+    /// session is. Keyed on the ack, not the offer: a gateway told no does not reuse, and left
+    /// on the pool's script it would mine pool-only where it used to mine its own solo work.
+    /// (Asked for by FlyTheElephant, PR #121.)
+    scaled_reuse: bool,
     /// When this session last said what a coinbase it refused paid; see `note_refused_coinbase`.
     refused_coinbase_warned: Option<Instant>,
     /// What `class-budget` has learned of this gateway's coinbase sections; `None` without the
@@ -974,6 +982,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         fee_path: fee_path.into(),
         held_split: held_build.is_some(),
         pins_script,
+        scaled_reuse: selection.is_some(),
         class_budget_bytes: class_budget.as_ref().map(|_| None),
         class_budget_replies: class_budget.as_ref().map(|_| 0),
         workers: (!house).then(Default::default),
@@ -1022,6 +1031,7 @@ pub async fn run(shared: Arc<Shared>, mut stream: TcpStream, remote: SocketAddr)
         split_ready: false,
         held: held_build.map(|_| HeldPayout::default()),
         pins_script,
+        scaled_reuse: selection.is_some(),
         refused_coinbase_warned: None,
         class_budget,
         last_split_prev: None,
@@ -1255,7 +1265,7 @@ impl Session {
     /// empty job and a late section 0 pay the pool, credited and owed back to the window, and
     /// the full job pays the split.
     fn solo_script(&self) -> Option<Vec<u8>> {
-        self.gateway_script.clone().filter(|_| !self.pins_script)
+        self.gateway_script.clone().filter(|_| !self.pins_script && !self.scaled_reuse)
     }
 
     fn stay_on_gateway(&self) -> bool {
@@ -1343,6 +1353,7 @@ impl Session {
         }
         if changed
             && !self.pins_script
+            && !self.scaled_reuse
             && !self.split_ready
             && !self.configured_as_gateway
             && self.restore_script_at.is_none()

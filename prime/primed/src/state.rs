@@ -211,6 +211,11 @@ pub struct ClientInfo {
     /// every tip. Left out of the row when false.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub pins_script: bool,
+    /// The gateway offered DRS scaled reuse and this Prime acked it (`scaled-reuse-ack`): while
+    /// a tip's split is late it stretches its last one, so it is never turned to its own script
+    /// (`Session::scaled_reuse`). Left out of the row when false.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub scaled_reuse: bool,
     /// The payee bytes `class-budget` holds this session's coinbasers to, and null until its
     /// shares have shown one (see `session::ClassBudget`). Both fields are left out of the row
     /// for a session the key does not apply to, so a Prime without it writes the rows it always

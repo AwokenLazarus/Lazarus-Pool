@@ -633,6 +633,16 @@ pay is its solo work). Scripts "neither the list nor the session names" on a job
 replaced within seconds. Listed scripts short or over: a list from another reply than the one the
 job names.
 
+### Gateways that reuse their last split
+
+A gateway that offers DRS scaled reuse (hello bit `0x04`) and is told yes (`scaled-reuse-ack`)
+stretches its last split over the new value while a tip's split is late, so it has no pool-only
+gap for its own script to cover. Turning it to its own script at each tip only interrupts the
+stretch. Such a session is left on the pool's script through every tip, the way a session that
+keeps a job's script is (next section), and `stats.json` marks its row `scaled_reuse`. It is
+keyed on the ack and not the offer: with the key off the gateway is told no, does not reuse,
+and is turned to its own script as before. (Asked for by FlyTheElephant, PR #121.)
+
 ### Gateways that keep the script a job was made with
 
 Every tip, and every session of a gateway whose payout Prime knows, opens with the gateway
