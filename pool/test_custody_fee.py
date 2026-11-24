@@ -240,7 +240,15 @@ class OutdatedGateways(unittest.TestCase):
         bad = server.gateway_offenders(clients, now=NOW)
         self.assertEqual(sorted(bad), ["cur-rate", "old-one", "two-bad"], "one bad block on a current build is the build's bug")
         self.assertTrue(server.current_gateway_build("v0.5.0-beta/UNKNOWN_GIT_HASH") and server.current_gateway_build("v1.0.0"))
-        self.assertFalse(server.current_gateway_build(old) or server.current_gateway_build("ratum-gateway/0.1.74/b9ea9f605eba"))
+        self.assertFalse(server.current_gateway_build(old))
+        # every build the pool recommends is current; an old Ratum is not
+        self.assertTrue(server.current_gateway_build("ratum-gateway/0.1.74/b9ea9f605eba"))
+        self.assertTrue(server.current_gateway_build("v0.4.1-beta/280cf543b57608ba9d79cac1438029a6f02caa27+"))
+        self.assertTrue(server.current_gateway_build("lazarus-gateway/0.1"))
+        self.assertFalse(server.current_gateway_build("ratum-gateway/0.1.28/f0569180c986"))
+        self.assertFalse(server.current_gateway_build("v0.4.1-beta/7491a5099dd5d887a027c812f71de63e0d5986a3"))
+        self.assertFalse(server.block_offender_kind(["partial", "split"], "ratum-gateway/0.1.74/b9ea9f605eba"))
+        self.assertTrue(server.block_offender_kind(["partial", "split", "partial"], "ratum-gateway/0.1.74/b9ea9f605eba"))
 
     def test_miner_flags(self):
         Book(self).write()
