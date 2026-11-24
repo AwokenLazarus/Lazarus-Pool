@@ -2015,6 +2015,38 @@ def rpc(method, params=None):
         return None
 
 
+def rpc_batch(calls, timeout=20):
+    """Several node calls in one request: `calls` is [(method, params)], the answer their results
+    in the same order (None where a call failed), or None if the node did not answer. One curl
+    for the lot, where rpc() forks one per call."""
+    if not calls:
+        return []
+    if not COOKIE.exists():
+        return None
+    auth = COOKIE.read_text().strip()
+    payload = json.dumps([{"jsonrpc": "1.0", "id": i, "method": m, "params": prm or []} for i, (m, prm) in enumerate(calls)])
+    conf = "\n".join(
+        [
+            f"url = {_curl_quote(RPC_URL)}",
+            f"user = {_curl_quote(auth)}",
+            f"data-binary = {_curl_quote(payload)}",
+            'header = "content-type:text/plain"',
+        ]
+    )
+    try:
+        out = subprocess.run(
+            ["curl", "-sS", "--max-time", str(timeout), "-K", "-"],
+            input=conf.encode(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=timeout + 5, check=True,
+        ).stdout
+        rows = json.loads(out)
+    except Exception:
+        return None
+    if not isinstance(rows, list):
+        return None
+    got = {r.get("id"): r.get("result") for r in rows if isinstance(r, dict)}
+    return [got.get(i) for i in range(len(calls))]
+
+
 # Short-lived response cache for the anonymous API. Every one of these endpoints forks curl
 # to bitcoind or the mempool API, or walks the database, per request; behind Cloudflare
 # that is a fork-per-request the whole internet can drive. Payloads change on the order of
@@ -3183,6 +3215,86 @@ def maturity_confs(height):
     if rolling_maturity(height):
         return ROLLING_MATURITY_CONFS
     return LONG_MATURITY_CONFS if long_maturity(height) else MATURITY_CONFS
+
+
+# ---- an address's balance, spendable and locked (the explorer's address page) ----
+# A mined coin cannot be spent until the chain has built this many blocks on it; anything that
+# is not a coinbase output is spendable once it is in a block. The explorer's own balance is one
+# figure for both. Asked of the node coin by coin (gettxout says which are coinbase outputs),
+# so an address with more coins than this is not broken down.
+ADDRESS_UTXO_CAP = 3000
+_CHAIN_ADDRESS_RE = re.compile(r"^[A-Za-z0-9]{20,100}$")
+
+
+def coinbase_lock_blocks(height):
+    """Blocks that must pass before the coinbase of the block at `height` can be spent: it is
+    spendable in block `height + this`."""
+    if rolling_maturity(height):
+        return ROLLING_MATURITY_CONFS - 1
+    if LONG_MATURITY_START <= int(height) < ROLLING_MATURITY_START:
+        return LONG_MATURITY_CONFS - 1
+    return MATURITY_CONFS
+
+
+def split_address_balance(utxos, coinbase, tip):
+    """Spendable and locked sats of an address's unspent outputs.
+
+    `utxos` is the explorer's list ({txid, vout, value, status:{confirmed, block_height}});
+    `coinbase` maps (txid, vout) to whether that output is a coinbase's, and leaves out an
+    output the node no longer has (spent since the list was read, or being spent in the
+    mempool). A coin is spendable if the next block may spend it."""
+    out = {"spendable_sats": 0, "locked_sats": 0, "unconfirmed_sats": 0, "utxos": 0, "locked_utxos": 0,
+           "next_unlock_height": None, "last_unlock_height": None}
+    for u in utxos:
+        key = (u.get("txid"), u.get("vout"))
+        value = int(u.get("value") or 0)
+        st = u.get("status") or {}
+        if not st.get("confirmed"):
+            out["unconfirmed_sats"] += value
+            out["utxos"] += 1
+            continue
+        if key not in coinbase:
+            continue
+        out["utxos"] += 1
+        height = int(st.get("block_height") or 0)
+        unlock = height + coinbase_lock_blocks(height) if coinbase[key] else height + 1
+        if int(tip) + 1 >= unlock:
+            out["spendable_sats"] += value
+        else:
+            out["locked_sats"] += value
+            out["locked_utxos"] += 1
+            out["next_unlock_height"] = unlock if out["next_unlock_height"] is None else min(out["next_unlock_height"], unlock)
+            out["last_unlock_height"] = unlock if out["last_unlock_height"] is None else max(out["last_unlock_height"], unlock)
+    return out
+
+
+def address_spendable_payload(addr):
+    """{address, tip, spendable_sats, locked_sats, ...} for the explorer's address page, or
+    {too_many: true} past ADDRESS_UTXO_CAP coins. None if the explorer or the node did not answer."""
+    raw = curl(f"{MEMPOOL_API.rstrip('/')}/api/address/{addr}/utxo", timeout=20)
+    try:
+        utxos = json.loads(raw or "")
+    except ValueError:
+        return None
+    if not isinstance(utxos, list):
+        return None
+    doc = {"address": addr, "utxo_cap": ADDRESS_UTXO_CAP}
+    if len(utxos) > ADDRESS_UTXO_CAP:
+        return {**doc, "too_many": True, "utxos": len(utxos)}
+    tip = rpc("getblockcount")
+    if not isinstance(tip, int):
+        return None
+    confirmed = [u for u in utxos if (u.get("status") or {}).get("confirmed")]
+    coinbase = {}
+    for i in range(0, len(confirmed), 500):
+        chunk = confirmed[i:i + 500]
+        got = rpc_batch([("gettxout", [u.get("txid"), u.get("vout")]) for u in chunk])
+        if got is None:
+            return None
+        for u, r in zip(chunk, got):
+            if isinstance(r, dict):
+                coinbase[(u.get("txid"), u.get("vout"))] = bool(r.get("coinbase"))
+    return {**doc, "too_many": False, "tip": tip, **split_address_balance(utxos, coinbase, tip)}
 
 
 def current_maturity_confs(tip):
@@ -7719,6 +7831,19 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/makegoods":
             self.send_json(cached("makegoods", 15.0, makegoods_payload), cache_s=15)
+            return
+        if path.startswith("/api/spendable/"):
+            # The explorer's address page: the balance as spendable and locked. Not in the
+            # stable API table; the theme script is its one reader.
+            addr = path.split("/api/spendable/", 1)[1].strip("/")
+            if not _CHAIN_ADDRESS_RE.match(addr):
+                self.send_json({"error": "not found"}, 404)
+                return
+            doc = cached(("spendable", addr), 60.0, lambda: address_spendable_payload(addr))
+            if not doc:
+                self.send_json({"error": "unavailable"}, 503)
+                return
+            self.send_json(doc, cache_s=60)
             return
         if path == "/api/hardware":
             self.send_json(cached("hardware", 15.0, hardware_payload), cache_s=15)
