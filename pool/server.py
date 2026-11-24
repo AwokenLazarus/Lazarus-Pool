@@ -3503,10 +3503,29 @@ OFFENDER_RECENT_BAD = 2
 _offender_blocks_cache = {"key": None, "latest": {}}
 
 
+# Every build the pool recommends counts as current, as in the fee wallet (Mike, 2026-11-24):
+# Ratum from RATUM_BUILD_MIN, FlyTheElephant's master, and lazarus-gateway beside the C
+# gateway's v0.5.0 line. One partial or pool-only block does not warn them; two of five do.
+RATUM_BUILD_MIN = (0, 1, 66)
+FTE_CURRENT_COMMITS = ("280cf54",)
+
+
 def current_gateway_build(user_agent):
-    """A DATUM gateway at CURRENT_BUILD_MIN or later, by its user agent (`v0.5.0-beta/<hash>`)."""
-    m = re.match(r"v(\d+)\.(\d+)\.(\d+)", str(user_agent or ""))
-    return bool(m) and tuple(int(x) for x in m.groups()) >= CURRENT_BUILD_MIN
+    """A gateway build with the partial-split and pool-only fixes, by its user agent: the C
+    gateway at CURRENT_BUILD_MIN or later (`v0.5.0-beta/<hash>`), Ratum at RATUM_BUILD_MIN or
+    later (`ratum-gateway/0.1.74/<hash>`), FlyTheElephant's master (`v0.4.1-beta/280cf54…`), or
+    lazarus-gateway."""
+    ua = str(user_agent or "")
+    m = re.match(r"v(\d+)\.(\d+)\.(\d+)", ua)
+    if m and tuple(int(x) for x in m.groups()) >= CURRENT_BUILD_MIN:
+        return True
+    m = re.match(r"ratum-gateway/(\d+)\.(\d+)\.(\d+)", ua)
+    if m and tuple(int(x) for x in m.groups()) >= RATUM_BUILD_MIN:
+        return True
+    if ua.startswith("lazarus-gateway/"):
+        return True
+    m = re.match(r"v\d+\.\d+\.\d+[^/]*/([0-9a-f]{7,40})", ua)
+    return bool(m) and m.group(1).startswith(FTE_CURRENT_COMMITS)
 
 
 def block_offender_kind(kinds, user_agent):
