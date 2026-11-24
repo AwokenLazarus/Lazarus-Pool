@@ -56,7 +56,17 @@ pub struct Credit {
     pub height: u32,
     /// `SOURCE_*` — stored in the last 4 bytes of the on-disk row (was padding).
     pub source: u8,
+    /// The tip the share's own username asked for, in tenths of a percent of what this work
+    /// earns (0: none; [`MAX_TIP_PERMILLE`] at most). Kept per row, so a miner who changes or
+    /// drops the tip changes it for the work that follows and nothing before. Stored in the
+    /// byte after `source`; a build from before tips reads that byte as padding and pays the
+    /// work in full.
+    pub tip_permille: u8,
 }
+
+/// The most a share may tip: 5%. A worker name is typed by hand, and `.tip50` for `.tip5`
+/// must not cost a miner half its income.
+pub const MAX_TIP_PERMILLE: u8 = 50;
 
 impl Credit {
     pub const SIZE: usize = 24;
@@ -66,7 +76,7 @@ impl Credit {
         out.extend_from_slice(&self.ident.to_le_bytes());
         out.extend_from_slice(&self.work.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
-        out.extend_from_slice(&[self.source, 0, 0, 0]);
+        out.extend_from_slice(&[self.source, self.tip_permille, 0, 0]);
     }
 
     fn read(b: &[u8; Self::SIZE]) -> Self {
@@ -76,6 +86,7 @@ impl Credit {
             work: u64::from_le_bytes(b[8..16].try_into().unwrap()),
             height: u32::from_le_bytes(b[16..20].try_into().unwrap()),
             source: b[20],
+            tip_permille: b[21].min(MAX_TIP_PERMILLE),
         }
     }
 }
@@ -97,6 +108,11 @@ pub struct MinerStat {
     /// floor or over the size budget). Paid on top of the earned share once it fits.
     #[serde(default)]
     pub carry: u64,
+    /// Σ work × tip (tenths of a percent) over the identity's DATUM rows that asked to tip:
+    /// what the split takes from this identity's own earnings for the pool, and from nobody
+    /// else's. 0 for an identity that does not tip.
+    #[serde(default)]
+    pub tip_weight: u64,
 }
 
 /// The sliding share window and identity table. Pure in-memory state.
@@ -191,6 +207,20 @@ impl Window {
     /// Add work. Returns the credit as stored (it may have been merged into the tail row),
     /// and whether a new row was appended.
     pub fn credit(&mut self, identity: &str, work: u64, height: u32, ts: u32, source: u8) -> (Credit, bool) {
+        self.credit_tipped(identity, work, height, ts, source, 0)
+    }
+
+    /// [`Window::credit`] for work that tips; see [`Credit::tip_permille`].
+    pub fn credit_tipped(
+        &mut self,
+        identity: &str,
+        work: u64,
+        height: u32,
+        ts: u32,
+        source: u8,
+        tip_permille: u8,
+    ) -> (Credit, bool) {
+        let tip_permille = tip_permille.min(MAX_TIP_PERMILLE);
         let ident = self.intern(identity);
         self.lifetime_shares += 1;
         self.lifetime_work = self.lifetime_work.saturating_add(work);
@@ -200,13 +230,19 @@ impl Window {
         t.0 = t.0.saturating_add(work);
         t.2 = ts;
         let appended = match self.credits.back_mut() {
-            Some(tail) if tail.ident == ident && tail.ts == ts && tail.height == height && tail.source == source => {
+            Some(tail)
+                if tail.ident == ident
+                    && tail.ts == ts
+                    && tail.height == height
+                    && tail.source == source
+                    && tail.tip_permille == tip_permille =>
+            {
                 tail.work = tail.work.saturating_add(work);
                 false
             }
             _ => {
                 t.1 += 1;
-                self.credits.push_back(Credit { ts, ident, work, height, source });
+                self.credits.push_back(Credit { ts, ident, work, height, source, tip_permille });
                 true
             }
         };
@@ -218,6 +254,20 @@ impl Window {
     /// Add work as its own row, never merging into the tail. Used by [`Ledger`] so that
     /// on-disk rows stay 1:1 with window rows and a replay lands on the same trim boundary.
     pub fn credit_row(&mut self, identity: &str, work: u64, height: u32, ts: u32, source: u8) -> Credit {
+        self.credit_row_tipped(identity, work, height, ts, source, 0)
+    }
+
+    /// [`Window::credit_row`] for work that tips; see [`Credit::tip_permille`].
+    pub fn credit_row_tipped(
+        &mut self,
+        identity: &str,
+        work: u64,
+        height: u32,
+        ts: u32,
+        source: u8,
+        tip_permille: u8,
+    ) -> Credit {
+        let tip_permille = tip_permille.min(MAX_TIP_PERMILLE);
         let ident = self.intern(identity);
         self.lifetime_shares += 1;
         self.lifetime_work = self.lifetime_work.saturating_add(work);
@@ -227,7 +277,7 @@ impl Window {
         t.0 = t.0.saturating_add(work);
         t.1 += 1;
         t.2 = ts;
-        let c = Credit { ts, ident, work, height, source };
+        let c = Credit { ts, ident, work, height, source, tip_permille };
         self.credits.push_back(c);
         self.trim();
         c
@@ -412,6 +462,7 @@ impl Window {
     /// window are included (work 0) so their carry can still be paid.
     pub fn miners(&self) -> Vec<MinerStat> {
         let mut stratum: HashMap<u32, (u64, u64)> = HashMap::new();
+        let mut tips: HashMap<u32, u64> = HashMap::new();
         for c in &self.credits {
             if c.source == SOURCE_STRATUM || c.source == SOURCE_STRATUM_GRACE {
                 let s = stratum.entry(c.ident).or_insert((0, 0));
@@ -419,6 +470,10 @@ impl Window {
                 if c.source == SOURCE_STRATUM_GRACE {
                     s.1 += c.work;
                 }
+            } else if c.tip_permille > 0 {
+                // Stratum work already pays the stratum fee; a tip is on DATUM work only.
+                let t = tips.entry(c.ident).or_insert(0);
+                *t = t.saturating_add(c.work.saturating_mul(u64::from(c.tip_permille)));
             }
         }
         let mut v: Vec<MinerStat> = self
@@ -432,6 +487,7 @@ impl Window {
                 credits,
                 last_ts,
                 carry: self.carry.get(&i).copied().unwrap_or(0),
+                tip_weight: tips.get(&i).copied().unwrap_or(0),
             })
             .collect();
         for (&i, &carry) in &self.carry {
@@ -444,6 +500,7 @@ impl Window {
                     credits: 0,
                     last_ts: self.last_seen.get(&i).copied().unwrap_or(0),
                     carry,
+                    tip_weight: 0,
                 });
             }
         }
@@ -996,8 +1053,21 @@ impl Ledger {
     /// duplicate instead. The window therefore does not coalesce on this path, keeping
     /// disk rows 1:1 with window rows so a replay reproduces the window exactly.
     pub fn credit(&mut self, identity: &str, work: u64, height: u32, ts: u32, source: u8) -> io::Result<()> {
+        self.credit_tipped(identity, work, height, ts, source, 0)
+    }
+
+    /// [`Ledger::credit`] for work that tips; see [`Credit::tip_permille`].
+    pub fn credit_tipped(
+        &mut self,
+        identity: &str,
+        work: u64,
+        height: u32,
+        ts: u32,
+        source: u8,
+        tip_permille: u8,
+    ) -> io::Result<()> {
         let known = self.window.ident_index.contains_key(identity);
-        let row = self.window.credit_row(identity, work, height, ts, source);
+        let row = self.window.credit_row_tipped(identity, work, height, ts, source, tip_permille);
         if !known {
             // one write, so the line and its newline are not split across a buffer spill
             self.idents_out.write_all(format!("{identity}\n").as_bytes())?;
@@ -1395,6 +1465,11 @@ pub struct BlockRecord {
     /// for a coinbaser no class budget applied to, which is every block without the key.
     #[serde(default, skip_serializing_if = "is_zero")]
     pub carry_reserved_sats: u64,
+    /// Tips in the coinbaser this block was found on: what each identity that asked to tip gave
+    /// the pool out of its own share (`Split::tips`). Already off those identities' figures in
+    /// `split` and `carry_delta`, and inside `pool_sats`. Absent from a block nobody tipped in.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tips: Vec<(String, u64)>,
 }
 
 fn is_zero(n: &u64) -> bool {
@@ -1915,6 +1990,7 @@ mod tests {
             books: None,
             carry_shortfall_sats: 0,
             carry_reserved_sats: 0,
+            tips: vec![],
         };
         log.append(&r).unwrap();
         assert_eq!(log.read_all().unwrap(), vec![r.clone()]);
@@ -2175,6 +2251,7 @@ mod tests {
             books: None,
             carry_shortfall_sats: 0,
             carry_reserved_sats: 0,
+            tips: vec![],
         }
     }
 
@@ -2512,5 +2589,44 @@ mod tests {
         let mut l = Ledger::open(&dir).unwrap();
         assert_eq!(l.seed_grace(&p), Some(3));
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// A tip rides its own row: through the window, onto disk and back, and into the split.
+    #[test]
+    fn a_tipped_row_survives_a_restart_and_only_its_work_tips() {
+        let dir = std::env::temp_dir().join(format!("tides-tip-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        {
+            let mut l = Ledger::open(&dir).unwrap();
+            l.credit("a", 600, 1, 100, SOURCE_DATUM).unwrap();
+            l.credit_tipped("b", 100, 1, 100, SOURCE_DATUM, 10).unwrap();
+            l.credit_tipped("b", 100, 1, 101, SOURCE_DATUM, 0).unwrap();
+            l.credit_tipped("b", 100, 1, 102, SOURCE_DATUM, 200).unwrap();
+            l.credit_tipped("c", 100, 1, 103, SOURCE_STRATUM, 50).unwrap();
+            l.persist_window().unwrap();
+        }
+        let l = Ledger::open(&dir).unwrap();
+        let rows: Vec<(u64, u8)> = l.window.credits().map(|c| (c.work, c.tip_permille)).collect();
+        assert_eq!(rows, vec![(600, 0), (100, 10), (100, 0), (100, MAX_TIP_PERMILLE), (100, 50)]);
+        let miners = l.window.miners();
+        let weight = |id: &str| miners.iter().find(|m| m.identity == id).unwrap().tip_weight;
+        assert_eq!((weight("a"), weight("b"), weight("c")), (0, 100 * 10 + 100 * 50, 0), "stratum work does not tip");
+        let p = SplitParams { min_payout: 1, ..SplitParams::default() };
+        let s = l.window.split(100_000_000, &p, 0, |i| Some(i.as_bytes().to_vec()));
+        assert_eq!(s.tips, vec![("b".to_string(), 100_000 + 500_000)]);
+        // a build from before tips reads the byte as padding: the same rows, paid in full
+        let raw = fs::read(dir.join("credits.bin")).unwrap();
+        assert_eq!((raw[24 + 20], raw[24 + 21], raw[24 + 22], raw[24 + 23]), (SOURCE_DATUM, 10, 0, 0));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// Two shares in the same second coalesce only if they tip alike.
+    #[test]
+    fn shares_that_tip_differently_do_not_share_a_row() {
+        let mut w = Window::new();
+        assert!(w.credit_tipped("a", 5, 1, 9, SOURCE_DATUM, 10).1);
+        assert!(!w.credit_tipped("a", 5, 1, 9, SOURCE_DATUM, 10).1);
+        assert!(w.credit_tipped("a", 5, 1, 9, SOURCE_DATUM, 0).1);
+        assert_eq!(w.miners()[0].tip_weight, 100);
     }
 }

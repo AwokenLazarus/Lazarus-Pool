@@ -116,6 +116,7 @@ pub fn build(shared: &Shared) -> Value {
     let sample_value = 312_500_000u64;
     let grace = shared.cfg.grace();
     let split = w.split(sample_value, &shared.split_params, ts as u32, |i| address::to_script(i, shared.network));
+    let sample_tips = split.tips.clone();
     let payouts: std::collections::HashMap<&str, u64> =
         split.payees.iter().map(|p| (p.identity.as_str(), p.sats)).collect();
     let rebates: std::collections::HashMap<&str, u64> =
@@ -364,6 +365,22 @@ pub fn build(shared: &Shared) -> Value {
         "template_faults": shared.faults.all().into_iter().map(|(k, f)| serde_json::json!({"gateway": &k[..16.min(k.len())], "fault": f})).collect::<Vec<_>>(),
         "blocks": blocks,
     });
+    // Replies, and blocks found on one, that paid a gateway's own miner under `min-payout`
+    // (`own-min-payout`). Set here: the document above is as deep as `json!` expands.
+    doc["totals"]["own_floor_replies"] = json!(t.own_floor_replies.load(Ordering::Relaxed));
+    doc["totals"]["own_floor_blocks"] = json!(t.own_floor_blocks.load(Ordering::Relaxed));
+    doc["pool"]["own_min_payout"] = json!(shared.cfg.own_min_payout);
+    // Tips: shares that asked to tip since start, and what a block found now would give the pool
+    // out of the tipping identities' own shares (the sample split above).
+    doc["totals"]["tipped_shares"] = json!(t.tipped_shares.load(Ordering::Relaxed));
+    doc["window"]["sample_tip_sats"] = json!(sample_tips.iter().map(|t| t.1).sum::<u64>());
+    doc["window"]["tips"] =
+        json!(sample_tips.iter().map(|(i, s)| json!({"identity": i, "sats": s})).collect::<Vec<_>>());
+    doc["pool"]["max_tip_percent"] = json!(f64::from(tides::MAX_TIP_PERMILLE) / 10.0);
+    // Credited shares by the zero bits of their hash past 32, per gateway build (`state::Quality`).
+    let quality = shared.quality.lock().unwrap_or_else(|e| e.into_inner()).snapshot();
+    doc["quality"] =
+        json!(quality.into_iter().map(|(build, bits)| json!({"build": build, "bits": bits})).collect::<Vec<_>>());
     // Apart from the document above, which is as deep as `json!` goes.
     doc["pool"]["gateway_key"] = json!(shared.cfg.gateway_key);
     doc["pool"]["revealed_keys"] = json!(shared.revealed.len());
@@ -397,22 +414,69 @@ pub fn build(shared: &Shared) -> Value {
     doc
 }
 
-/// The legacy `ledger.json` shape (`{"credits":[{ts,identity,work}], ...}`) for the last hour.
-pub fn legacy_ledger(shared: &Shared) -> Value {
+/// What the legacy `ledger.json` is written from: the last hour's credit rows as they are in the
+/// window, and the identity table they index.
+///
+/// Copied out under the ledger mutex and turned into JSON off it ([`LegacyRows::to_json`]). An
+/// hour is some 650 000 rows and 64 MB of text. Built as a `serde_json::Value` under the mutex,
+/// as it was, that was a tenth to a fifth of a second every five seconds in which no share was
+/// credited and no coinbaser snapshot rebuilt, and then half a second of an async worker
+/// serializing it: a gateway whose request sat behind either waited that long for its reply.
+pub struct LegacyRows {
+    credits: Vec<tides::Credit>,
+    idents: Vec<String>,
+    shares: u64,
+    window_work: u64,
+    target_work: u64,
+}
+
+/// The rows of the last hour, oldest first. Holds the ledger mutex for one copy of them.
+pub fn legacy_rows(shared: &Shared) -> LegacyRows {
     let ledger = shared.ledger.lock().unwrap();
     let w = &ledger.window;
     let cutoff = now().saturating_sub(LEDGER_EXPORT_S) as u32;
-    let mut credits = Vec::new();
-    for c in w.credits().rev() {
-        if c.ts <= cutoff {
-            break;
-        }
-        credits.push(
-            json!({ "ts": c.ts, "identity": w.identity(c.ident).unwrap_or(""), "work": c.work, "height": c.height }),
-        );
-    }
+    let mut credits: Vec<tides::Credit> = w.credits().rev().take_while(|c| c.ts > cutoff).copied().collect();
     credits.reverse();
-    json!({ "credits": credits, "shares": w.lifetime_shares, "window_work": w.total_work(), "target_work": w.target_work() })
+    LegacyRows {
+        credits,
+        idents: w.identities().to_vec(),
+        shares: w.lifetime_shares,
+        window_work: w.total_work(),
+        target_work: w.target_work(),
+    }
+}
+
+impl LegacyRows {
+    /// The legacy `ledger.json` shape (`{"credits":[{ts,identity,work,height}], ...}`). Heavy:
+    /// call it from a blocking thread, never from a session's worker.
+    pub fn to_json(&self) -> String {
+        #[derive(serde::Serialize)]
+        struct Row<'a> {
+            height: u32,
+            identity: &'a str,
+            ts: u32,
+            work: u64,
+        }
+        #[derive(serde::Serialize)]
+        struct Doc<'a> {
+            credits: Vec<Row<'a>>,
+            shares: u64,
+            target_work: u64,
+            window_work: u64,
+        }
+        let credits = self
+            .credits
+            .iter()
+            .map(|c| Row {
+                height: c.height,
+                identity: self.idents.get(c.ident as usize).map_or("", String::as_str),
+                ts: c.ts,
+                work: c.work,
+            })
+            .collect();
+        let doc = Doc { credits, shares: self.shares, target_work: self.target_work, window_work: self.window_work };
+        serde_json::to_string(&doc).unwrap_or_else(|_| "{}".into())
+    }
 }
 
 pub async fn serve(shared: Arc<Shared>) {
@@ -454,7 +518,12 @@ pub async fn serve(shared: Arc<Shared>) {
                             return body.clone();
                         }
                     }
-                    let body = Arc::new(if which == 0 { build(&shared) } else { legacy_ledger(&shared) }.to_string());
+                    let body = Arc::new(if which == 0 {
+                        build(&shared).to_string()
+                    } else {
+                        let rows = legacy_rows(&shared);
+                        tokio::task::spawn_blocking(move || rows.to_json()).await.unwrap_or_else(|_| "{}".into())
+                    });
                     held[which] = Some((Instant::now(), body.clone()));
                     body
                 }
@@ -481,6 +550,8 @@ type Built = Option<(Instant, Arc<String>)>;
 
 /// How long a built stats document is served for before it is built again.
 const STATS_TTL: Duration = Duration::from_millis(500);
+/// The `ledger.json` mirror is rewritten every this many housekeeping rounds of five seconds.
+const LEDGER_MIRROR_EVERY: u64 = 12;
 /// Stats connections open at once; past this a new one is closed unanswered.
 const STATS_MAX_CONNECTIONS: usize = 64;
 
@@ -513,11 +584,16 @@ pub async fn housekeeping(shared: Arc<Shared>) {
             shared.seen.lock().unwrap().prune_below(tip.height.saturating_sub(2));
         }
         let dir = shared.cfg.data_dir.clone();
-        let stats = build(&shared).to_string();
-        let legacy = legacy_ledger(&shared).to_string();
+        let stats = build(&shared);
+        // `ledger.json` is the pool site's fallback for when the stats endpoint is down, and an
+        // hour of rows: once a minute is as fresh as that needs, and the text is made and
+        // written on a blocking thread, like the stats mirror's.
+        let legacy = n.is_multiple_of(LEDGER_MIRROR_EVERY).then(|| legacy_rows(&shared));
         let _ = tokio::task::spawn_blocking(move || {
-            write_atomic(&dir.join("stats.json"), stats.as_bytes());
-            write_atomic(&dir.join("ledger.json"), legacy.as_bytes());
+            write_atomic(&dir.join("stats.json"), stats.to_string().as_bytes());
+            if let Some(rows) = legacy {
+                write_atomic(&dir.join("ledger.json"), rows.to_json().as_bytes());
+            }
         })
         .await;
     }
@@ -527,5 +603,45 @@ fn write_atomic(path: &std::path::Path, data: &[u8]) {
     let tmp = path.with_extension("tmp");
     if std::fs::write(&tmp, data).and_then(|_| std::fs::rename(&tmp, path)).is_err() {
         log::debug!("could not write {}", path.display());
+    }
+}
+
+#[cfg(test)]
+mod legacy_tests {
+    use super::*;
+
+    /// The export made off the lock is, read back, the document the old one built under it.
+    #[test]
+    fn the_legacy_ledger_is_the_same_document_as_before() {
+        let idents = vec!["bc1qa".to_string(), "weird \"name\"\n".to_string()];
+        let credits: Vec<tides::Credit> = (0..500u32)
+            .map(|i| tides::Credit {
+                ts: 1_795_000_000 + i,
+                ident: i % 3,
+                work: u64::from(i) * 4_096 + 1,
+                height: 982_000 + i / 50,
+                source: (i % 4) as u8,
+                tip_permille: 0,
+            })
+            .collect();
+        let rows = LegacyRows {
+            credits: credits.clone(),
+            idents: idents.clone(),
+            shares: 77,
+            window_work: 9,
+            target_work: 11,
+        };
+        let old: Vec<Value> = credits
+            .iter()
+            .map(|c| {
+                json!({ "ts": c.ts, "identity": idents.get(c.ident as usize).map_or("", String::as_str), "work": c.work, "height": c.height })
+            })
+            .collect();
+        let old = json!({ "credits": old, "shares": 77u64, "window_work": 9u64, "target_work": 11u64 });
+        let new: Value = serde_json::from_str(&rows.to_json()).unwrap();
+        assert_eq!(new, old);
+        assert_eq!(new["credits"].as_array().unwrap().len(), 500);
+        // an identity index past the table is an empty name, as it was
+        assert_eq!(new["credits"][2]["identity"], "");
     }
 }

@@ -309,6 +309,10 @@ fn run(cfg: Config) -> i32 {
             stale_after: if cfg.stale_coinbase { cfg.stale_after_secs() } else { 0 },
             stale_min_payout: cfg.stale_min_payout,
             stale_max_outputs: cfg.stale_per_block,
+            own_min_payout: cfg.own_min_payout,
+            own_max_outputs: cfg.own_per_block,
+            // each reply is computed with the asking session's (`Session::own_params`)
+            own: Vec::new(),
         },
         pool_script,
         pool,
@@ -332,6 +336,7 @@ fn run(cfg: Config) -> i32 {
         coinbaser_base: Mutex::new(None),
         gateway_payouts: Mutex::new(Shared::load_gateway_payouts(&cfg.data_dir)),
         pinned_scripts: Mutex::new(Default::default()),
+        quality: Mutex::new(Default::default()),
         parents: Default::default(),
         revealed: Default::default(),
         faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),

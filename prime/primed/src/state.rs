@@ -211,6 +211,11 @@ pub struct ClientInfo {
     /// every tip. Left out of the row when false.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub pins_script: bool,
+    /// The gateway offered DRS scaled reuse and this Prime acked it (`scaled-reuse-ack`): while
+    /// a tip's split is late it stretches its last one, so it is never turned to its own script
+    /// (`Session::scaled_reuse`). Left out of the row when false.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub scaled_reuse: bool,
     /// The payee bytes `class-budget` holds this session's coinbasers to, and null until its
     /// shares have shown one (see `session::ClassBudget`). Both fields are left out of the row
     /// for a session the key does not apply to, so a Prime without it writes the rows it always
@@ -285,6 +290,12 @@ pub struct Totals {
     pub template_checks_failed: AtomicU64,
     /// Coinbasers held to a session's class budget (`class-budget`).
     pub class_budget_replies: AtomicU64,
+    /// Credited shares whose username asked to tip (`address::tip_permille_of`).
+    pub tipped_shares: AtomicU64,
+    /// Coinbaser replies that placed at least one payee under `own-min-payout`.
+    pub own_floor_replies: AtomicU64,
+    /// Blocks whose coinbaser had placed a payee under `own-min-payout`.
+    pub own_floor_blocks: AtomicU64,
     /// Coinbasers a session's class budget would have held, issued at the pool's budget instead
     /// because carry was over `class-budget-carry-ceiling`.
     pub class_budget_ceiling_replies: AtomicU64,
@@ -527,6 +538,8 @@ pub struct Shared {
     /// Gateway keys whose jobs keep the script they were made under; see
     /// [`Shared::remember_pinned_script`].
     pub pinned_scripts: Mutex<HashSet<String>>,
+    /// How good the hashes of credited shares are, by gateway build; see [`Quality`].
+    pub quality: Mutex<Quality>,
     /// Parents gateways build on that are not our tip, as our node judges them.
     pub parents: crate::validity::ParentBook,
     /// Gateways whose templates our node found invalid; their shares earn nothing until one passes.
@@ -543,6 +556,44 @@ pub struct Shared {
 pub struct GatewayPayout {
     pub identity: String,
     pub script_hex: String,
+}
+
+/// Luck study (2026-11-23): over 47 days the pool found 6.5% fewer blocks than its credited work
+/// predicts, and nothing in how a share is credited accounts for it. A hash is uniform, so among
+/// credited shares half should have one more leading zero bit than any given level, a quarter two
+/// more, and so on up to a block. This counts credited shares by how many zero bits their hash has
+/// past the base 32 ([`datum_wire::pow::hash_pot`]), per gateway build. A build, firmware or proxy
+/// that loses its best hashes shows as a tail that falls off faster than by halves.
+#[derive(Default)]
+pub struct Quality {
+    by_build: HashMap<String, Box<[u64; Quality::LEVELS]>>,
+}
+
+impl Quality {
+    /// `hash_pot` 0 to 47, and one last bucket for anything past that (a block is about 33).
+    pub const LEVELS: usize = 49;
+    /// Shares at this `hash_pot` or better are also logged one by one, with their worker: about
+    /// one share in 4 000 at the pool's usual share difficulty, a few thousand lines a day.
+    pub const LOG_FROM: u32 = 26;
+    /// Builds counted apart; a user agent is the gateway's to choose, so the rest share a row.
+    const MAX_BUILDS: usize = 128;
+
+    pub fn note(&mut self, build: &str, hash_pot: u32) {
+        let key: String = build.chars().take(72).collect();
+        let key = if self.by_build.contains_key(&key) || self.by_build.len() < Self::MAX_BUILDS {
+            key
+        } else {
+            "(other)".into()
+        };
+        let row = self.by_build.entry(key).or_insert_with(|| Box::new([0; Self::LEVELS]));
+        row[(hash_pot as usize).min(Self::LEVELS - 1)] += 1;
+    }
+
+    pub fn snapshot(&self) -> Vec<(String, Vec<u64>)> {
+        let mut v: Vec<(String, Vec<u64>)> = self.by_build.iter().map(|(k, r)| (k.clone(), r.to_vec())).collect();
+        v.sort_by_key(|(_, r)| std::cmp::Reverse(r.iter().sum::<u64>()));
+        v
+    }
 }
 
 /// Gateway keys whose payout script is remembered across restarts; see `Shared::remember_gateway`.
@@ -728,6 +779,14 @@ impl Shared {
         out
     }
 
+    /// The payout an earlier session of this gateway key was last seen mining for. Good for
+    /// lowering that payout's floor in the key's own splits (`own-min-payout`), which pays an
+    /// address nothing but its own balance; not for what `HeldPayout` declines to trust it with.
+    pub fn lookup_gateway_identity(&self, key_hex: &str) -> Option<String> {
+        let map = self.gateway_payouts.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(key_hex).map(|p| p.identity.clone())
+    }
+
     pub fn lookup_gateway_script(&self, key_hex: &str) -> Option<Vec<u8>> {
         let map = self.gateway_payouts.lock().unwrap_or_else(|e| e.into_inner());
         map.get(key_hex).and_then(|p| hex::decode(&p.script_hex).ok())
@@ -850,6 +909,9 @@ mod tests {
                 stale_after: 0,
                 stale_min_payout: 10_000,
                 stale_max_outputs: 25,
+                own_min_payout: 0,
+                own_max_outputs: 20,
+                own: Vec::new(),
             },
             pool_script: address::to_script(&cfg.payout_address, Network::Mainnet).unwrap(),
             pool: Identity::generate(),
@@ -873,6 +935,7 @@ mod tests {
             coinbaser_base: Mutex::new(None),
             gateway_payouts: Mutex::new(Default::default()),
             pinned_scripts: Mutex::new(Default::default()),
+            quality: Mutex::new(Default::default()),
             parents: Default::default(),
             revealed: Default::default(),
             faults: crate::validity::Faults::with_ttl(cfg.quarantine_max_hours.saturating_mul(3600)),
@@ -1248,6 +1311,25 @@ mod quarantine_backoff_tests {
     /// on its own: first_secs doubled per strike, capped.
     fn span(first_secs: u64, cap_secs: u64, strikes: u32) -> u64 {
         first_secs.saturating_mul(1u64 << (strikes - 1).min(20)).min(cap_secs.max(first_secs))
+    }
+
+    #[test]
+    fn quality_counts_by_build_and_level_and_bounds_both() {
+        let mut q = super::Quality::default();
+        q.note("v1/abc", 0);
+        q.note("v1/abc", 0);
+        q.note("v1/abc", 33);
+        q.note("v1/abc", 200);
+        for i in 0..300 {
+            q.note(&format!("made-up/{i}"), 1);
+        }
+        let snap = q.snapshot();
+        assert!(snap.len() <= super::Quality::MAX_BUILDS + 1, "{}", snap.len());
+        let (_, row) = snap.iter().find(|(b, _)| b == "v1/abc").unwrap();
+        assert_eq!((row[0], row[33], row[super::Quality::LEVELS - 1], row.len()), (2, 1, 1, super::Quality::LEVELS));
+        let (_, other) = snap.iter().find(|(b, _)| b == "(other)").unwrap();
+        assert_eq!(other[1], 300 - (super::Quality::MAX_BUILDS as u64 - 1));
+        assert_eq!(snap.iter().map(|(_, r)| r.iter().sum::<u64>()).sum::<u64>(), 304, "every share is counted once");
     }
 
     #[test]

@@ -306,6 +306,7 @@ fn record(hash: &str, delta: Vec<(String, i64)>, books: Books) -> BlockRecord {
         books: Some(books),
         carry_shortfall_sats: 0,
         carry_reserved_sats: 0,
+        tips: vec![],
     }
 }
 

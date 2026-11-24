@@ -80,6 +80,13 @@ stale-min-payout = 10000
 stale-coinbase = true
 # Most stale balances one coinbase pays; a backlog drains over blocks.
 stale-per-block = 25
+# A miner under min-payout is in no coinbase, not even that of a block it finds. With this set,
+# the split handed to a gateway pays the payouts that gateway's own shares name from this many
+# sats up: their earned share plus carry, out of the pool's output, and nothing more. Other
+# gateways' splits do not change. 0 (the default) is off; not below 546.
+# own-min-payout = 1000
+# Most outputs one split places under own-min-payout (a gateway many miners share), largest first.
+# own-per-block = 20
 # DATUM / Prime-gateway fee in basis points (0 = free).
 fee-bps = 0
 # Public house-stratum fee (1000 = 10%). 0 inherits fee-bps.

@@ -296,6 +296,49 @@ and paid one of two ways, never both:
   and closes the hold only when it has 3 confirmations and pays every held script in full.
   `release` turns a hold back into carry. Every change is appended to `payouts/payouts.jsonl`.
 
+**A gateway's own miners (`own-min-payout`).** A miner too small to clear `min-payout` is in
+no coinbase, that of a block it finds included: the block pays everyone but its finder, whose
+share goes to carry. Every gateway is handed its own split, though, and Prime knows whom a
+gateway mines for from its accepted shares. With `own-min-payout` set, the split handed to a
+gateway lowers the floor to that figure for the payouts that gateway's shares have named this
+session (and the one its key was last seen mining for, so that a gateway back from a restart
+is covered before its first share). Whoever finds a block on that gateway is then in it.
+
+* *It is the same money, sooner.* The output is this block's earned share plus carry, the sum
+  every split already works out, and it comes out of the pool's output, where it was. No other
+  payee's output changes and no other gateway's split does.
+* *Naming an address gains nothing.* A lowered floor pays an address its own balance. A gateway
+  that submits shares under an address it does not mine for has that address paid what it was
+  owed.
+* *Placed first, and few.* These outputs lead the list, largest first, so neither the output
+  cap, the byte budget nor a size class that keeps a prefix of the list leaves the finder out;
+  at most `own-per-block` (20) are placed, which is also the most the smallest ordinary payees
+  can be set back by, and those are carried as by any full coinbase. A gateway shared by more
+  miners than that has its largest balances paid.
+* *Settled like any payee.* The block record lists the output in `split`, its carry in
+  `carry_paid`, and a coinbase that dropped it owes it (`owed_sats`), which the make-good pays.
+  A second block found on the same list before the gateway asks for another pays the carry
+  twice; that is `carry_shortfall_sats` on the record and debt on the miner's books, taken from
+  what it earns next, as for any payee.
+* *Not covered:* a balance under `own-min-payout`; a gateway's first shares of a first session,
+  before any names a payout; miners past `own-per-block` on a shared gateway; the house
+  gateway, whose usernames are the public stratum's. `stats.json` counts the replies and blocks
+  (`totals.own_floor_replies`, `totals.own_floor_blocks`).
+
+**Tips.** DATUM work pays no fee, and a miner who wants to give something can: a username
+that ends in `.tip` and a percentage (`bc1q….rig1.tip1`, `bc1q….tip0.5`) tips that share of
+what the work credited under it earns, 0.1% to 5%, anything higher read as 5%. The rate is
+stored on each credit row (the byte after `source`), so it is exact per share and changing or
+dropping it changes only the work that follows. In the split a tipping identity's earned share
+is lower by its tip and the pool's output higher; nobody else's figure moves, and carry, the
+lowered floor and make-goods all work from the figure after the tip. Stratum work, which pays
+the stratum fee, does not tip. A block record lists the tips in its coinbaser (`tips`), and
+`stats.json` has the shares that asked (`totals.tipped_shares`) and what a block found now
+would give (`window.tips`, `window.sample_tip_sats`). A build from before tips reads the byte
+as padding and pays the work in full, so the data directory moves either way. A gateway that
+forwards no worker names (`pool_pass_workers` and `pool_pass_full_users` both off) cannot
+carry the suffix.
+
 Stock gateways build several coinbase sizes and hand small miners those with room for only
 the first few outputs, or none at all while a coinbaser reply is in flight. The Prime
 classifies every share's coinbase as **Split** (every issued miner output paid), **Partial**
@@ -589,6 +632,16 @@ pay is its solo work). Scripts "neither the list nor the session names" on a job
 "this session did not issue": work built in an earlier session, which a reconnect should have
 replaced within seconds. Listed scripts short or over: a list from another reply than the one the
 job names.
+
+### Gateways that reuse their last split
+
+A gateway that offers DRS scaled reuse (hello bit `0x04`) and is told yes (`scaled-reuse-ack`)
+stretches its last split over the new value while a tip's split is late, so it has no pool-only
+gap for its own script to cover. Turning it to its own script at each tip only interrupts the
+stretch. Such a session is left on the pool's script through every tip, the way a session that
+keeps a job's script is (next section), and `stats.json` marks its row `scaled_reuse`. It is
+keyed on the ack and not the offer: with the key off the gateway is told no, does not reuse,
+and is turned to its own script as before. (Asked for by FlyTheElephant, PR #121.)
 
 ### Gateways that keep the script a job was made with
 
