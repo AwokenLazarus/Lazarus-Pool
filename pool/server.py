@@ -4332,8 +4332,12 @@ def live_workers_of(addresses):
     out = {}
     for addr in addresses:
         book = by.get(addr) or {}
-        live = {w["name"] for w in book.get("named") or [] if _prime_worker_live(w)}
-        if any(_prime_worker_live(w) for w in (book.get("unnamed") or []) + (book.get("more") or [])):
+        def hashing(w):
+            # tighter than the ten minutes a row stays on the Workers tab
+            return w["hr_ghs"] > 1e-6 and w["last_share_s"] < supporters.LIVE_SHARE_S
+
+        live = {w["name"] for w in book.get("named") or [] if hashing(w)}
+        if any(hashing(w) for w in (book.get("unnamed") or []) + (book.get("more") or [])):
             live.add("")
         out[addr] = live
     return out

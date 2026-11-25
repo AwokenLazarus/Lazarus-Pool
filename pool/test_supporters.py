@@ -110,9 +110,9 @@ class AlertsCase(unittest.TestCase):
         self.on()
         sup = {A}
         self.assertEqual(self.a.check({A: {"rig1", "rig2"}}, sup), 0)
-        self.t += 600
-        self.assertEqual(self.a.check({A: {"rig1"}}, sup), 0)  # ten minutes: not yet
-        self.t += S.OFFLINE_AFTER_S
+        self.t += S.OFFLINE_AFTER_S - 60
+        self.assertEqual(self.a.check({A: {"rig1"}}, sup), 0)  # not yet
+        self.t += 60
         self.assertEqual(self.a.check({A: {"rig1"}}, sup), 1)
         to, subject, body = self.mail.sent[-1]
         self.assertEqual((to, subject), ("m@example.org", "Lazarus Pool: rig2 is offline"))
