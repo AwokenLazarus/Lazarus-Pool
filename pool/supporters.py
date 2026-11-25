@@ -395,7 +395,7 @@ class Alerts:
         if went_down:
             lines.append("Stopped hashing:")
             for w, last in sorted(went_down):
-                lines.append(f"  {label(w)}   last share {time.strftime('%Y-%m-%d %H:%M', time.gmtime(last))} UTC")
+                lines.append(f"  {label(w)}   last seen hashing {time.strftime('%Y-%m-%d %H:%M', time.gmtime(last))} UTC")
             lines.append("")
         if came_back:
             lines.append("Hashing again:")
