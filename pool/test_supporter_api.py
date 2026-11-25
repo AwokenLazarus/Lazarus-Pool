@@ -97,7 +97,7 @@ class Routes(unittest.TestCase):
         while server._inflight.acquire(blocking=False):
             held += 1
         try:
-            self.assertEqual(call(self.port, "/api/miners")[0], 503)
+            self.assertEqual(call(self.port, f"/api/export/{TIPPER}.csv")[0], 503)
             self.assertIn("no longer valid", call(self.port, "/api/alerts/confirm?t=" + "z" * 32)[3])
         finally:
             for _ in range(held):
