@@ -353,6 +353,13 @@ window.LZ_I18N_DICTS["en"] = {
     "unavailable": "Alerts are not available right now. Try again later."
   },
   "tip": {
+    "boardTitle": "Supporters",
+    "boardLead": "Thank you to the miners keeping the pool running. Ranked by what they tipped over the last 7 days.",
+    "boardEmpty": "No supporters yet. Tip 0.5% or more across your address for 7 days and yours is the first name here.",
+    "boardThMiner": "Miner",
+    "boardThTipped": "Tipped, 7 days",
+    "boardThRate": "Tip",
+    "boardMore": "and {n} more",
     "supTitle": "Supporters get a little extra",
     "supBody": "An address whose tips come to <b>0.5% or more</b> of what it earned over the last 7 days, all its machines together, is a supporter. Payouts are the same for everyone; supporters also get:",
     "sup1": "<b>Worker alerts by email</b> when a machine stops hashing for 15 minutes, and when it is back",

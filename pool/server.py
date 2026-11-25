@@ -4300,6 +4300,27 @@ def supporter_status(addr):
     return doc
 
 
+SUPPORTER_BOARD = 10
+
+
+def supporter_board():
+    """The home page's supporters: addresses with supporter standing, most tipped over the
+    last seven days first, at most SUPPORTER_BOARD. The pool's own addresses (config
+    `supporters_always`) are left off: the board is the miners'."""
+    rows = [
+        {"address": a, "tip_sats_7d": int(r.get("tip_sats") or 0), "tip_percent_7d": float(r.get("percent") or 0.0)}
+        for a, r in supporter_table().items()
+        if r.get("supporter") and a not in SUPPORTERS_ALWAYS
+    ]
+    rows.sort(key=lambda r: (-r["tip_sats_7d"], r["address"]))
+    return {
+        "days": supporters.SUPPORTER_DAYS,
+        "min_percent": supporters.SUPPORTER_MIN_PERCENT,
+        "count": len(rows),
+        "supporters": rows[:SUPPORTER_BOARD],
+    }
+
+
 def stamp_supporters(doc):
     """Mark the supporter rows of a miners payload (every list of rows that carry an address)."""
     sup = supporter_addresses()
@@ -4424,7 +4445,7 @@ def _alert_page(kind, addr=None):
 }})();
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
-<link rel="stylesheet" href="/static/pool.css?v=ft8">
+<link rel="stylesheet" href="/static/pool.css?v=ft9">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
   .zh {{ display: none; }} .lang-zh .zh {{ display: inline; }} .lang-zh .en {{ display: none; }}
@@ -8109,6 +8130,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/payouts":
             self.send_json(cached("payouts", 30.0, self._payouts_payload), cache_s=30)
+            return
+        if path == "/api/supporters":
+            # The home page's supporter board. Not in the stable API table.
+            self.send_json(cached("supporters", 60.0, supporter_board), cache_s=60)
             return
         if path == "/api/makegoods":
             self.send_json(cached("makegoods", 15.0, makegoods_payload), cache_s=15)
