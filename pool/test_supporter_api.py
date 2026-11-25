@@ -82,6 +82,16 @@ class Routes(unittest.TestCase):
         self.assertFalse(json.loads(body)["support"]["supporter"])
         self.assertEqual(call(self.port, "/api/export/../etc.csv")[0], 404)
 
+    def test_an_address_the_config_names_is_a_supporter(self):
+        keep = server.SUPPORTERS_ALWAYS
+        server.SUPPORTERS_ALWAYS = frozenset([OTHER])
+        try:
+            self.assertIn(OTHER, server.supporter_addresses())
+            self.assertTrue(server.supporter_status(OTHER)["supporter"])
+            self.assertFalse(server.supporter_status("bc1qnobody")["supporter"])
+        finally:
+            server.SUPPORTERS_ALWAYS = keep
+
     def test_rows_are_marked(self):
         doc = server.stamp_supporters({"online": [{"address": TIPPER}, {"address": OTHER}], "n": 2})
         self.assertEqual([r["supporter"] for r in doc["online"]], [True, False])
