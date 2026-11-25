@@ -1085,6 +1085,7 @@
   .supboard-table th { padding: 0.3rem 0.5rem; border-bottom: 1px solid color-mix(in oklch, var(--ink) 16%, transparent); color: var(--muted); font-weight: 500; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; }
   .supboard-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid color-mix(in oklch, var(--ink) 8%, transparent); font-family: var(--mono); }
   .supboard-table .num { text-align: right; }
+  .supboard-table .supboard-name { font-family: var(--sans, inherit); font-weight: 600; }
   .supboard-table td:first-child, .supboard-table th:first-child { width: 2.2rem; color: var(--muted); }
   .tipbox.on { border-left-color: #3fb26b; }
   .tipbox.on .tipbox-kicker { color: #3fb26b; }

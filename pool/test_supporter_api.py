@@ -107,7 +107,13 @@ class Routes(unittest.TestCase):
         code, _, _, body = call(self.port, "/api/supporters")
         doc = json.loads(body)
         self.assertEqual((code, doc["count"], doc["days"], doc["min_percent"]), (200, 1, 7, 0.5))
-        self.assertEqual(doc["supporters"], [{"address": TIPPER, "tip_sats_7d": 10_000, "tip_percent_7d": 1.0}])
+        self.assertEqual(doc["supporters"], [{"address": TIPPER, "tip_sats_7d": 10_000, "tip_percent_7d": 1.0, "gateway_name": ""}])
+        keep_names = server.gateway_names_by_address
+        server.gateway_names_by_address = lambda: {TIPPER: {"name": "Shire Hash <b>"}}
+        try:
+            self.assertEqual(server.supporter_board()["supporters"][0]["gateway_name"], "Shire Hash <b>")
+        finally:
+            server.gateway_names_by_address = keep_names
         keep = server.SUPPORTERS_ALWAYS
         server.SUPPORTERS_ALWAYS = frozenset([TIPPER, OTHER])
         try:

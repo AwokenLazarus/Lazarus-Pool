@@ -1617,7 +1617,7 @@
     const pctOf = (v) => Number(v || 0).toFixed(2).replace(/\.?0+$/, "") + "%";
     const more = Number(d.count) > rows.length ? `<p class="tipbox-fine">${t("tip.boardMore", { n: num(Number(d.count) - rows.length) })}</p>` : "";
     box.innerHTML = `<table class="supboard-table"><thead><tr><th class="num">#</th><th>${t("tip.boardThMiner")}</th><th class="num">${t("tip.boardThTipped")}</th><th class="num">${t("tip.boardThRate")}</th></tr></thead><tbody>${rows
-      .map((r, i) => `<tr><td class="num">${i + 1}</td><td><a href="/miner/${encodeURIComponent(r.address)}" title="${esc(r.address)}">${short(r.address)}</a></td><td class="num">${num(r.tip_sats_7d)} sats</td><td class="num tip-on">${pctOf(r.tip_percent_7d)}</td></tr>`)
+      .map((r, i) => `<tr><td class="num">${i + 1}</td><td><a href="/miner/${encodeURIComponent(r.address)}" title="${esc(r.address)}"${r.gateway_name ? ' class="supboard-name"' : ""}>${r.gateway_name ? esc(r.gateway_name) : short(r.address)}</a></td><td class="num">${num(r.tip_sats_7d)} sats</td><td class="num tip-on">${pctOf(r.tip_percent_7d)}</td></tr>`)
       .join("")}</tbody></table>${more}`;
   }
   drawSupporters();
