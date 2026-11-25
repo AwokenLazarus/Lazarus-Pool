@@ -7755,7 +7755,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(501, f"Unsupported method ({self.command!r})")
                 return
             path = unquote(urlparse(self.path).path)
-            if split_lang_prefix(path)[1] in _CHEAP_PATHS or path.startswith("/static/"):
+            # The alert links arrive from an email and do one small write: never shed, or a
+            # miner who clicks "confirm" on a busy minute is shown {"error": "busy"}.
+            if split_lang_prefix(path)[1] in _CHEAP_PATHS or path.startswith(("/static/", "/api/alerts/")):
                 method()
             elif _inflight.acquire(blocking=False):
                 try:
