@@ -20,6 +20,7 @@ it imports nothing from the server, so it is tested on its own.
 import csv
 import hashlib
 import io
+import os
 import re
 import secrets
 import smtplib
@@ -229,6 +230,10 @@ class Alerts:
         self.site = site_url.rstrip("/")
         self.now = now
         self._lock = threading.Lock()
+        # Mailboxes: the file is the service user's alone (SQLite gives its -wal and -shm the
+        # same mode).
+        if not os.path.exists(self.path):
+            os.close(os.open(self.path, os.O_CREAT | os.O_WRONLY, 0o600))
         self._c = sqlite3.connect(self.path, check_same_thread=False, timeout=10)
         self._c.row_factory = sqlite3.Row
         self._c.execute("PRAGMA journal_mode=WAL")

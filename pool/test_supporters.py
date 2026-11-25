@@ -148,6 +148,9 @@ class AlertsCase(unittest.TestCase):
         alerts = [m for m in self.mail.sent if "Confirm" not in m[1]]
         self.assertEqual(len(alerts), S.MAX_MAILS_PER_DAY)
 
+    def test_the_mailbox_file_is_private(self):
+        self.assertEqual(Path(self.a.path).stat().st_mode & 0o777, 0o600)
+
     def test_without_mail_settings_nothing_is_offered(self):
         a = S.Alerts(Path(tempfile.mkdtemp(prefix="alerts-")) / "a.sqlite", S.Mailer(S.read_mail_env("/nonexistent")), "https://pool.example")
         self.assertFalse(a.mailer.ready)
