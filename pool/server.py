@@ -4363,14 +4363,102 @@ def alerts_loop():
             print("alerts", type(e).__name__, str(e)[:160], flush=True)
 
 
-def _alert_page(title, text):
-    return (
-        "<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-        "<meta name=robots content=noindex><title>" + html.escape(title) + " - Lazarus Pool</title>"
-        "<body style='font:16px/1.5 system-ui,sans-serif;background:#0d0b08;color:#e8dcc0;max-width:34em;margin:12vh auto;padding:0 1em'>"
-        "<h1 style='font-size:1.3em;color:#d9b45a'>" + html.escape(title) + "</h1><p>" + text + "</p>"
-        "<p><a style='color:#d9b45a' href='" + html.escape(_PUBLIC_SITE) + "/'>Lazarus Pool</a></p></body></html>"
-    )
+# The pages an alert link opens: confirm, unsubscribe, and the two dead ends. One self-contained
+# page in the site's own dress, English or Chinese by the same rule as the stats page (the
+# language cookie, else the browser).
+_ALERT_PAGES = {
+    "on": (
+        ("Worker alerts are on", "You are set. We will email you when a worker on this address stops hashing for 15 minutes, and again when it comes back."),
+        ("矿机提醒已开启", "设置完成。此地址下的矿机停止提交 15 分钟时，我们会给你发邮件；恢复时会再发一封。"),
+    ),
+    "off": (
+        ("Worker alerts are off", "No more alerts for this address will be sent to you, and your email address has been deleted from our records."),
+        ("矿机提醒已关闭", "我们不会再向你发送此地址的提醒，你的邮箱地址也已从记录中删除。"),
+    ),
+    "invalid": (
+        ("This link is no longer valid", "Confirmation links work for two days. Ask for the alerts again from your stats page and open the new link."),
+        ("此链接已失效", "确认链接两天内有效。请在你的矿工页面重新申请提醒，并打开新邮件中的链接。"),
+    ),
+    "none": (
+        ("Nothing to turn off", "These alerts were already off."),
+        ("无需关闭", "这些提醒已经是关闭状态。"),
+    ),
+}
+_ALERT_FACTS = (
+    ("Sent from", "发件地址", "alerts@lazarus-xbt.xyz"),
+    ("At most", "每日上限", ("12 emails a day", "每天 12 封")),
+    ("To stop", "如何停止", ("the link at the bottom of any alert", "任意提醒邮件底部的链接")),
+)
+
+
+def _alert_page(kind, addr=None):
+    (en_t, en_b), (zh_t, zh_b) = _ALERT_PAGES[kind]
+    good = kind in ("on", "off")
+
+    def both(en, zh):
+        return f'<span class="en">{html.escape(en)}</span><span class="zh">{html.escape(zh)}</span>'
+
+    facts = ""
+    if kind == "on":
+        rows = "".join(
+            f"<div><dt>{both(en, zh)}</dt><dd>{both(*v) if isinstance(v, tuple) else html.escape(v)}</dd></div>" for en, zh, v in _ALERT_FACTS
+        )
+        facts = f"<dl class=\"alert-facts\">{rows}</dl>"
+    address = f'<p class="addr"><code>{html.escape(addr)}</code></p>' if addr else ""
+    stats = f'<a class="btn" href="/miner/{html.escape(addr)}">{both("Open my stats", "打开我的矿工页面")}</a>' if addr else ""
+    home = f'<a class="btn ghost" href="/">{both("Lazarus Pool", "Lazarus Pool 首页")}</a>'
+    mark = "\u2713" if good else "!"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>{html.escape(en_t)} - Lazarus Pool</title>
+<script>
+(function () {{
+  var c = (document.cookie.match(/(?:^|; )lz_lang=([^;]*)/) || [])[1];
+  var n = decodeURIComponent(c || "") || navigator.language || "";
+  if (/^zh\\b/i.test(n)) {{ document.documentElement.lang = "zh-CN"; document.documentElement.classList.add("lang-zh"); }}
+}})();
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<link rel="stylesheet" href="/static/pool.css?v=ft6">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<style>
+  .zh {{ display: none; }} .lang-zh .zh {{ display: inline; }} .lang-zh .en {{ display: none; }}
+  body {{ min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }}
+  .alert-top {{ padding: 1.1rem 1.25rem; border-bottom: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); }}
+  .alert-main {{ display: grid; place-items: start center; padding: clamp(2rem, 9vh, 6rem) 1.25rem 3rem; }}
+  .alert-card {{ width: min(34rem, 100%); padding: clamp(1.5rem, 4vw, 2.25rem); border: 1px solid color-mix(in oklch, var(--ink) 16%, transparent); border-left: 3px solid var(--brass); border-radius: 6px; background: var(--bg-card); }}
+  .alert-card.good {{ border-left-color: #3fb26b; }}
+  .alert-mark {{ display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin-bottom: 1rem; border-radius: 50%; border: 1.5px solid var(--brass); color: var(--brass); font-size: 1.3rem; font-weight: 600; }}
+  .good .alert-mark {{ border-color: #3fb26b; color: #3fb26b; }}
+  .alert-card h1 {{ margin: 0 0 0.6rem; font-family: var(--serif); font-weight: 500; font-size: clamp(1.6rem, 4vw, 2rem); letter-spacing: -0.01em; line-height: 1.15; color: var(--ink); }}
+  .alert-card p {{ margin: 0 0 1rem; color: color-mix(in oklch, var(--ink) 86%, var(--muted)); font-size: 1rem; line-height: 1.6; }}
+  .alert-card .addr {{ padding: 0.6rem 0.75rem; border-radius: 4px; background: var(--bg-inset); overflow-wrap: anywhere; font-size: 0.85rem; }}
+  .alert-facts {{ display: block; margin: 0 0 1.4rem; padding: 0.9rem 0 0; border-top: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); font-size: 0.92rem; }}
+  .alert-facts div {{ display: flex; gap: 0.75rem; margin: 0 0 0.45rem; }}
+  .alert-facts dt {{ flex: 0 0 7rem; color: var(--muted); }} .alert-facts dd {{ flex: 1; margin: 0; color: var(--ink); overflow-wrap: anywhere; }}
+  .alert-actions {{ display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem; }}
+</style>
+</head>
+<body>
+<header class="alert-top"><a class="wordmark" href="/">Lazarus <em>Pool</em></a></header>
+<main class="alert-main">
+  <section class="alert-card{' good' if good else ''}">
+    <div class="alert-mark" aria-hidden="true">{mark}</div>
+    <h1>{both(en_t, zh_t)}</h1>
+    <p>{both(en_b, zh_b)}</p>
+    {address}
+    {facts}
+    <div class="alert-actions">{stats}{home}</div>
+  </section>
+</main>
+</body>
+</html>
+"""
 
 
 def loop():
@@ -7982,18 +8070,10 @@ class Handler(BaseHTTPRequestHandler):
             a = alerts()
             if path.endswith("/confirm"):
                 addr = a.confirm(token) if a else None
-                page = (
-                    _alert_page("Worker alerts are on", "You will get an email when a worker on <code>" + html.escape(addr) + "</code> stops hashing for 15 minutes, and when it comes back. Every alert has a link that turns them off.")
-                    if addr
-                    else _alert_page("This link is no longer valid", "Ask for the alerts again from your stats page.")
-                )
+                page = _alert_page("on", addr) if addr else _alert_page("invalid")
             else:
                 addr = a.unsubscribe(token) if a else None
-                page = (
-                    _alert_page("Worker alerts are off", "No more alerts for <code>" + html.escape(addr) + "</code> will be sent to you, and your email address has been deleted.")
-                    if addr
-                    else _alert_page("Nothing to turn off", "These alerts were already off.")
-                )
+                page = _alert_page("off", addr) if addr else _alert_page("none")
             self.send_text(page, "text/html; charset=utf-8")
             return
         if path == "/api/history":
