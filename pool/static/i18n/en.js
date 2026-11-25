@@ -353,6 +353,7 @@ window.LZ_I18N_DICTS["en"] = {
     "unavailable": "Alerts are not available right now. Try again later."
   },
   "tip": {
+    "boardHow": "How to become one",
     "boardTitle": "Supporters",
     "boardLead": "Thank you to the miners keeping the pool running. Ranked by what they tipped over the last 7 days.",
     "boardEmpty": "No supporters yet. Tip 0.5% or more across your address for 7 days and yours is the first name here.",

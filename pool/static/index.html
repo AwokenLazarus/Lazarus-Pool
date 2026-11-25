@@ -57,7 +57,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap"></noscript>
-<link rel="stylesheet" href="/static/pool.css?v=ft9">
+<link rel="stylesheet" href="/static/pool.css?v=ft10">
 <link rel="stylesheet" href="/static/app.css?v=fork1">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/static/favicon-48.png" sizes="48x48" type="image/png">
@@ -241,6 +241,11 @@
         <li data-i18n-html="status.p3"><b>Verifiable end to end.</b> Every share is rebuilt and hashed; every block found is on the <a href="https://mempool.lazarus-xbt.xyz/mining/pool/lazarus" target="_blank" rel="noreferrer">Lazarus Mempool</a>. Source on <a href="https://github.com/AwokenLazarus/Bitcoin" target="_blank" rel="noreferrer">GitHub</a>.</li>
       </ul>
       <p class="tipband" data-i18n-html="tip.band"><b>0% fee on DATUM mining.</b> Want to support the pool? <a href="#tip">Add an optional tip</a> to a worker name, like <code>rig1.tip1</code>. Supporters get worker alerts by email and an earnings export.</p>
+      <aside class="supboard" id="supboard" aria-labelledby="supboard-title">
+        <h3 class="supboard-title" id="supboard-title"><span class="sup-mark" aria-hidden="true">&#9670;</span> <span data-i18n="tip.boardTitle">Supporters</span></h3>
+        <p class="supboard-lead"><span data-i18n="tip.boardLead">Thank you to the miners keeping the pool running. Ranked by what they tipped over the last 7 days.</span> <a href="#tip" data-i18n="tip.boardHow">How to become one</a></p>
+        <div id="supboard-body"><p class="tipbox-fine" data-i18n="tip.boardEmpty">No supporters yet. Tip 0.5% or more across your address for 7 days and yours is the first name here.</p></div>
+      </aside>
     </div>
   </section>
 
@@ -445,11 +450,6 @@
                 <li data-i18n-html="tip.sup3"><b>A supporter mark</b> beside the address in the miners table</li>
               </ul>
               <p class="tipbox-fine" data-i18n="tip.supFine">The alerts and the file are on your miner page once the address qualifies. A 1% tip on every machine gets there in about three and a half days.</p>
-            </div>
-            <div class="supboard" id="supboard" aria-labelledby="supboard-title">
-              <h4 class="tipbox-subtitle" id="supboard-title"><span class="sup-mark" aria-hidden="true">&#9670;</span> <span data-i18n="tip.boardTitle">Supporters</span></h4>
-              <p class="tipbox-fine" data-i18n="tip.boardLead">Thank you to the miners keeping the pool running. Ranked by what they tipped over the last 7 days.</p>
-              <div id="supboard-body"><p class="tipbox-fine" data-i18n="tip.boardEmpty">No supporters yet. Tip 0.5% or more across your address for 7 days and yours is the first name here.</p></div>
             </div>
           </aside>
           <details class="fold">
@@ -894,12 +894,12 @@
 </nav>
 
 <script src="/static/i18n.js?v=seo2"></script>
-<script src="/static/i18n/en.js?v=ft9"></script>
-<script src="/static/i18n/zh-CN.js?v=ft9"></script>
+<script src="/static/i18n/en.js?v=ft10"></script>
+<script src="/static/i18n/zh-CN.js?v=ft10"></script>
 <script>LZ_I18N.boot();</script>
-<script src="/static/shared.js?v=ft9"></script>
+<script src="/static/shared.js?v=ft10"></script>
 <script src="/static/app.js?v=fork2"></script>
-<script src="/static/pool.js?v=ft9"></script>
+<script src="/static/pool.js?v=ft10"></script>
 <script src="/static/chart.js?v=app4"></script>
 </body>
 </html>

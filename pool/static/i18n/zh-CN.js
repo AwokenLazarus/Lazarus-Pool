@@ -353,6 +353,7 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "unavailable": "提醒功能暂时不可用，请稍后再试。"
   },
   "tip": {
+    "boardHow": "如何成为支持者",
     "boardTitle": "支持者",
     "boardLead": "感谢这些让矿池持续运行的矿工。按过去 7 天的小费金额排名。",
     "boardEmpty": "暂时还没有支持者。让你的地址在 7 天内小费达到 0.5% 或以上，你就是这里的第一个名字。",
