@@ -349,7 +349,7 @@ window.LZ_I18N_DICTS["en"] = {
     "badEmail": "That does not look like an email address.",
     "notSupporter": "Alerts are for supporters. This address is not one at the moment.",
     "slowDown": "Too many requests. Try again in an hour.",
-    "full": "This address already has three alert subscriptions.",
+    "full": "This address has as many alert subscriptions as it can take.",
     "unavailable": "Alerts are not available right now. Try again later."
   },
   "tip": {

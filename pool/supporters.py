@@ -44,7 +44,10 @@ OFFLINE_AFTER_S = 10 * 60
 MAX_MAILS_PER_DAY = 12
 # An unconfirmed subscription is forgotten after this long.
 CONFIRM_WITHIN_S = 48 * 3600
-MAX_SUBSCRIPTIONS_PER_ADDRESS = 3
+# Nobody proves they own an address, so a stranger can subscribe to one (and learn only what
+# its stats page shows). The cap is therefore high enough that a stranger cannot use it to shut
+# the owner out, and a full address gives up its oldest unconfirmed request first.
+MAX_SUBSCRIPTIONS_PER_ADDRESS = 25
 # Sign-up attempts: per requester and per target mailbox, in a rolling hour.
 MAX_ATTEMPTS_PER_HOUR = 5
 
@@ -295,7 +298,10 @@ class Alerts:
             else:
                 n = self._c.execute("SELECT COUNT(*) FROM subs WHERE address = ?", (address,)).fetchone()[0]
                 if n >= MAX_SUBSCRIPTIONS_PER_ADDRESS:
-                    return False, "full"
+                    old = self._c.execute("SELECT token FROM subs WHERE address = ? AND confirmed_ts IS NULL ORDER BY created_ts LIMIT 1", (address,)).fetchone()
+                    if not old:
+                        return False, "full"
+                    self._c.execute("DELETE FROM subs WHERE token = ?", (old["token"],))
                 token = secrets.token_urlsafe(24)
                 self._c.execute("INSERT INTO subs (token, address, email, created_ts) VALUES (?, ?, ?, ?)", (token, address, email, now))
             self._c.commit()

@@ -102,9 +102,20 @@ class AlertsCase(unittest.TestCase):
         for i in range(S.MAX_ATTEMPTS_PER_HOUR):
             self.a.subscribe(A, f"u{i}@example.org", "same-ip", True)
         self.assertEqual(self.a.subscribe(A, "last@example.org", "same-ip", True), (False, "slow_down"))
-        # three per address, whoever asks
-        self.t += 3601
-        self.assertEqual(self.a.subscribe(A, "four@example.org", "other", True), (False, "full"))
+
+    def test_a_stranger_cannot_fill_an_address(self):
+        # unconfirmed requests up to the cap: the next one takes the oldest one's place
+        for i in range(S.MAX_SUBSCRIPTIONS_PER_ADDRESS):
+            self.assertEqual(self.a.subscribe(A, f"s{i}@example.org", f"ip{i}", True), (True, "sent"))
+            self.t += 1
+        self.assertEqual(self.a.subscribe(A, "owner@example.org", "owner-ip", True), (True, "sent"))
+        self.assertEqual(self.a.confirm(self.token()), A)
+        n = self.a._c.execute("SELECT COUNT(*) FROM subs WHERE address = ?", (A,)).fetchone()[0]
+        self.assertEqual(n, S.MAX_SUBSCRIPTIONS_PER_ADDRESS)
+        self.assertIsNone(self.a._c.execute("SELECT 1 FROM subs WHERE email = ?", ("s0@example.org",)).fetchone())
+        # only confirmed mailboxes can make an address full
+        self.a._c.execute("UPDATE subs SET confirmed_ts = 1 WHERE address = ?", (A,))
+        self.assertEqual(self.a.subscribe(A, "late@example.org", "late-ip", True), (False, "full"))
 
     def test_offline_after_the_wait_then_back_once_each(self):
         self.on()
