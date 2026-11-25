@@ -1076,8 +1076,11 @@
   .tipbox-subtitle { margin: 0 0 0.4rem; font-family: var(--serif); font-size: 1.12rem; font-weight: 500; color: var(--ink); }
   .tipbox-perks { display: grid; gap: 0.3rem; margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.95rem; line-height: 1.5; color: color-mix(in oklch, var(--ink) 88%, var(--muted)); }
   .tipbox-perks b { color: var(--ink); }
-  .supboard { margin: 1rem 0 0; padding-top: 0.9rem; border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent); }
-  .supboard .tipbox-fine { margin-top: 0.3rem; }
+  /* The supporter board: its own card under the status pillars, where a visitor sees it. */
+  .supboard { margin: 1rem 0 0; padding: 1.1rem 1.25rem 1.2rem; border: 1px solid color-mix(in oklch, var(--brass) 45%, transparent); border-left: 3px solid var(--brass); border-radius: 6px; background: var(--bg-card); }
+  .supboard-title { margin: 0 0 0.3rem; font-family: var(--serif); font-size: 1.3rem; font-weight: 500; color: var(--ink); }
+  .supboard-lead { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
+  .supboard .tipbox-fine { margin-top: 0.6rem; }
   .supboard-table { width: 100%; margin-top: 0.7rem; border-collapse: collapse; font-size: 0.93rem; }
   .supboard-table th { padding: 0.3rem 0.5rem; border-bottom: 1px solid color-mix(in oklch, var(--ink) 16%, transparent); color: var(--muted); font-weight: 500; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; }
   .supboard-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid color-mix(in oklch, var(--ink) 8%, transparent); font-family: var(--mono); }

@@ -4445,7 +4445,7 @@ def _alert_page(kind, addr=None):
 }})();
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
-<link rel="stylesheet" href="/static/pool.css?v=ft9">
+<link rel="stylesheet" href="/static/pool.css?v=ft10">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
   .zh {{ display: none; }} .lang-zh .zh {{ display: inline; }} .lang-zh .en {{ display: none; }}
