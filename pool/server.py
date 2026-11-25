@@ -4268,6 +4268,9 @@ def check_blocks_found_drift(now=None, force=False):
 ALERTS_DB = Path(CONF.get("alerts_db") or str(Path(DB).with_name("alerts.sqlite")))
 MAIL_ENV = CONF.get("mail_env") or "/etc/lazarus/pool-mail.env"
 _supporter_cache = {"sig": None, "hour": None, "table": {}}
+# Addresses with supporter standing whatever they tip (config `supporters_always`): the pool's
+# own, for testing the alerts and the export on real machines.
+SUPPORTERS_ALWAYS = frozenset(str(a) for a in (CONF.get("supporters_always") or []))
 _alerts = None
 _alerts_lock = threading.Lock()
 
@@ -4286,7 +4289,15 @@ def supporter_table():
 
 
 def supporter_addresses():
-    return {a for a, r in supporter_table().items() if r.get("supporter")}
+    return {a for a, r in supporter_table().items() if r.get("supporter")} | SUPPORTERS_ALWAYS
+
+
+def supporter_status(addr):
+    """The API's `support` block for one address."""
+    doc = supporters.public_status(supporter_table().get(addr))
+    if addr in SUPPORTERS_ALWAYS:
+        doc["supporter"] = True
+    return doc
 
 
 def stamp_supporters(doc):
@@ -7942,7 +7953,7 @@ class Handler(BaseHTTPRequestHandler):
                     a = alerts()
                     # Standing as a supporter (tips over the last seven days) and whether the
                     # email alerts can be asked for here. Never says who is subscribed.
-                    doc["support"] = {**supporters.public_status(supporter_table().get(addr)), "alerts_available": bool(a and a.mailer.ready)}
+                    doc["support"] = {**supporter_status(addr), "alerts_available": bool(a and a.mailer.ready)}
                 return public_view(doc)
 
             self.send_json(cached(key, 5.0, build), cache_s=5)
@@ -7955,7 +7966,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "not found"}, 404)
                 return
             if addr not in supporter_addresses():
-                self.send_json({"error": "supporters only", "support": supporters.public_status(supporter_table().get(addr))}, 403)
+                self.send_json({"error": "supporters only", "support": supporter_status(addr)}, 403)
                 return
             text = cached(("export", addr), 60.0, lambda: supporters.earnings_csv(_block_log_latest()[1].values(), addr))
             self.send_text(text, "text/csv; charset=utf-8", cache_s=60)
