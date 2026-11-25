@@ -330,6 +330,28 @@ window.LZ_I18N_DICTS["zh-CN"] = {
     "carryFwdAmt": " + {amt} 结转至后续",
     "carryBackAmt": " − {amt} 已付回结转"
   },
+  "sup": {
+    "title": "支持者。",
+    "on": "过去 {days} 天你的小费占此地址收益的 {pct}%。谢谢。",
+    "progress": "过去 {days} 天你的小费占此地址收益的 {pct}%。达到 {min}% 即成为支持者：矿机离线邮件提醒，以及收益明细文件下载。",
+    "offer": "过去 {days} 天小费达到 {min}% 或以上的地址即为支持者：矿机离线邮件提醒，以及收益明细文件下载。所有人的收益分配完全一样。",
+    "alertsBtn": "邮件提醒矿机状态",
+    "exportBtn": "下载收益明细（CSV）",
+    "markTitle": "支持者：过去 7 天小费达到收益的 0.5% 或以上",
+    "dlgTitle": "矿机邮件提醒",
+    "dlgBody": "此地址下的矿机停止提交 15 分钟时，以及恢复时，我们会给你发邮件。",
+    "dlgEmail": "邮箱地址",
+    "dlgSend": "发送确认邮件",
+    "dlgClose": "关闭",
+    "dlgFine": "我们会先发一封确认邮件。邮箱只用于这些提醒，不会公开，退订后即删除。提醒邮件为英文。",
+    "sending": "发送中…",
+    "sent": "请查收邮件并点击其中的链接以开启提醒。",
+    "badEmail": "这看起来不是有效的邮箱地址。",
+    "notSupporter": "提醒功能仅对支持者开放，此地址目前不是支持者。",
+    "slowDown": "请求过于频繁，请一小时后再试。",
+    "full": "此地址已有三个提醒订阅。",
+    "unavailable": "提醒功能暂时不可用，请稍后再试。"
+  },
   "tip": {
     "kicker": "自愿",
     "title": "DATUM 挖矿 0% 手续费。愿意的话，可以给矿池小费。",
@@ -1218,6 +1240,6 @@ window.LZ_I18N_DICTS["zh-CN"].app.sub.live = "实时数据";
 window.LZ_I18N_DICTS["zh-CN"].app.chart.rangeSoon = "更长的时间范围将随下一次节点更新提供";
 window.LZ_I18N_DICTS["zh-CN"].app.scroll = {"prev": "向左滚动", "next": "向右滚动"};
 window.LZ_I18N_DICTS["zh-CN"].app.article = {"more": "展开全文", "less": "收起"};
-Object.assign(window.LZ_I18N_DICTS["zh-CN"].app.learn, {"pathTitle": "从零到开挖：DATUM 方式", "p1": "<b>准备一个收款地址。</b>任何能提供本链 bc1… 地址的钱包都可以。这个地址就是你的用户名，无需注册。", "p2": "<b>运行你自己的节点。</b>使用本链的 Bitcoin Knots，开启 <code>server=1</code>，并提供网关可读取的 cookie 或 RPC 用户。你区块里的交易由你的节点来选择。", "p3": "<b>启动 DATUM 网关。</b>构建一个网关（推荐 CONVOY），填入“连接”页面上的 Lazarus 主机、端口和公钥，并把 <code>mining.pool_address</code> 设为你的地址。", "p4": "<b>把矿机指向你的网关。</b>任何 Siacoin BLAKE2b 矿机都可以，连接你自己网关的 stratum 端口，用户名为 <code>地址.矿工名</code>。", "p5": "<b>看它工作。</b>你的网关会出现在“网关”列表中，你的地址会出现在“矿工”列表中。费率为 0%，区块由你自己构建。", "pathCta": "搭建 DATUM", "pathCalc": "我能赚多少？"});
+Object.assign(window.LZ_I18N_DICTS["zh-CN"].app.learn, {"pathTitle": "从零到开挖：DATUM 方式", "p1": "<b>准备一个收款地址。</b>任何能提供本链 bc1… 地址的钱包都可以。这个地址就是你的用户名，无需注册。", "p2": "<b>运行你自己的节点。</b>使用本链的 Bitcoin Knots，开启 <code>server=1</code>，并提供网关可读取的 cookie 或 RPC 用户。你区块里的交易由你的节点来选择。", "p3": "<b>启动 DATUM 网关。</b>构建一个网关（推荐 CONVOY），填入“连接”页面上的 Lazarus 主机、端口和公钥，并把 <code>mining.pool_address</code> 设为你的地址。", "p4": "<b>把矿机指向你的网关。</b>任何 Siacoin BLAKE2b 矿机都可以，连接你自己网关的 stratum 端口，用户名为 <code>地址.矿工名.tip1</code>。<code>.tip1</code> 表示给矿池 1% 的小费，完全自愿；不想给就去掉。", "p5": "<b>看它工作。</b>你的网关会出现在“网关”列表中，你的地址会出现在“矿工”列表中。费率为 0%，区块由你自己构建。", "pathCta": "搭建 DATUM", "pathCalc": "我能赚多少？"});
 window.LZ_I18N_DICTS["zh-CN"].app.chart.m = {"title": "你的算力与支付给你的区块", "blocks": "支付给你的区块", "reward": "区间内支付给你", "rewardOne": "支付给你", "toYou": "支付给你 {amt}", "immature": "成熟中", "spendable": "可花费", "hint": "悬停查看读数 · 菱形是支付给该地址的区块，点击查看支付明细 · 聚焦图表后可用 ← →", "aria": "该地址的算力，{range}。当前 {now}，平均 {avg}，峰值 {peak}。共有 {blocks} 个区块向它支付。", "clickSplit": "点击查看支付明细", "empty": "该时间范围内没有这个地址的样本。"};
 window.LZ_I18N_DICTS["zh-CN"].app.chart.n = {"title": "该地址的算力与向它支付的区块", "blocks": "向它支付的区块", "reward": "区间内支付给它", "rewardOne": "支付给该地址", "toYou": "支付给该地址 {amt}"};

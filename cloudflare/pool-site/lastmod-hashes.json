@@ -1,7 +1,7 @@
 {
  "/": {
-  "lastmod": "2026-11-23",
-  "sha256": "78d63f4f0d216a8a7ad60c2dfaf719e184b70c37088ee75be1a24f30424ed8e4"
+  "lastmod": "2026-11-25",
+  "sha256": "b2a5025ac9167a2394ee4a5e7c0d051d031e8697d4a5c67c4b819748212255e7"
  },
  "/api": {
   "lastmod": "2026-10-30",
@@ -24,8 +24,8 @@
   "sha256": "3f2232d15c646612aaee16edb8ef779957ed969cc5ea2598ce764fa1de55c6e1"
  },
  "/flytheelephant": {
-  "lastmod": "2026-11-12",
-  "sha256": "54f0ada5f42939b2e4ef96ef5814239dfa52b5d31bb5cb49dcc4c66b89329a5a"
+  "lastmod": "2026-11-25",
+  "sha256": "b0bd67c52c847264ea928eb44db01b56326254a1e2998be9419f5e6d89ad523d"
  },
  "/hardware": {
   "lastmod": "2026-10-29",
@@ -44,8 +44,8 @@
   "sha256": "7cc0a6c1b8fb8a2bc24635384125716406da2ac0908c8a82a66cf6987ade4389"
  },
  "/ratum": {
-  "lastmod": "2026-11-04",
-  "sha256": "bba06b569769a390c18ff0f780cd53ade89f6cd4ffd1bba91c655beea6eedcfb"
+  "lastmod": "2026-11-25",
+  "sha256": "ae9450cb403eb7c19fbc7d7daae4c4d6d8822d4b548c3a70560dbebf60f623ba"
  },
  "/rentals": {
   "lastmod": "2026-10-29",
@@ -56,7 +56,7 @@
   "sha256": "ed851132e877a848831ba5acac4519879220a09cda798723b7f61f777783d99c"
  },
  "/zh/": {
-  "lastmod": "2026-11-23",
+  "lastmod": "2026-11-25",
   "sha256": "7bc96a46e30e27aabeff4ad8d94ff9c3e697cddd3ea8eeae45a6640a2a81f271"
  },
  "/zh/api": {
@@ -80,8 +80,8 @@
   "sha256": "94662053ff977f229882910e2bd9071252c239c9edae4ada3c3591e8583aeb3d"
  },
  "/zh/flytheelephant": {
-  "lastmod": "2026-11-12",
-  "sha256": "aef14c3e9f59b2de554a79e7f5238431b3cedbbe37bcf4b1caf4d1833e156774"
+  "lastmod": "2026-11-25",
+  "sha256": "26550b65fc5ffad8522ae60a14ae47dcc335566bae832fe8dd6845ee92fd01c2"
  },
  "/zh/hardware": {
   "lastmod": "2026-10-29",
@@ -100,8 +100,8 @@
   "sha256": "7801adda30e0e5ef61db2269b1ec83ce59d8e80e8f0fc7a972bd1bbe1487d9ca"
  },
  "/zh/ratum": {
-  "lastmod": "2026-11-04",
-  "sha256": "61ca17949b40aec1ea0d447d9f9a51375df5e684a2f7c0317afe6de49ddece0a"
+  "lastmod": "2026-11-25",
+  "sha256": "e2f703b0f5690d4d9e870d080fb3330d1496ec4432d592de16724a03f28d2ba4"
  },
  "/zh/rentals": {
   "lastmod": "2026-10-29",

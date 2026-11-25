@@ -1599,7 +1599,9 @@
   let lastPays = { payouts: [], prime_blocks: [] };
   // Optional tip, separate from the path fee: a percentage for an address that tips, a dash
   // for one that does not.
-  const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(2).replace(/\.?0+$/, "")}%</span>` : "\u2014");
+  // A supporter (tips of 0.5% or more over seven days) carries a mark beside the figure.
+  const supMark = (m) => (m.supporter ? ` <span class="sup-mark" title="${esc(t("sup.markTitle"))}" aria-label="${esc(t("sup.markTitle"))}">\u25C6</span>` : "");
+  const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(2).replace(/\.?0+$/, "")}%</span>` : "\u2014") + supMark(m);
   let lastBlocks = { blocks: [] };
   async function refresh() {
     // A tab nobody is looking at has no one to refresh for; it catches up when it is shown.

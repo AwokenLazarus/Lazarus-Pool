@@ -29,6 +29,7 @@ async function api(request, env, ctx) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS" } });
   }
+  if (request.method === "POST") return post(request, env);
   if (request.method !== "GET" && request.method !== "HEAD") {
     return json({ error: "method not allowed" }, 405);
   }
@@ -78,6 +79,38 @@ async function api(request, env, ctx) {
     ctx.waitUntil(Promise.all([cache.put(freshKey, fresh), cache.put(staleKey, keep)]));
   }
   return finish(out, request, "MISS");
+}
+
+// The two things a browser or a mail client posts: a supporter asking for worker alerts by
+// email, and a one-click unsubscribe. Small JSON bodies, never cached; the node gets the
+// caller's address (for its sign-up limits) in a header only this worker can set.
+const POST_PATHS = new Set(["/api/alerts/subscribe", "/api/alerts/unsubscribe"]);
+
+async function post(request, env) {
+  const url = new URL(request.url);
+  if (!POST_PATHS.has(url.pathname)) return json({ error: "method not allowed" }, 405);
+  if (!env.ORIGIN_URL) return json({ error: "origin not configured" }, 500);
+  const body = await request.text();
+  if (body.length > 2048) return json({ error: "too large" }, 413);
+  try {
+    const res = await fetch(env.ORIGIN_URL.replace(/\/$/, "") + url.pathname + url.search, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "lazarus-pages-proxy",
+        "X-Lazarus-Client": request.headers.get("CF-Connecting-IP") || "",
+        ...accessHeaders(env),
+      },
+      body,
+      signal: AbortSignal.timeout(30000),
+    });
+    const out = new Response(res.body, res);
+    out.headers.set("Cache-Control", "no-store");
+    out.headers.delete("Set-Cookie");
+    return out;
+  } catch (e) {
+    return json({ error: "origin unreachable" }, 502);
+  }
 }
 
 // The origin hostname sits behind Cloudflare Access; this service token is the only way in.

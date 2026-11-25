@@ -330,6 +330,28 @@ window.LZ_I18N_DICTS["en"] = {
     "carryFwdAmt": " + {amt} carried forward",
     "carryBackAmt": " − {amt} carry paid back"
   },
+  "sup": {
+    "title": "Supporter.",
+    "on": "Your tips over the last {days} days come to {pct}% of what this address earned. Thank you.",
+    "progress": "Your tips over the last {days} days come to {pct}% of what this address earned. At {min}% it becomes a supporter: worker alerts by email and your earnings as a file.",
+    "offer": "Addresses that tip {min}% or more over {days} days are supporters: worker alerts by email and their earnings as a file. Payouts are the same for everyone.",
+    "alertsBtn": "Email me worker alerts",
+    "exportBtn": "Download earnings (CSV)",
+    "markTitle": "Supporter: tips 0.5% or more of its earnings over the last 7 days",
+    "dlgTitle": "Worker alerts by email",
+    "dlgBody": "We email you when a worker on this address stops hashing for 15 minutes, and when it comes back.",
+    "dlgEmail": "Email address",
+    "dlgSend": "Send confirmation",
+    "dlgClose": "Close",
+    "dlgFine": "We send a confirmation link first. Your address is used for these alerts only, is never shown, and is deleted when you unsubscribe.",
+    "sending": "Sending…",
+    "sent": "Check your inbox and open the link to turn the alerts on.",
+    "badEmail": "That does not look like an email address.",
+    "notSupporter": "Alerts are for supporters. This address is not one at the moment.",
+    "slowDown": "Too many requests. Try again in an hour.",
+    "full": "This address already has three alert subscriptions.",
+    "unavailable": "Alerts are not available right now. Try again later."
+  },
   "tip": {
     "kicker": "Optional",
     "title": "0% fee on DATUM. Tip the pool if you want to.",
@@ -1221,6 +1243,6 @@ window.LZ_I18N_DICTS["en"].app.sub.live = "Live numbers";
 window.LZ_I18N_DICTS["en"].app.chart.rangeSoon = "Longer ranges arrive with the next node update";
 window.LZ_I18N_DICTS["en"].app.scroll = {"prev": "Scroll left", "next": "Scroll right"};
 window.LZ_I18N_DICTS["en"].app.article = {"more": "Read more", "less": "Show less"};
-Object.assign(window.LZ_I18N_DICTS["en"].app.learn, {"pathTitle": "From zero to mining, the DATUM way", "p1": "<b>Get a payout address.</b> Any wallet that gives you a bc1… address on this chain. That address is your username; there is nothing to register.", "p2": "<b>Run your own node.</b> Bitcoin Knots for this chain, with <code>server=1</code> and a cookie or RPC user your gateway can read. Your node is what chooses the transactions in your blocks.", "p3": "<b>Start a DATUM gateway.</b> Build one (CONVOY is recommended), paste in the Lazarus host, port and pubkey from the Connect page, and set <code>mining.pool_address</code> to your address.", "p4": "<b>Point your miner at your gateway.</b> Any Siacoin BLAKE2b ASIC, aimed at your own gateway’s stratum port, with the username <code>address.worker</code>.", "p5": "<b>Watch it work.</b> Your gateway shows up under Gateways and your address under Miners. You pay 0%, and you build your own blocks.", "pathCta": "Set up DATUM", "pathCalc": "What would I earn?"});
+Object.assign(window.LZ_I18N_DICTS["en"].app.learn, {"pathTitle": "From zero to mining, the DATUM way", "p1": "<b>Get a payout address.</b> Any wallet that gives you a bc1… address on this chain. That address is your username; there is nothing to register.", "p2": "<b>Run your own node.</b> Bitcoin Knots for this chain, with <code>server=1</code> and a cookie or RPC user your gateway can read. Your node is what chooses the transactions in your blocks.", "p3": "<b>Start a DATUM gateway.</b> Build one (CONVOY is recommended), paste in the Lazarus host, port and pubkey from the Connect page, and set <code>mining.pool_address</code> to your address.", "p4": "<b>Point your miner at your gateway.</b> Any Siacoin BLAKE2b ASIC, aimed at your own gateway’s stratum port, with the username <code>address.worker.tip1</code>. The <code>.tip1</code> tips the pool 1% and is optional; leave it off to tip nothing.", "p5": "<b>Watch it work.</b> Your gateway shows up under Gateways and your address under Miners. You pay 0%, and you build your own blocks.", "pathCta": "Set up DATUM", "pathCalc": "What would I earn?"});
 window.LZ_I18N_DICTS["en"].app.chart.m = {"title": "Your hashrate and the blocks that paid you", "blocks": "Blocks that paid you", "reward": "Paid to you in range", "rewardOne": "Paid to you", "toYou": "to you {amt}", "immature": "maturing", "spendable": "spendable", "hint": "Hover for a reading · diamonds are blocks that paid this address; click one for its payout split · ← → with the chart focused", "aria": "Hashrate for this address, {range}. Now {now}, average {avg}, peak {peak}. {blocks} blocks paid it.", "clickSplit": "Click for the payout split", "empty": "No samples for this address in this range."};
 window.LZ_I18N_DICTS["en"].app.chart.n = {"title": "Hashrate and the blocks that paid this address", "blocks": "Blocks that paid it", "reward": "Paid to it in range", "rewardOne": "Paid to this address", "toYou": "to this address {amt}"};
