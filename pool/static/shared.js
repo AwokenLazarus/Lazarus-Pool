@@ -601,6 +601,48 @@
       keepScroll(card, () => card.querySelectorAll("[data-payouts-tables]").forEach((box) => { box.outerHTML = payoutTables(m, last.ctx); }));
     });
   }
+  // Worker alerts sign-up. The stats card is redrawn on every refresh, so the form lives in a
+  // dialog on the body, outside it. The server mails a confirmation link; nothing is on until
+  // that link is opened, and the answer never says whether a mailbox was already subscribed.
+  let supDialog = null;
+  function openAlertsDialog(address) {
+    if (!supDialog) {
+      supDialog = document.createElement("dialog");
+      supDialog.className = "sup-dialog";
+      document.body.appendChild(supDialog);
+      supDialog.addEventListener("click", (e) => {
+        if (e.target === supDialog || (e.target.closest && e.target.closest("[data-sup-close]"))) supDialog.close();
+      });
+      supDialog.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const msg = supDialog.querySelector(".sup-msg");
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        msg.textContent = t("sup.sending");
+        let code = "unavailable";
+        try {
+          const res = await fetch("/api/alerts/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: form.getAttribute("data-address"), email: form.elements.email.value.trim() }),
+          });
+          code = ((await res.json()) || {}).code || code;
+        } catch (err) { /* unavailable */ }
+        const key = { sent: "sup.sent", bad_email: "sup.badEmail", not_supporter: "sup.notSupporter", slow_down: "sup.slowDown", full: "sup.full" }[code] || "sup.unavailable";
+        msg.textContent = t(key);
+        msg.classList.toggle("ok", code === "sent");
+        btn.disabled = code === "sent";
+      });
+    }
+    supDialog.innerHTML = `<form method="dialog" data-address="${esc(address)}"><h3>${t("sup.dlgTitle")}</h3><p>${t("sup.dlgBody")}</p><label>${t("sup.dlgEmail")}<input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="you@example.com"></label><p class="sup-msg" role="status"></p><p class="sup-dlg-actions"><button type="button" class="sup-btn" data-sup-close>${t("sup.dlgClose")}</button><button type="submit" class="sup-btn primary">${t("sup.dlgSend")}</button></p><p class="sup-fine">${t("sup.dlgFine")}</p></form>`;
+    if (supDialog.showModal) supDialog.showModal();
+    else supDialog.setAttribute("open", "");
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("[data-sup-alerts]");
+    if (b) openAlertsDialog(b.getAttribute("data-sup-alerts"));
+  });
   document.addEventListener("click", (e) => {
     const btn = e.target.closest && e.target.closest("[data-payouts-more]");
     if (!btn || olderPayouts.busy) return;
@@ -932,7 +974,19 @@
         ? t("tip.mBodyOn", { pct: Number(m.tip_percent || 0).toFixed(2).replace(/\.?0+$/, ""), amt: satsExact(Math.round(Number(m.tip_btc_block) * 1e8)) })
         : t("tip.mBodyOff", { ex: esc((first || "rig1") + ".tip1") });
       const more = `<a href="${document.documentElement.lang.startsWith("zh") ? "/zh/" : "/"}#tip">${t("tip.more")}</a>`;
-      return panelBox("tip", `<aside class="tipbox ${tipping ? "on" : ""}"><p class="tipbox-kicker">${t("tip.kicker")}</p><h3 class="tipbox-title">${t(tipping ? "tip.mTitleOn" : "tip.mTitleOff")}</h3><p class="tipbox-body">${body} ${more}</p></aside>`);
+      // Supporter standing: tips over the last seven days against what the address earned
+      // (server `support`). A supporter gets the earnings file and worker alerts by email;
+      // an address short of it is told where it stands, one that does not tip what there is.
+      const sp = m.support || {};
+      const pct = (v) => Number(v || 0).toFixed(2).replace(/\.?0+$/, "");
+      let sup = "";
+      if (sp.supporter) {
+        const alertsBtn = sp.alerts_available ? `<button type="button" class="sup-btn" data-sup-alerts="${esc(m.address)}">${t("sup.alertsBtn")}</button>` : "";
+        sup = `<div class="supbox on"><p class="sup-line"><span class="sup-mark" aria-hidden="true">\u25C6</span> <b>${t("sup.title")}</b> ${t("sup.on", { pct: pct(sp.tip_percent_7d), days: sp.days })}</p><p class="sup-actions">${alertsBtn}<a class="sup-btn" href="/api/export/${encodeURIComponent(m.address)}.csv" download="lazarus-earnings-${esc(String(m.address).slice(-8))}.csv">${t("sup.exportBtn")}</a></p></div>`;
+      } else if (sp.min_percent) {
+        sup = `<div class="supbox"><p class="sup-line">${t(Number(sp.tip_sats_7d) > 0 ? "sup.progress" : "sup.offer", { pct: pct(sp.tip_percent_7d), min: pct(sp.min_percent), days: sp.days })}</p></div>`;
+      }
+      return panelBox("tip", `<aside class="tipbox ${tipping ? "on" : ""}"><p class="tipbox-kicker">${t("tip.kicker")}</p><h3 class="tipbox-title">${t(tipping ? "tip.mTitleOn" : "tip.mTitleOff")}</h3><p class="tipbox-body">${body} ${more}</p>${sup}</aside>`);
     })();
     const nPending = Number(m.immature_blocks) || (m.blocks_found || []).filter((b) => payStatus(b) === "immature").length;
     const nPaid = (m.blocks_found || []).length - (m.blocks_found || []).filter((b) => payStatus(b) === "immature").length;
