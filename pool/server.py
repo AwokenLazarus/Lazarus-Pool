@@ -4313,11 +4313,18 @@ def supporter_board():
         if r.get("supporter") and a not in SUPPORTERS_ALWAYS
     ]
     rows.sort(key=lambda r: (-r["tip_sats_7d"], r["address"]))
+    count = len(rows)
+    rows = rows[:SUPPORTER_BOARD]
+    # Shown by the name its gateway mines under (the operator's own tag), where it has one; an
+    # address mining through someone else's gateway has none and is shown by address.
+    names = gateway_names_by_address()
+    for r in rows:
+        r["gateway_name"] = str((names.get(r["address"]) or {}).get("name") or "")[:40]
     return {
         "days": supporters.SUPPORTER_DAYS,
         "min_percent": supporters.SUPPORTER_MIN_PERCENT,
-        "count": len(rows),
-        "supporters": rows[:SUPPORTER_BOARD],
+        "count": count,
+        "supporters": rows,
     }
 
 
@@ -4445,7 +4452,7 @@ def _alert_page(kind, addr=None):
 }})();
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
-<link rel="stylesheet" href="/static/pool.css?v=ft10">
+<link rel="stylesheet" href="/static/pool.css?v=ft11">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
   .zh {{ display: none; }} .lang-zh .zh {{ display: inline; }} .lang-zh .en {{ display: none; }}
