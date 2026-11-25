@@ -35,10 +35,12 @@ SUPPORTER_DAYS = 7
 SUPPORTER_MIN_PERCENT = 0.5
 SUPPORTER_MIN_TIP_SATS = 1_000
 
-# A worker is reported offline once it has not been live for this long, and at most this many
-# mails go to one subscription in a day. A Prime restart drops every session for a minute or
-# two, well inside the wait.
-OFFLINE_AFTER_S = 15 * 60
+# A worker counts as hashing while its last share is under LIVE_SHARE_S old, and is reported
+# offline once it has not been hashing for OFFLINE_AFTER_S more: fifteen minutes after its
+# last share. At most MAX_MAILS_PER_DAY mails go to one subscription in a day. A Prime restart
+# drops every session for a minute or two, well inside the wait.
+LIVE_SHARE_S = 5 * 60
+OFFLINE_AFTER_S = 10 * 60
 MAX_MAILS_PER_DAY = 12
 # An unconfirmed subscription is forgotten after this long.
 CONFIRM_WITHIN_S = 48 * 3600

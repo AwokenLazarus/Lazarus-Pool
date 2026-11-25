@@ -92,6 +92,17 @@ class Routes(unittest.TestCase):
         finally:
             server.SUPPORTERS_ALWAYS = keep
 
+    def test_alert_links_are_answered_when_every_slot_is_taken(self):
+        held = 0
+        while server._inflight.acquire(blocking=False):
+            held += 1
+        try:
+            self.assertEqual(call(self.port, f"/api/export/{TIPPER}.csv")[0], 503)
+            self.assertIn("no longer valid", call(self.port, "/api/alerts/confirm?t=" + "z" * 32)[3])
+        finally:
+            for _ in range(held):
+                server._inflight.release()
+
     def test_rows_are_marked(self):
         doc = server.stamp_supporters({"online": [{"address": TIPPER}, {"address": OTHER}], "n": 2})
         self.assertEqual([r["supporter"] for r in doc["online"]], [True, False])

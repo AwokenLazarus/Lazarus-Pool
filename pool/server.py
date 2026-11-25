@@ -4332,8 +4332,12 @@ def live_workers_of(addresses):
     out = {}
     for addr in addresses:
         book = by.get(addr) or {}
-        live = {w["name"] for w in book.get("named") or [] if _prime_worker_live(w)}
-        if any(_prime_worker_live(w) for w in (book.get("unnamed") or []) + (book.get("more") or [])):
+        def hashing(w):
+            # tighter than the ten minutes a row stays on the Workers tab
+            return w["hr_ghs"] > 1e-6 and w["last_share_s"] < supporters.LIVE_SHARE_S
+
+        live = {w["name"] for w in book.get("named") or [] if hashing(w)}
+        if any(hashing(w) for w in (book.get("unnamed") or []) + (book.get("more") or [])):
             live.add("")
         out[addr] = live
     return out
@@ -7755,7 +7759,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(501, f"Unsupported method ({self.command!r})")
                 return
             path = unquote(urlparse(self.path).path)
-            if split_lang_prefix(path)[1] in _CHEAP_PATHS or path.startswith("/static/"):
+            # The alert links arrive from an email and do one small write: never shed, or a
+            # miner who clicks "confirm" on a busy minute is shown {"error": "busy"}.
+            if split_lang_prefix(path)[1] in _CHEAP_PATHS or path.startswith(("/static/", "/api/alerts/")):
                 method()
             elif _inflight.acquire(blocking=False):
                 try:
