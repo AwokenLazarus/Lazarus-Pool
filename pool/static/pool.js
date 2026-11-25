@@ -1602,6 +1602,26 @@
   // A supporter (tips of 0.5% or more over seven days) carries a mark beside the figure.
   const supMark = (m) => (m.supporter ? ` <span class="sup-mark" title="${esc(t("sup.markTitle"))}" aria-label="${esc(t("sup.markTitle"))}">\u25C6</span>` : "");
   const tipCell = (m) => (Number(m.tip_percent) > 0 ? `<span class="tip-on">${Number(m.tip_percent).toFixed(2).replace(/\.?0+$/, "")}%</span>` : "\u2014") + supMark(m);
+  // The home page's supporter board (/api/supporters): who has supporter standing, most
+  // tipped over seven days first. Drawn on load and every five minutes.
+  async function drawSupporters() {
+    const box = document.getElementById("supboard-body");
+    if (!box) return;
+    let d;
+    try { d = await j("/api/supporters"); } catch (e) { return; }
+    const rows = (d && d.supporters) || [];
+    if (!rows.length) {
+      box.innerHTML = `<p class="tipbox-fine">${t("tip.boardEmpty")}</p>`;
+      return;
+    }
+    const pctOf = (v) => Number(v || 0).toFixed(2).replace(/\.?0+$/, "") + "%";
+    const more = Number(d.count) > rows.length ? `<p class="tipbox-fine">${t("tip.boardMore", { n: num(Number(d.count) - rows.length) })}</p>` : "";
+    box.innerHTML = `<table class="supboard-table"><thead><tr><th class="num">#</th><th>${t("tip.boardThMiner")}</th><th class="num">${t("tip.boardThTipped")}</th><th class="num">${t("tip.boardThRate")}</th></tr></thead><tbody>${rows
+      .map((r, i) => `<tr><td class="num">${i + 1}</td><td><a href="/miner/${encodeURIComponent(r.address)}" title="${esc(r.address)}">${short(r.address)}</a></td><td class="num">${num(r.tip_sats_7d)} sats</td><td class="num tip-on">${pctOf(r.tip_percent_7d)}</td></tr>`)
+      .join("")}</tbody></table>${more}`;
+  }
+  drawSupporters();
+  setInterval(() => { if (!document.hidden) drawSupporters(); }, 300000);
   let lastBlocks = { blocks: [] };
   async function refresh() {
     // A tab nobody is looking at has no one to refresh for; it catches up when it is shown.

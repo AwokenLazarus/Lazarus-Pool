@@ -1,7 +1,7 @@
 {
  "/": {
   "lastmod": "2026-11-25",
-  "sha256": "b72cb9c5ce4f8bc32e56dc4798198baa7aad3a8d1b307d0419bef9993cfc5593"
+  "sha256": "a8bb49cd76423e2ed6c74c1f08971dfaf4a2b5ad56d192351f7c0e0722b9a3fd"
  },
  "/api": {
   "lastmod": "2026-10-30",
@@ -21,7 +21,7 @@
  },
  "/connect": {
   "lastmod": "2026-11-25",
-  "sha256": "0b6568b7214e72c184d26e343f1378dde8232f17de8443fe3831ac944e554da2"
+  "sha256": "72b827a2904ec4f1c9b0ef91e124f72f8ea3ed9cbafec9c492b2cd73948a2015"
  },
  "/flytheelephant": {
   "lastmod": "2026-11-25",
@@ -57,7 +57,7 @@
  },
  "/zh/": {
   "lastmod": "2026-11-25",
-  "sha256": "06ee3504434d582b386f455c4614bee35e39a6d4ef157c2f0e5d6a502f0b99ea"
+  "sha256": "ccbe768333bbfe9efda6b2cb76e143e9841537cbe440ddafef004e6a87e4adf9"
  },
  "/zh/api": {
   "lastmod": "2026-10-30",
@@ -77,7 +77,7 @@
  },
  "/zh/connect": {
   "lastmod": "2026-11-25",
-  "sha256": "c53ecb91eda4feefcb1a511f61ed3f9ab968ab8175975b89db44dd31d6c66f9a"
+  "sha256": "92a6d64acd3f3b7e31a40107cbb81d336545f93a5efa142c7e53313dd9ca1923"
  },
  "/zh/flytheelephant": {
   "lastmod": "2026-11-25",
