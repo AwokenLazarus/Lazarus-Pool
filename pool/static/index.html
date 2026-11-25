@@ -57,7 +57,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap"></noscript>
-<link rel="stylesheet" href="/static/pool.css?v=ft3">
+<link rel="stylesheet" href="/static/pool.css?v=ft8">
 <link rel="stylesheet" href="/static/app.css?v=fork1">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/static/favicon-48.png" sizes="48x48" type="image/png">
@@ -240,7 +240,7 @@
         <li><span data-i18n-html="status.p2a"><b>Your own gateway: 0% fee.</b> Your node builds the block; the pool only sets the split. A tip is optional.</span> <a href="#connect" data-i18n="nav.connect">Connect</a></li>
         <li data-i18n-html="status.p3"><b>Verifiable end to end.</b> Every share is rebuilt and hashed; every block found is on the <a href="https://mempool.lazarus-xbt.xyz/mining/pool/lazarus" target="_blank" rel="noreferrer">Lazarus Mempool</a>. Source on <a href="https://github.com/AwokenLazarus/Bitcoin" target="_blank" rel="noreferrer">GitHub</a>.</li>
       </ul>
-      <p class="tipband" data-i18n-html="tip.band"><b>0% fee on DATUM mining.</b> Want to support the pool? <a href="#tip">Add an optional tip</a> to a worker name, like <code>rig1.tip1</code>.</p>
+      <p class="tipband" data-i18n-html="tip.band"><b>0% fee on DATUM mining.</b> Want to support the pool? <a href="#tip">Add an optional tip</a> to a worker name, like <code>rig1.tip1</code>. Supporters get worker alerts by email and an earnings export.</p>
     </div>
   </section>
 
@@ -436,6 +436,16 @@
               <li><code>rig1.tip0.5</code> <span data-i18n="tip.ex2">tips half a percent</span></li>
             </ul>
             <p class="tipbox-fine" data-i18n="tip.fine">Anything from 0.1% to 5%; a larger number is read as 5%. It comes off your own payout only, shows on your miner page, and stops as soon as you remove it.</p>
+            <div class="tipbox-sup" id="supporters">
+              <h4 class="tipbox-subtitle"><span class="sup-mark" aria-hidden="true">&#9670;</span> <span data-i18n="tip.supTitle">Supporters get a little extra</span></h4>
+              <p class="tipbox-body" data-i18n-html="tip.supBody">An address whose tips come to <b>0.5% or more</b> of what it earned over the last 7 days, all its machines together, is a supporter. Payouts are the same for everyone; supporters also get:</p>
+              <ul class="tipbox-perks">
+                <li data-i18n-html="tip.sup1"><b>Worker alerts by email</b> when a machine stops hashing for 15 minutes, and when it is back</li>
+                <li data-i18n-html="tip.sup2"><b>Earnings as a file</b>: every block that paid the address, as CSV</li>
+                <li data-i18n-html="tip.sup3"><b>A supporter mark</b> beside the address in the miners table</li>
+              </ul>
+              <p class="tipbox-fine" data-i18n="tip.supFine">The alerts and the file are on your miner page once the address qualifies. A 1% tip on every machine gets there in about three and a half days.</p>
+            </div>
           </aside>
           <details class="fold">
             <summary data-i18n="connect.whoSummary">Who gets paid, by gateway setting</summary>
@@ -879,12 +889,12 @@
 </nav>
 
 <script src="/static/i18n.js?v=seo2"></script>
-<script src="/static/i18n/en.js?v=ft7"></script>
-<script src="/static/i18n/zh-CN.js?v=ft7"></script>
+<script src="/static/i18n/en.js?v=ft8"></script>
+<script src="/static/i18n/zh-CN.js?v=ft8"></script>
 <script>LZ_I18N.boot();</script>
-<script src="/static/shared.js?v=ft7"></script>
+<script src="/static/shared.js?v=ft8"></script>
 <script src="/static/app.js?v=fork2"></script>
-<script src="/static/pool.js?v=ft7"></script>
+<script src="/static/pool.js?v=ft8"></script>
 <script src="/static/chart.js?v=app4"></script>
 </body>
 </html>
