@@ -4424,7 +4424,7 @@ def _alert_page(kind, addr=None):
 }})();
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
-<link rel="stylesheet" href="/static/pool.css?v=ft6">
+<link rel="stylesheet" href="/static/pool.css?v=ft8">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
   .zh {{ display: none; }} .lang-zh .zh {{ display: inline; }} .lang-zh .en {{ display: none; }}
@@ -7443,7 +7443,7 @@ _SEO_ARTICLE = {
     "/non-custodial": ("Article", "2026-09-13", "2026-11-23"),
     "/bip110": ("Article", "2026-09-13", "2026-11-12"),
     "/how": ("Article", "2026-09-13", "2026-11-23"),
-    "/connect": ("TechArticle", "2026-09-13", "2026-11-23"),
+    "/connect": ("TechArticle", "2026-09-13", "2026-11-25"),
     "/ratum": ("TechArticle", "2026-09-28", "2026-11-25"),
     "/flytheelephant": ("TechArticle", "2026-09-28", "2026-11-25"),
     "/api": ("TechArticle", "2026-09-13", "2026-10-30"),
