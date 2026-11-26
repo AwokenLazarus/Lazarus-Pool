@@ -4,9 +4,6 @@
 //   blocks  compact record of every block since the fork (see galaxy.js blockRecord)
 //   galaxy  the built model the page draws
 import { blockRecord, buildGalaxy, FORK_HEIGHT } from "./galaxy.js";
-import { ACTIVE_SEC, addressPays, applyHosted, dropBlock, migrate, noteBlock, observeLive, outputsOf, prune, rememberStratum, validAddress } from "./naughtylist.js";
-import { askPools, buildView, refreshPools, storedEvidence } from "./pools.js";
-import { renderAddress, renderList } from "./naughtypage.js";
 import { fillHub, renderMapTable } from "./hubfill.js";
 
 const EXPLORER = "https://mempool.lazarus-xbt.xyz";
@@ -104,189 +101,10 @@ export async function refresh(env) {
   ]);
   const galaxy = buildGalaxy(recs, { lazarusGateways: (gw && gw.gateways) || [], lazarusPool: pool, networkHashrate: hr && hr.currentHashrate ? Math.round(hr.currentHashrate) : null });
   await env.GALAXY.put("galaxy", JSON.stringify(galaxy));
-  let naughty = null;
-  try {
-    naughty = await ingestNaughty(env, tip, recs);
-  } catch (e) {
-    console.error("naughty list ingest failed", e.message);
-  }
-  return { tip, blocks: recs.length, added: recs.length - stored.length, pages, stored: changed, coverage: Math.round(coverage * 1000) / 10, naughty };
-}
-
-// How many coinbases one cron reads, and how many at once. A cold start (2,300 blocks in fourteen
-// days) is a few hours of crons; scripts/naughty-backfill.mjs does it in one go.
-const INGEST_BLOCKS = 60;
-const INGEST_PARALLEL = 6;
-
-// Requests one cron may spend on the pools' own APIs, shared by the readers that ask per address.
-const POOL_BUDGET = 16;
-
-// Below this share of the window's coinbases read, a list built from them would be missing rows,
-// so the last published one stays up.
-const PUBLISH_COVERAGE = 0.97;
-
-/** The coinbase outputs of one block, or null if the explorer did not give them this time. */
-async function coinbaseOf(id) {
-  try {
-    const txs = await getJSON(`${EXPLORER}/api/block/${id}/txs/0`, 10000);
-    const coinbase = Array.isArray(txs) ? txs[0] : null;
-    if (!coinbase || !coinbase.txid) return null;
-    return { txid: coinbase.txid, outputs: outputsOf(coinbase) };
-  } catch (e) {
-    console.error("coinbase tx", id, e.message);
-    return null;
-  }
-}
-
-/**
- * Keep the naughty list's block store equal to the last fourteen days of `recs` (the record
- * refresh() keeps of every block), read what each pool publishes about its miners, and store
- * both the working document (`naughtylist`) and the small one the page reads (`naughtyview`).
- *
- * What to read is the difference between `recs` and the store, so nothing depends on a cursor:
- * a block missed during an outage is read on a later run, a block that was orphaned is dropped,
- * and a coinbase the explorer failed to return is simply still missing next time.
- */
-export async function ingestNaughty(env, tip, recs, nowSec) {
-  const now = nowSec || Math.floor(Date.now() / 1000);
-  const state = migrate(await env.GALAXY.get("naughtylist", "json"));
-  // Gateway names proved to be a pool's own (scripts/hosted-watch.py). Absent: nothing new is proved.
-  const hosted = await env.GALAXY.get("hostedgateways", "json").catch(() => null);
-  const window = recs.filter((r) => r.t >= now - ACTIVE_SEC && r.h <= tip);
-  const byHeight = new Map(window.map((r) => [r.h, r]));
-  let dropped = 0;
-  for (const [h, e] of Object.entries(state.blk)) {
-    const r = byHeight.get(Number(h));
-    if (Number(h) > tip || (r && r.id !== e[6])) { dropBlock(state, h); dropped++; }
-  }
-  for (const [h, id] of Object.entries(state.skip)) {
-    const r = byHeight.get(Number(h));
-    if (Number(h) > tip || (r && r.id !== id)) delete state.skip[h];
-  }
-  const missing = window.filter((r) => !state.blk[r.h] && state.skip[r.h] == null).reverse();
-  const batch = missing.slice(0, INGEST_BLOCKS);
-  let noted = 0, failed = 0;
-  for (let i = 0; i < batch.length; i += INGEST_PARALLEL) {
-    const slice = batch.slice(i, i + INGEST_PARALLEL);
-    const got = await Promise.all(slice.map((r) => coinbaseOf(r.id)));
-    slice.forEach((r, k) => {
-      if (!got[k]) { failed++; return; }
-      noteBlock(state, {
-        h: r.h, t: r.t, id: r.id, txid: got[k].txid, outputs: got[k].outputs,
-        tags: { layout: r.l ? "datum" : "other", primary: r.p || "", secondary: r.s || "" },
-        explorerPool: r.x || "",
-      }, hosted);
-      noted++;
-    });
-  }
-  state.tip = tip;
-  const coverage = { have: window.length - (missing.length - noted), of: window.length };
-  const rejudged = applyHosted(state, hosted);
-  // Addresses behind another pool's gateway on our own DATUM port, as the watcher last saw them.
-  if (hosted && hosted.lazarus) state.via = hosted.lazarus;
-  if (hosted) {
-    const eps = Object.values(hosted.endpoints || {});
-    state.watch = { asOf: hosted.asOf || 0, ports: eps.length, heard: eps.filter((e) => e.last && (hosted.asOf || 0) - e.last < 1800).length, proved: Object.keys(hosted.blocks || {}).length };
-  }
-  // A run that is still catching up on coinbases leaves the pools for the next one.
-  const pools = noted > 12 ? {} : await refreshPools(state, { get: getJSON, getText, now, budget: POOL_BUDGET });
-  const [miners, gateways] = await Promise.all([
-    getJSON(`${POOL}/api/miners`).catch(() => null),
-    getJSON(`${POOL}/api/gateways`).catch(() => null),
-  ]);
-  const online = (miners && miners.online) || [];
-  observeLive(state, online, now);
-  rememberStratum(state, now);
-  prune(state, now);
-  const view = buildView(state, online, (gateways && gateways.gateways) || [], now, { coverage });
-  // The Lazarus rows come from live sessions. If the pool did not answer, the last view still has
-  // them and a new one would silently drop every one, so the old view stays up. The same goes
-  // for a store that does not cover the window yet.
-  const thin = coverage.of > 0 && coverage.have / coverage.of < PUBLISH_COVERAGE;
-  const keepOld = (!miners || thin) && (await env.GALAXY.get("naughtyview")) != null;
-  await Promise.all([
-    env.GALAXY.put("naughtylist", JSON.stringify(state)),
-    keepOld ? null : env.GALAXY.put("naughtyview", JSON.stringify(view)),
-  ]);
-  return { noted, failed, dropped, rejudged, coverage, naughty: view.naughty.length, suspects: view.suspects.length, nice: view.nice.length, pools, viewKept: keepOld };
-}
-
-async function naughtyView(env) {
-  const view = await env.GALAXY.get("naughtyview", "json");
-  if (view) return view;
-  // Before the first cron after a deploy there is no view yet: build one from the working document.
-  const state = migrate(await env.GALAXY.get("naughtylist", "json"));
-  return buildView(state, [], [], Math.floor(Date.now() / 1000));
-}
-
-// A pool asked while someone waits for the page gets this long. Past it the page says the pool
-// did not answer, which is better than a page that hangs on someone else's server.
-const ASK_MS = 2500;
-
-async function naughtyAddress(env, address) {
-  if (!validAddress(address)) return { error: "that is not an address", address };
-  const now = Math.floor(Date.now() / 1000);
-  // The other servers are asked while the stored document is read; the answers are judged
-  // against it afterwards (chainKind is only called once a pool has replied).
-  let state = null;
-  const chainKind = (h) => (state && state.blk[h] ? state.blk[h][2] : null);
-  const [stored, view, utxos, asked] = await Promise.all([
-    env.GALAXY.get("naughtylist", "json").catch(() => null).then((d) => { state = migrate(d); return d; }),
-    naughtyView(env).catch(() => null),
-    getJSON(`${EXPLORER}/api/address/${encodeURIComponent(address)}/utxo`, 6000).catch(() => null),
-    askPools(address, { get: (url) => getJSON(url, ASK_MS), now, chainKind }).catch(() => []),
-  ]);
-  if (!state) state = migrate(stored);
-  const pays = addressPays(state, address, Array.isArray(utxos) ? utxos : []);
-  const unspent = pays.filter((p) => p.unspent);
-  const listed = view ? [...view.naughty, ...view.suspects, ...view.nice].find((r) => r.address === address) || null : null;
-  return {
-    address,
-    asOf: view ? view.asOf : null,
-    listed,
-    stored: storedEvidence(state, address, now),
-    asked,
-    pays,
-    utxosRead: Array.isArray(utxos),
-    unspentSats: unspent.reduce((s, p) => s + (Number(p.sats) || 0), 0),
-    unspentCount: unspent.length,
-    explorer: `https://mempool.lazarus-xbt.xyz/address/${address}`,
-  };
+  return { tip, blocks: recs.length, added: recs.length - stored.length, pages, stored: changed, coverage: Math.round(coverage * 1000) / 10 };
 }
 
 const PAGE_CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://*.googletagmanager.com https://*.posthog.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.posthog.com; worker-src 'self' blob: data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
-
-/** The naughty list as HTML, held at the edge for a minute per URL. */
-async function naughtyPage(request, env, ctx, url) {
-  const a = (url.searchParams.get("a") || "").trim();
-  const pool = (url.searchParams.get("pool") || "").slice(0, 64);
-  const all = url.searchParams.get("all") === "1";
-  const key = new Request(`${url.origin}/naughtylist/?${a ? `a=${encodeURIComponent(a.slice(0, 100))}${all ? "&all=1" : ""}` : `pool=${encodeURIComponent(pool)}`}`);
-  const cache = caches.default;
-  const hit = await cache.match(key);
-  if (hit) return withHeaders(hit, { "X-Edge-Cache": "HIT" });
-  let html, status = 200;
-  if (a) {
-    const d = await naughtyAddress(env, a);
-    if (d.error) status = 400;
-    html = renderAddress(d, { all });
-  } else {
-    html = renderList(await naughtyView(env), { pool });
-  }
-  const res = new Response(html, {
-    status,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": a ? "public, max-age=60" : "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
-      "Content-Security-Policy": PAGE_CSP,
-      "X-Frame-Options": "DENY",
-      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-      ...(a ? { "X-Robots-Tag": "noindex" } : {}),
-    },
-  });
-  if (status === 200) ctx.waitUntil(cache.put(key, res.clone()));
-  return withHeaders(res, { "X-Edge-Cache": "MISS" });
-}
 
 function withHeaders(res, extra = {}) {
   const out = new Response(res.body, res);
@@ -357,31 +175,12 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/map") return Response.redirect(`${url.origin}/map/`, 301);
-    if (url.pathname === "/naughtylist" || url.pathname === "/naughtylist/index.html") {
-      return Response.redirect(`${url.origin}/naughtylist/${url.search}`, 301);
+    // The naughty list was retired in November 2026. Old links go to the home page; the API says so plainly.
+    if (url.pathname === "/naughtylist" || url.pathname.startsWith("/naughtylist/")) {
+      return Response.redirect(`${url.origin}/`, 301);
     }
-    if (url.pathname === "/naughtylist/") {
-      if (request.method !== "GET" && request.method !== "HEAD") return new Response("method not allowed", { status: 405 });
-      try {
-        return await naughtyPage(request, env, ctx, url);
-      } catch (e) {
-        console.error("naughty page", e.message);
-        return withHeaders(new Response("The naughty list could not be built just now. Try again in a minute.\n", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "60", "Cache-Control": "no-store" } }));
-      }
-    }
-    if (url.pathname === "/api/naughtylist" || url.pathname === "/api/naughtylist/address") {
-      if (request.method !== "GET" && request.method !== "HEAD") return new Response("method not allowed", { status: 405 });
-      try {
-        const data = url.pathname.endsWith("/address")
-          ? await naughtyAddress(env, url.searchParams.get("a") || "")
-          : await naughtyView(env);
-        return withHeaders(new Response(JSON.stringify(data), {
-          status: data.error ? 400 : 200,
-          headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30, s-maxage=60", "Access-Control-Allow-Origin": "*" },
-        }));
-      } catch (e) {
-        return withHeaders(new Response(JSON.stringify({ error: e.message }), { status: 503, headers: { "Content-Type": "application/json", "Retry-After": "30", "Cache-Control": "no-store" } }));
-      }
+    if (url.pathname === "/api/naughtylist" || url.pathname.startsWith("/api/naughtylist/")) {
+      return withHeaders(new Response(JSON.stringify({ error: "the naughty list was retired" }), { status: 410, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" } }));
     }
     // The hub used to carry a mining guide; the pool site owns that, so those URLs go there.
     if (url.pathname === "/start" || url.pathname.startsWith("/start/")) {

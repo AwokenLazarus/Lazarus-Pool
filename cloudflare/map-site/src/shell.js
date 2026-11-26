@@ -10,7 +10,7 @@ export const xbt = (sats) => sats == null ? "—" : `${(sats / 1e8).toLocaleStri
 export const plural = (count, one, many) => `${n(count)} ${count === 1 ? one : many}`;
 export const safeUrl = (u) => /^https:\/\//.test(String(u || "")) ? esc(u) : "#";
 
-const NAV = [["/learn/", "The chain"], ["/ecosystem/", "Ecosystem"], ["/map/", "Galaxy map"], ["/naughtylist/", "Naughty list"], ["/key/", "Lazarus Key"], ["/faq/", "FAQ"]];
+const NAV = [["/learn/", "The chain"], ["/ecosystem/", "Ecosystem"], ["/map/", "Galaxy map"], ["/key/", "Lazarus Key"], ["/faq/", "FAQ"]];
 
 export const HEAD = (title, description, canonical, current = "", css = "") => `<!doctype html>
 <html lang="en">

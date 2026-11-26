@@ -2,3 +2,5 @@
 # it dates a page. One full commit hash per line; say what the commit did in a comment above it.
 # 2026-10-19: GA4 and PostHog tag on every page, CSP for them (no words changed)
 7ab669deeed250064fe30f0b4c0d8b2fcb5904e0
+# 2026-11-26: naughty list retired, its nav link removed from every page (no words changed)
+3361d2b09fb8dc4b869707cd46cb266f196b1a1b

@@ -84,7 +84,6 @@ jobs:
         run: |
           node scripts/test-indexing.mjs
           node scripts/sitemap-lastmod.mjs --check
-          node scripts/test-naughtylist.mjs
 
       - name: MCP tests
         working-directory: cloudflare/mcp

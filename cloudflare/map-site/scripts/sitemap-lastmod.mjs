@@ -15,7 +15,6 @@ const check = process.argv.includes("--check");
 
 // Pages the Worker renders have no HTML file; their words live in these sources.
 const RENDERED = {
-  "/naughtylist/": ["src/naughtypage.js", "src/naughtylist.js"],
   "/map/table/": ["src/worker.js", "src/galaxy.js"],
 };
 
