@@ -37,39 +37,6 @@ aliases, software default tags, pool types) and says why each exists.
 KV namespace `lazarus-map-galaxy` holds the map's two keys: `blocks` (compact record of every block since
 block 961,640) and `galaxy` (the built model the page draws).
 
-## Naughty list (`/naughtylist/`)
-
-Addresses hashing on a pool's stratum endpoint, for every pool, rendered by the Worker as plain
-HTML (`src/naughtypage.js`): no script is needed to read it, filter by pool (`?pool=`) or look up
-an address (`?a=`). JSON is at `/api/naughtylist`.
-
-- `src/naughtylist.js`: the coinbase walk (14 days) and the rules. The chain alone classifies
-  nothing but a block paid to a pool alone: a split pays stratum hashers and gateway operators
-  alike, and RATUM gateways write no tag.
-- `src/pools.js`: one reader per pool API (Lazarus, B2Pool, dxpool, RIPTIDE, PaperclipPool,
-  Blockvase, PyBLOCK, CONVOY, Bitcoin Xor) and the table of what each pool publishes. To add a
-  pool, add a reader that fills `state.ext[pool].m[address]` and a `POOLS` row. A pool with no row
-  still appears on the page from its blocks, marked not checked.
-- The store (`naughtylist`, v3) is `blk` (one entry per block of the last 14 days) and `pays`
-  (every coinbase output of those blocks, per address). Counts are worked out from them on each
-  run (`derive`), never kept as running totals. What the cron reads is the difference between
-  the `blocks` record and the store: a block missed in an outage is read later, an orphaned block
-  is dropped, a coinbase the explorer failed on is retried. A view built from under 97% of the
-  window is not published. `node scripts/naughty-backfill.mjs blocks.json naughtylist.json
-  hostedgateways.json` fills a store in one go.
-- A block paid to a pool in one output is custody. Two or three outputs from a known pool is a
-  small split (a finder and a fee), judged like any split. A gateway block the watcher tied to a
-  pool counts as the pool's: `direct` when that block's job was heard on a public stratum port,
-  `named` when it only carries a gateway name proved by another block. The page gives both.
-- The page says what is out of date (`staleness`): a list not rebuilt for 20 minutes, a window
-  not fully read, a watcher silent for 2 hours, a pool that did not answer. `assets/naughty.js`
-  adds a filter box and column sorting; the page is complete without it.
-- KV: `naughtylist` is the working document, `naughtyview` the small one the page reads. The cron
-  writes both. B2Pool and dxpool answer per address, so they are read a few addresses per run
-  (`POOL_BUDGET`); B2Pool drops a client that sends a few hundred requests in a burst.
-- `node scripts/naughty-pools.mjs state.json` runs every reader over a saved document and prints
-  the lists. `npm test` covers the rules and that the page carries no inline script.
-
 ## Without JavaScript
 
 Every hub page reads with scripts off. `assets/js.js` sets `.js` on `<html>`; styles that hide

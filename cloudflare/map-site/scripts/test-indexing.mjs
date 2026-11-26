@@ -8,21 +8,21 @@ assert.deepEqual([...index.matchAll(/<sitemap><loc>([^<]+)<\/loc>/g)].map(m=>m[1
 assert.ok(readFileSync(new URL('robots.txt',publicDir),'utf8').includes('Sitemap: https://lazarus-xbt.xyz/sitemap-en.xml\n'));
 const xml = readFileSync(new URL('sitemap-en.xml', publicDir), 'utf8');
 const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
-assert.equal(urls.length, 10);
-assert.equal(new Set(urls).size, 10);
+assert.equal(urls.length, 9);
+assert.equal(new Set(urls).size, 9);
 for (const url of urls) {
   const path = new URL(url).pathname;
-  if (['/naughtylist/', '/map/table/'].includes(path)) continue; // Worker-rendered, tested below/elsewhere.
+  if (['/map/table/'].includes(path)) continue; // Worker-rendered, tested below/elsewhere.
   const html = readFileSync(new URL(path.slice(1)+'index.html', publicDir),'utf8');
   assert.ok(html.includes(`rel="canonical" href="${url}"`), url);
   assert.ok(!/<meta[^>]+name="robots"[^>]+noindex/i.test(html), url);
   assert.ok(/<h1\b/.test(html), url);
   assert.ok(html.includes('<script src="/assets/analytics.js?v=1" defer></script>'), `${url}: no analytics`);
 }
-for (const path of ['/naughtylist', '/naughtylist/index.html']) {
+for (const path of ['/naughtylist', '/naughtylist/', '/naughtylist/index.html']) { // retired: old links land on the home page
   const r = await worker.fetch(new Request('https://lazarus-xbt.xyz'+path+'?pool=Lazarus'), {}, {});
   assert.equal(r.status, 301);
-  assert.equal(r.headers.get('Location'),'https://lazarus-xbt.xyz/naughtylist/?pool=Lazarus');
+  assert.equal(r.headers.get('Location'),'https://lazarus-xbt.xyz/');
 }
 assert.ok(!readFileSync(new URL('robots.txt',publicDir),'utf8').includes('Disallow: /\n'));
 console.log('PASS: main sitemap/static canonical pages and dynamic canonical redirects');
